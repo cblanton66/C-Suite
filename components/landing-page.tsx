@@ -15,7 +15,11 @@ import {
   ArrowRight,
   Building2,
   Target,
-  Zap
+  Zap,
+  PieChart,
+  Shield,
+  Handshake,
+  Quote
 } from "lucide-react"
 
 interface LandingPageProps {
@@ -25,44 +29,44 @@ interface LandingPageProps {
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const benefits = [
     {
-      icon: <Calculator className="w-6 h-6" />,
-      title: "Tax Estimate & FinancialProjections",
-      description: "Generate accurate tax estimates and financial projections for better planning"
+      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Strategic Planning & Forecasting",
+      description: "Model growth scenarios, analyze what-if situations, and make data-driven strategic decisions"
     },
     {
-      icon: <FileText className="w-6 h-6" />,
-      title: "Tax Law Research",
-      description: "Instant access to current tax regulations and compliance requirements"
-    },
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: "Deduction Optimization",
-      description: "Identify all eligible deductions and credits to maximize tax savings"
+      icon: <DollarSign className="w-6 h-6" />,
+      title: "Cash Flow Management",
+      description: "13-week cash flow forecasting, working capital optimization, and liquidity planning"
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
-      title: "Tax Planning Strategies",
-      description: "Develop comprehensive tax planning strategies for individuals and businesses"
+      title: "KPI Dashboard & Analytics",
+      description: "Track performance metrics, benchmark against industry standards, identify trends"
     },
     {
-      icon: <Users className="w-6 h-6" />,
-      title: "Client Communications",
-      description: "Generate professional client letters, presentations, and tax reports"
+      icon: <FileText className="w-6 h-6" />,
+      title: "Tax Strategy & Compliance",
+      description: "Year-round tax planning, compliance monitoring, and deduction optimization"
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
-      title: "Compliance Monitoring",
-      description: "Stay updated on tax law changes and compliance requirements"
+      icon: <Handshake className="w-6 h-6" />,
+      title: "M&A & Investment Readiness",
+      description: "Prepare for acquisitions, investor presentations, and valuation analysis"
+    },
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: "Risk & Compliance Guardian",
+      description: "Monitor regulatory requirements, loan covenants, and flag potential issues early"
     }
   ]
 
   const features = [
-    "30+ years of CPA expertise built-in",
-    "24/7 availability for urgent tax questions",
-    "Individual and business tax focused",
-    "Secure and confidential data handling",
-    "Regular updates with latest tax law changes",
-    "Integration with popular tax software"
+    "Full CFO toolkit - from cash flow to compliance",
+    "24/7 access to strategic financial guidance",
+    "Built on 31 years of CPA and PE experience",
+    "Industry-specific insights and benchmarks",
+    "M&A readiness and valuation tools",
+    "Secure, confidential, and SOC 2 compliant"
   ]
 
   return (
@@ -76,14 +80,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <Building2 className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">TaxGPT</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Tax Research & Projections</p>
+                <h1 className="text-2xl font-bold text-foreground">C-Suite AI</h1>
+                <p className="text-sm text-muted-foreground">Your Virtual CFO</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <Button onClick={onNavigateToChat} variant="outline">
-                Try Demo
+                See It In Action
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -96,22 +100,21 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Zap className="w-4 h-4" />
-            Powered by 30+ Years of CPA Expertise
+Your Virtual CFO, Powered by 30+ Years of Business Experience
           </div>
           <h2 className="text-5xl font-bold text-foreground mb-6 leading-tight">
-            Your AI Tax Assistant
+            C-Suite AI
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Get expert tax guidance powered by 30+ years of CPA expertise. From tax planning to compliance, 
-            get instant answers to your most complex tax questions.
+            Every business deserves CFO-level financial intelligence. From cash flow to compliance, from tax strategy to M&A prep. Make confident financial decisions 24/7.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" onClick={onNavigateToChat} className="text-lg px-8 py-6">
-              Start Free Trial
+              Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-              Watch Demo
+              See It In Action
             </Button>
           </div>
         </div>
@@ -122,10 +125,10 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Everything You Need for Tax Success
+              Your Complete Financial Command Center
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive tax tools designed specifically for CPAs, tax professionals, and small business owners
+              Strategic CFO capabilities designed for businesses from $500K to $50M in revenue
             </p>
           </div>
           
@@ -153,7 +156,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
           <Card className="max-w-md mx-auto p-8">
             <div className="text-center mb-6">
               <h4 className="text-xl font-semibold text-foreground mb-2">Ready to Get Started?</h4>
-              <p className="text-muted-foreground">Sign in to access your TaxGPT Assistant</p>
+              <p className="text-muted-foreground">Sign in to access your C-Suite AI Assistant</p>
             </div>
             <div className="space-y-4">
               <Input placeholder="Email address" type="email" />
@@ -165,6 +168,119 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 Don't have an account? <a href="#" className="text-primary hover:underline">Sign up here</a>
               </p>
             </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Target Personas Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              Built for Three Types of Financial Leaders
+            </h3>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Whether you're wearing multiple hats or leading a finance team, C-Suite AI adapts to your role
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* The Owner-CFO */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Briefcase className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Owner-CFO</h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                You built the business but need CFO-level financial intelligence without the CFO salary. Get strategic insights, cash flow forecasting, and M&A readiness.
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>13-week cash flow forecasting</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Strategic planning scenarios</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Investment & exit preparation</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* The Accounting Head */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <BarChart3 className="w-8 h-8 text-green-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Accounting Head</h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                You manage the books but want to provide strategic value. Transform from number-cruncher to business advisor with executive-level analysis tools.
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Management reporting automation</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>KPI dashboards & benchmarking</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Strategic recommendations</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* The Strategic CFO */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Target className="w-8 h-8 text-purple-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Strategic CFO</h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                You're already strategic but need deeper insights and faster analysis. Enhance your capabilities with AI-powered modeling and industry benchmarking.
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Advanced financial modeling</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Board presentation support</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>M&A due diligence prep</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Built by Experience Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h3 className="text-3xl font-bold text-foreground mb-8">
+            Three Decades of Real-World Business Intelligence
+          </h3>
+          
+          <Card className="p-8 bg-muted/30 border-l-4 border-l-primary">
+            <Quote className="w-12 h-12 text-primary mx-auto mb-6" />
+            <blockquote className="text-xl text-foreground leading-relaxed mb-8 italic">
+              "I've advised hundreds of businesses over 31 years. The difference between those that thrive and those that merely survive? Access to trusted financial guidance when they need it most."
+            </blockquote>
+            <div className="text-lg font-semibold text-foreground mb-2">
+              Chuck Blanton, CPA | Former PE Executive | Serial Entrepreneur
+            </div>
+            <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              With experience spanning CPA practice, private equity, investment advisory managing $55M, and multiple business ventures, C-Suite AI brings battle-tested financial intelligence to your business.
+            </p>
           </Card>
         </div>
       </section>
@@ -233,17 +349,17 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
       <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-3xl font-bold mb-4">
-            Ready to Transform Your Tax Practice?
+            Every Business Deserves a CFO
           </h3>
           <p className="text-xl mb-8 opacity-90">
-            Join forward-thinking tax professionals who are already using AI to work smarter, not harder.
+            Join growing companies that are making smarter financial decisions with AI-powered CFO intelligence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={onNavigateToChat}>
-              Start Free Trial
+              Start Your Free Trial
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={onNavigateToChat}>
-              Try Demo
+              See It In Action
             </Button>
           </div>
         </div>
@@ -256,13 +372,13 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Building2 className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold text-foreground">TaxGPT</span>
+            <span className="text-lg font-semibold text-foreground">C-Suite AI</span>
           </div>
           <p className="text-muted-foreground mb-4">
-            Empowering tax professionals with AI-driven tax intelligence
+            Empowering businesses with AI-driven CFO intelligence
           </p>
           <p className="text-sm text-muted-foreground">
-            © 2024 TaxGPT. All rights reserved.
+            © 2024 C-Suite AI. All rights reserved.
           </p>
         </div>
       </footer>

@@ -158,7 +158,7 @@ export function ChatInterface() {
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Calculator className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-3">Welcome to TaxGPT</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-3">Your CFO Assistant</h2>
               <p className="text-muted-foreground mb-8 text-balance">
                 Your AI-powered tax research and projection assistant. Get expert guidance on tax planning, deductions,
                 compliance, and financial projections.
