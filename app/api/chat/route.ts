@@ -136,17 +136,23 @@ Submit your responses, and the estimate will be generated promptly. ¡Listo para
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json()
+    const { messages, fileContext } = await req.json()
 
     if (!process.env.XAI_API_KEY) {
       return NextResponse.json({ error: "XAI API key not configured" }, { status: 500 })
+    }
+
+    // Include file context in system instructions if available
+    let systemInstructions = SYSTEM_INSTRUCTIONS
+    if (fileContext) {
+      systemInstructions += `\n\nFILE CONTEXT:\nThe user has uploaded a file with the following content:\n\nFile Name: ${fileContext.filename}\nFile Type: ${fileContext.type}\nFile Size: ${fileContext.size} bytes\n\nFile Content:\n${fileContext.content}\n\nPlease analyze this file content in your response and provide insights based on the uploaded document.`
     }
 
     const result = await streamText({
       model: xai("grok-4", {
         apiKey: process.env.XAI_API_KEY,
       }),
-      system: SYSTEM_INSTRUCTIONS,
+      system: systemInstructions,
       messages: messages,
     })
 

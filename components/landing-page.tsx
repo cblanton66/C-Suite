@@ -1,8 +1,10 @@
 "use client"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AccessCodeModal } from "@/components/access-code-modal"
 import { 
   Calculator, 
   FileText, 
@@ -27,6 +29,26 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
+  const [showAccessModal, setShowAccessModal] = useState(false)
+
+  const handleAccessSuccess = () => {
+    setShowAccessModal(false)
+    onNavigateToChat()
+  }
+
+  const handleTryNowClick = () => {
+    // Check if user already has access
+    if (typeof window !== 'undefined') {
+      const hasAccess = sessionStorage.getItem('csuiteai_access_granted') === 'true'
+      if (hasAccess) {
+        onNavigateToChat()
+      } else {
+        setShowAccessModal(true)
+      }
+    } else {
+      setShowAccessModal(true)
+    }
+  }
   const benefits = [
     {
       icon: <TrendingUp className="w-6 h-6" />,
@@ -86,7 +108,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <Button onClick={onNavigateToChat} variant="outline">
+              <Button onClick={handleTryNowClick} variant="outline">
                 See It In Action
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -109,7 +131,7 @@ Your Virtual CFO, Powered by 30+ Years of Business Experience
             Every business deserves CFO-level financial intelligence. From cash flow to compliance, from tax strategy to M&A prep. Make confident financial decisions 24/7.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" onClick={onNavigateToChat} className="text-lg px-8 py-6">
+            <Button size="lg" onClick={handleTryNowClick} className="text-lg px-8 py-6">
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
@@ -355,10 +377,10 @@ Your Virtual CFO, Powered by 30+ Years of Business Experience
             Join growing companies that are making smarter financial decisions with AI-powered CFO intelligence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={onNavigateToChat}>
+            <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={handleTryNowClick}>
               Start Your Free Trial
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={onNavigateToChat}>
+            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={handleTryNowClick}>
               See It In Action
             </Button>
           </div>
@@ -382,6 +404,13 @@ Your Virtual CFO, Powered by 30+ Years of Business Experience
           </p>
         </div>
       </footer>
+
+      {/* Access Code Modal */}
+      <AccessCodeModal
+        isOpen={showAccessModal}
+        onClose={() => setShowAccessModal(false)}
+        onSuccess={handleAccessSuccess}
+      />
     </div>
   )
 }
