@@ -298,7 +298,7 @@ AI that is easy to use and makes sense.
             <Card className="p-8 border-2 border-border hover:border-primary/50 transition-colors">
               <div className="text-center">
                 <h4 className="text-2xl font-bold text-foreground mb-2">Monthly</h4>
-                <div className="text-4xl font-bold text-primary mb-2">$99</div>
+                <div className="text-4xl font-bold text-primary mb-2">$199</div>
                 <p className="text-muted-foreground mb-6">per month</p>
                 <ul className="text-left space-y-3 mb-8">
                   {features.map((feature, index) => (
@@ -323,9 +323,9 @@ AI that is easy to use and makes sense.
               </div>
               <div className="text-center">
                 <h4 className="text-2xl font-bold text-foreground mb-2">Annual</h4>
-                <div className="text-4xl font-bold text-primary mb-2">$999</div>
+                <div className="text-4xl font-bold text-primary mb-2">$1,999</div>
                 <p className="text-muted-foreground mb-1">per year</p>
-                <p className="text-sm text-green-600 font-medium mb-6">Save $189 (2 months free!)</p>
+                <p className="text-sm text-green-600 font-medium mb-6">Save $389 (almost 2 months free!)</p>
                 <ul className="text-left space-y-3 mb-8">
                   {features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-3">

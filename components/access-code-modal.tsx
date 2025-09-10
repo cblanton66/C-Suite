@@ -11,8 +11,15 @@ interface AccessCodeModalProps {
   onSuccess: () => void
 }
 
-const ACCESS_CODE = "goldstar"
+const ACCESS_CODES = {
+  "goldstar": "Beta User 1",
+  "peakpro": "Beta User 2", 
+  "csuite": "Beta User 3",
+  "finance": "Beta User 4",
+  "summit": "Beta User 5"
+}
 const SESSION_KEY = "peaksuiteai_access_granted"
+const USER_CODE_KEY = "peaksuiteai_user_code"
 
 export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalProps) {
   const [code, setCode] = useState("")
@@ -45,10 +52,14 @@ export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalP
     // Simulate a brief loading state for better UX
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    if (code.toLowerCase().trim() === ACCESS_CODE.toLowerCase()) {
-      // Store access in session storage
+    const trimmedCode = code.toLowerCase().trim()
+    const validCode = Object.keys(ACCESS_CODES).find(key => key.toLowerCase() === trimmedCode)
+    
+    if (validCode) {
+      // Store access and the specific code used in session storage
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(SESSION_KEY, 'true')
+        sessionStorage.setItem(USER_CODE_KEY, validCode)
       }
       onSuccess()
       onClose()
