@@ -3,7 +3,7 @@
 
 export const ENABLE_ACCESS_GATE = true
 export const ACCESS_CODE = "goldstar"
-export const SESSION_KEY = "csuiteai_access_granted"
+export const SESSION_KEY = "peaksuiteai_access_granted"
 
 export function hasValidAccess(): boolean {
   if (!ENABLE_ACCESS_GATE) return true

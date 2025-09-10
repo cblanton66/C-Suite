@@ -1,4 +1,6 @@
-# Tax chatbot with Grok
+# PeakSuite.ai
+
+**AI-Powered Executive Intelligence Platform - Performance, Efficiency, Analytics & Knowledge**
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
@@ -6,6 +8,8 @@
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/yFDPtIB4YQc)
 
 ## Overview
+
+PeakSuite.ai is an AI-powered virtual CFO platform that provides executive-level financial intelligence to businesses from $500K to $50M in revenue. Built on 31 years of CPA and private equity experience, PeakSuite delivers strategic CFO capabilities including cash flow forecasting, tax planning, M&A readiness, and comprehensive financial analysis.
 
 This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).

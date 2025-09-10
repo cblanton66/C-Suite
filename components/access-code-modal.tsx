@@ -12,7 +12,7 @@ interface AccessCodeModalProps {
 }
 
 const ACCESS_CODE = "goldstar"
-const SESSION_KEY = "csuiteai_access_granted"
+const SESSION_KEY = "peaksuiteai_access_granted"
 
 export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalProps) {
   const [code, setCode] = useState("")
@@ -149,7 +149,7 @@ export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalP
         {/* Beta Note */}
         <div className="mt-6 pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground text-center">
-            This is a beta version of C-Suite AI. Access codes are provided to early testers.
+            This is a beta version of PeakSuite.ai. Access codes are provided to early testers.
           </p>
         </div>
       </Card>

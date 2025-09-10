@@ -8,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "TaxGPT - AI Tax Research & Projections",
-  description: "AI-powered tax research and projection assistant powered by Grok",
+  title: "PeakSuite.ai - AI-Powered Executive Intelligence Platform",
+  description: "AI-Powered Executive Intelligence Platform - Performance, Efficiency, Analytics & Knowledge. Your Virtual CFO for strategic financial guidance.",
   generator: "v0.app",
 }
 

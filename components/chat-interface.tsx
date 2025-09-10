@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Send, Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle } from "lucide-react"
+import { Send, Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -25,6 +25,14 @@ interface Message {
   file?: UploadedFile
 }
 
+interface ChatSession {
+  id: string
+  title: string
+  messages: Message[]
+  createdAt: Date
+  lastUpdated: Date
+}
+
 interface ApiStatus {
   hasApiKey: boolean
   status: string
@@ -38,14 +46,152 @@ export function ChatInterface() {
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [currentSessionId, setCurrentSessionId] = useState<string>('')
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
+  const [showHistory, setShowHistory] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Load chat history and current session on mount
   useEffect(() => {
     fetch("/api/status")
       .then((res) => res.json())
       .then(setApiStatus)
       .catch(console.error)
+
+    // Load chat sessions from localStorage
+    if (typeof window !== 'undefined') {
+      const savedSessions = localStorage.getItem('peaksuiteai_chat_sessions')
+      const savedCurrentSession = localStorage.getItem('peaksuiteai_current_session')
+      
+      if (savedSessions) {
+        try {
+          const sessions: ChatSession[] = JSON.parse(savedSessions).map((session: any) => ({
+            ...session,
+            createdAt: new Date(session.createdAt),
+            lastUpdated: new Date(session.lastUpdated),
+            messages: session.messages.map((msg: any) => ({
+              ...msg,
+              createdAt: new Date(msg.createdAt)
+            }))
+          }))
+          setChatSessions(sessions)
+        } catch (error) {
+          console.error('Error loading chat sessions:', error)
+        }
+      }
+      
+      if (savedCurrentSession && savedSessions) {
+        const sessions: ChatSession[] = JSON.parse(savedSessions).map((session: any) => ({
+          ...session,
+          createdAt: new Date(session.createdAt),
+          lastUpdated: new Date(session.lastUpdated),
+          messages: session.messages.map((msg: any) => ({
+            ...msg,
+            createdAt: new Date(msg.createdAt)
+          }))
+        }))
+        const currentSession = sessions.find(s => s.id === savedCurrentSession)
+        if (currentSession) {
+          setCurrentSessionId(savedCurrentSession)
+          setMessages(currentSession.messages)
+        } else {
+          // Create a new session if saved session not found
+          startNewChat()
+        }
+      } else if (!savedSessions) {
+        // Create a new session if no sessions exist
+        startNewChat()
+      }
+    }
   }, [])
+
+  // Save sessions to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && chatSessions.length > 0) {
+      localStorage.setItem('peaksuiteai_chat_sessions', JSON.stringify(chatSessions))
+    }
+  }, [chatSessions])
+
+  // Save current session ID
+  useEffect(() => {
+    if (typeof window !== 'undefined' && currentSessionId) {
+      localStorage.setItem('peaksuiteai_current_session', currentSessionId)
+    }
+  }, [currentSessionId])
+
+  // Update current session when messages change
+  useEffect(() => {
+    if (currentSessionId && messages.length > 0) {
+      updateCurrentSession()
+    }
+  }, [messages, currentSessionId])
+
+  const startNewChat = () => {
+    const newSessionId = Date.now().toString()
+    const newSession: ChatSession = {
+      id: newSessionId,
+      title: 'New Conversation',
+      messages: [],
+      createdAt: new Date(),
+      lastUpdated: new Date()
+    }
+    
+    setChatSessions(prev => [newSession, ...prev])
+    setCurrentSessionId(newSessionId)
+    setMessages([])
+    setUploadedFile(null)
+    setUploadError(null)
+  }
+
+  const updateCurrentSession = () => {
+    if (!currentSessionId) return
+    
+    setChatSessions(prev => prev.map(session => {
+      if (session.id === currentSessionId) {
+        // Generate title from first user message if still 'New Conversation'
+        let title = session.title
+        if (title === 'New Conversation' && messages.length > 0) {
+          const firstUserMessage = messages.find(m => m.role === 'user')
+          if (firstUserMessage) {
+            title = firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+          }
+        }
+        
+        return {
+          ...session,
+          title,
+          messages: [...messages],
+          lastUpdated: new Date()
+        }
+      }
+      return session
+    }))
+  }
+
+  const loadChatSession = (sessionId: string) => {
+    const session = chatSessions.find(s => s.id === sessionId)
+    if (session) {
+      setCurrentSessionId(sessionId)
+      setMessages(session.messages)
+      setUploadedFile(null)
+      setUploadError(null)
+      setShowHistory(false)
+    }
+  }
+
+  const deleteChatSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setChatSessions(prev => prev.filter(s => s.id !== sessionId))
+    
+    if (sessionId === currentSessionId) {
+      if (chatSessions.length > 1) {
+        const remainingSessions = chatSessions.filter(s => s.id !== sessionId)
+        loadChatSession(remainingSessions[0].id)
+      } else {
+        startNewChat()
+      }
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -233,6 +379,49 @@ export function ChatInterface() {
     setUploadError(null)
   }
 
+  const quickActions = [
+    {
+      icon: <DollarSign className="w-4 h-4" />,
+      title: "Cash Flow Forecast",
+      description: "13-week cash flow projection",
+      prompt: "Help me create a 13-week cash flow forecast. What information do you need from me to get started?"
+    },
+    {
+      icon: <BarChart3 className="w-4 h-4" />,
+      title: "KPI Analysis", 
+      description: "Key performance indicators",
+      prompt: "I'd like to analyze my business KPIs. Can you help me identify the most important metrics for my industry and set up a tracking system?"
+    },
+    {
+      icon: <FileText className="w-4 h-4" />,
+      title: "Tax Planning",
+      description: "Strategic tax optimization",
+      prompt: "I need help with tax planning strategies for my business. What are the key considerations and deadlines I should be aware of?"
+    },
+    {
+      icon: <PieChart className="w-4 h-4" />,
+      title: "Financial Health Check",
+      description: "Complete business assessment",
+      prompt: "Can you perform a comprehensive financial health check of my business? What financial statements and data should I provide?"
+    },
+    {
+      icon: <Target className="w-4 h-4" />,
+      title: "Budget Planning",
+      description: "Annual budget creation",
+      prompt: "I need to create an annual budget for my business. Can you guide me through the process and help identify key budget categories?"
+    },
+    {
+      icon: <TrendingUp className="w-4 h-4" />,
+      title: "Growth Modeling",
+      description: "Scenario planning & projections",
+      prompt: "Help me model different growth scenarios for my business. What variables should I consider and how do I build realistic projections?"
+    }
+  ]
+
+  const handleQuickAction = (prompt: string) => {
+    setInput(prompt)
+  }
+
   const suggestedQuestions = [
     "What are the 2024 tax brackets?",
     "How do I calculate quarterly estimated taxes?",
@@ -241,7 +430,7 @@ export function ChatInterface() {
   ]
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto">
+    <div className="flex flex-col h-screen max-w-7xl mx-auto">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between p-4">
@@ -250,8 +439,7 @@ export function ChatInterface() {
               <Calculator className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-foreground">C-Suite AI</h1>
-              <p className="text-sm text-muted-foreground">Your Virtual CFO</p>
+              <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
             </div>
             <Link 
               href="/" 
@@ -262,6 +450,29 @@ export function ChatInterface() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={startNewChat}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              New Chat
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2 relative"
+            >
+              <History className="w-4 h-4" />
+              History
+              {chatSessions.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {chatSessions.length}
+                </span>
+              )}
+            </Button>
             <ThemeToggle />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
@@ -271,40 +482,86 @@ export function ChatInterface() {
         </div>
       </header>
 
+      {/* Chat History Dropdown */}
+      {showHistory && (
+        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <div className="max-h-60 overflow-y-auto p-4">
+            <h3 className="text-sm font-medium text-foreground mb-3">Recent Conversations</h3>
+            {chatSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No conversations yet</p>
+            ) : (
+              <div className="space-y-2">
+                {chatSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
+                      session.id === currentSessionId ? 'bg-primary/10 border border-primary/20' : ''
+                    }`}
+                    onClick={() => loadChatSession(session.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {session.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {session.lastUpdated.toLocaleDateString()} • {session.messages.length} messages
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => deleteChatSession(session.id, e)}
+                      className="h-auto p-1 ml-2 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Chat Area */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center max-w-2xl">
+            <div className="text-center max-w-6xl w-full mx-auto">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Calculator className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-2xl font-semibold text-foreground mb-3">Your CFO Assistant</h2>
               <p className="text-muted-foreground mb-8 text-balance">
-                Your AI-powered tax research and projection assistant. Get expert guidance on tax planning, deductions,
-                compliance, and financial projections.
+                AI-powered executive intelligence for Performance, Efficiency, Analytics & Knowledge. Get expert CFO guidance on demand.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-                {suggestedQuestions.map((question, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="text-left justify-start h-auto p-4 text-wrap bg-transparent"
-                    onClick={() => setInput(question)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                        {index === 0 && <FileText className="w-3 h-3 text-primary" />}
-                        {index === 1 && <Calculator className="w-3 h-3 text-primary" />}
-                        {index === 2 && <TrendingUp className="w-3 h-3 text-primary" />}
-                        {index === 3 && <FileText className="w-3 h-3 text-primary" />}
+              {/* Quick Actions */}
+              <div className="w-full max-w-4xl mx-auto mb-8">
+                <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Quick Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {quickActions.map((action, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="text-left justify-start h-auto p-4 text-wrap bg-transparent hover:bg-primary/5 border border-border hover:border-primary/20"
+                      onClick={() => handleQuickAction(action.prompt)}
+                    >
+                      <div className="flex items-start gap-3 w-full">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 text-primary">
+                          {action.icon}
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="font-medium text-foreground text-sm mb-1">{action.title}</p>
+                          <p className="text-xs text-muted-foreground">{action.description}</p>
+                        </div>
                       </div>
-                      <span className="text-sm">{question}</span>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))}
+                </div>
               </div>
+
+            
             </div>
           </div>
         ) : (
@@ -439,7 +696,7 @@ export function ChatInterface() {
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-muted-foreground">
               {apiStatus?.hasApiKey
-                ? "C-Suite AI is ready to help with financial analysis and document review"
+                ? "PeakSuite.ai is ready to help with financial analysis and document review"
                 : "Add your XAI API key in environment variables to enable AI responses"}
             </p>
             <p className="text-xs text-muted-foreground">
