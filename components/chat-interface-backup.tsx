@@ -95,9 +95,11 @@ export function ChatInterface() {
           setCurrentSessionId(savedCurrentSession)
           setMessages(currentSession.messages)
         } else {
+          // Create a new session if saved session not found
           startNewChat()
         }
       } else if (!savedSessions) {
+        // Create a new session if no sessions exist
         startNewChat()
       }
     }
@@ -413,6 +415,12 @@ export function ChatInterface() {
       title: "Growth Modeling",
       description: "Scenario planning & projections",
       prompt: "Help me model different growth scenarios for my business. What variables should I consider and how do I build realistic projections?"
+    },
+    {
+      icon: <BarChart3 className="w-4 h-4" />,
+      title: "Revenue Visualization",
+      description: "Sample chart example",
+      prompt: "Show me a sample revenue analysis with a chart. Please create a visualization showing monthly revenue trends for the past 6 months using this format:\n\nCHART:LINE:Monthly Revenue Trends\nJanuary: 85000\nFebruary: 92000\nMarch: 88000\nApril: 95000\nMay: 102000\nJune: 98000\n\nThis demonstrates how data can be visualized in our chat interface."
     }
   ]
 
@@ -424,20 +432,20 @@ export function ChatInterface() {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
 
-    let content = `PeakSuite.ai Conversation Export\\n`
-    content += `Title: ${currentSession.title}\\n`
-    content += `Date: ${currentSession.createdAt.toLocaleDateString()}\\n`
-    content += `Messages: ${currentSession.messages.length}\\n`
-    content += `\\n${'='.repeat(50)}\\n\\n`
+    let content = `PeakSuite.ai Conversation Export\n`
+    content += `Title: ${currentSession.title}\n`
+    content += `Date: ${currentSession.createdAt.toLocaleDateString()}\n`
+    content += `Messages: ${currentSession.messages.length}\n`
+    content += `\n${'='.repeat(50)}\n\n`
 
     currentSession.messages.forEach((message, index) => {
-      content += `${message.role.toUpperCase()}: ${message.createdAt.toLocaleString()}\\n`
+      content += `${message.role.toUpperCase()}: ${message.createdAt.toLocaleString()}\n`
       if (message.file) {
-        content += `[File: ${message.file.name} (${formatFileSize(message.file.size)})]\\n`
+        content += `[File: ${message.file.name} (${formatFileSize(message.file.size)})]\n`
       }
-      content += `${message.content}\\n\\n`
+      content += `${message.content}\n\n`
       if (index < currentSession.messages.length - 1) {
-        content += `${'-'.repeat(30)}\\n\\n`
+        content += `${'-'.repeat(30)}\n\n`
       }
     })
 
@@ -487,7 +495,7 @@ export function ChatInterface() {
         <div class="message ${message.role}">
           <div class="role">${message.role}</div>
           ${message.file ? `<div class="file">📎 File: ${message.file.name} (${formatFileSize(message.file.size)})</div>` : ''}
-          <div>${message.content.replace(/\\n/g, '<br>')}</div>
+          <div>${message.content.replace(/\n/g, '<br>')}</div>
           <div class="timestamp">${message.createdAt.toLocaleString()}</div>
         </div>
       `
@@ -505,6 +513,7 @@ export function ChatInterface() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
+
 
   return (
     <div className="flex flex-col h-screen">
@@ -628,112 +637,17 @@ export function ChatInterface() {
       <div className="flex-1 overflow-hidden flex flex-col">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8">
-            <div className="max-w-6xl w-full mx-auto">
-              <div className="text-center mb-12">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Calculator className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-semibold text-foreground mb-3">Your CFO Assistant</h2>
-                <p className="text-muted-foreground mb-8 text-balance">
-                  AI-powered executive intelligence for Performance, Efficiency, Analytics & Knowledge. Get expert CFO guidance on demand.
-                </p>
-
-                {/* Input Area */}
-                <div className="mb-8">
-                  {/* Upload Error */}
-                  {uploadError && (
-                    <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-sm">{uploadError}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUploadError(null)}
-                        className="ml-auto h-auto p-1"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Uploaded File Preview */}
-                  {uploadedFile && (
-                    <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 border border-green-200 rounded">
-                      <span className="text-lg">{getFileIcon(uploadedFile.type)}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-green-600">{formatFileSize(uploadedFile.size)} • Ready for analysis</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={removeUploadedFile}
-                        className="h-auto p-1 text-green-600 hover:text-green-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="flex gap-3 justify-center">
-                    <div className="flex-1 relative max-w-lg">
-                      <Input
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder="Ask about financial analysis, tax strategies, or upload documents..."
-                        className="pr-10"
-                        disabled={isLoading || !apiStatus?.hasApiKey}
-                      />
-                    </div>
-                    
-                    {/* Upload Button */}
-                    <div className="relative">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
-                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        onClick={() => {
-                          fileInputRef.current?.click()
-                        }}
-                      >
-                        {isUploading ? (
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Paperclip className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-
-                    <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </form>
-                  
-                  <div className="text-center mt-2 text-xs text-muted-foreground">
-                    <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB)</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-300 pt-6 mt-4"></div>
-                <p className="text-base text-muted-foreground mb-8">
-                  Use the Quick Actions to get started
-                </p>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            <div className="max-w-6xl w-full mx-auto flex gap-8">
+              {/* Left side - Quick Actions */}
+              <div className="w-1/2">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
+                <p className="text-sm text-muted-foreground mb-6">Start conversations with expert CFO guidance</p>
+                <div className="space-y-3">
                   {quickActions.map((action, index) => (
                     <Button
                       key={index}
                       variant="outline"
-                      className="text-left justify-start h-auto p-4 bg-transparent hover:bg-primary/5 border border-border hover:border-primary/20"
+                      className="text-left justify-start h-auto p-4 bg-transparent hover:bg-primary/5 border border-border hover:border-primary/20 w-fit"
                       onClick={() => handleQuickAction(action.prompt)}
                     >
                       <div className="flex items-start gap-3 w-full">
@@ -749,10 +663,116 @@ export function ChatInterface() {
                   ))}
                 </div>
               </div>
+
+              {/* Right side - Welcome & Input */}
+              <div className="w-1/2 flex flex-col justify-center">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Calculator className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-foreground mb-3">Your CFO Assistant</h2>
+                  <p className="text-muted-foreground mb-8 text-balance">
+                    AI-powered executive intelligence for Performance, Efficiency, Analytics & Knowledge. Get expert CFO guidance on demand.
+                  </p>
+
+                  {/* Input Area */}
+                  <div className="mb-4">
+                    {/* Upload Error */}
+                    {uploadError && (
+                      <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm">{uploadError}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUploadError(null)}
+                          className="ml-auto h-auto p-1"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Uploaded File Preview */}
+                    {uploadedFile && (
+                      <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                        <span className="text-lg">{getFileIcon(uploadedFile.type)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
+                          <p className="text-xs text-green-600">{formatFileSize(uploadedFile.size)} • Ready for analysis</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeUploadedFile}
+                          className="h-auto p-1 text-green-600 hover:text-green-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <Input
+                          value={input}
+                          onChange={handleInputChange}
+                          placeholder="Ask about financial analysis, tax strategies, or upload documents..."
+                          className="pr-10"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                        />
+                      </div>
+                      
+                      {/* Upload Button */}
+                      <div className="relative">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          onClick={() => {
+                            fileInputRef.current?.click()
+                          }}
+                        >
+                          {isUploading ? (
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Paperclip className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </form>
+                    
+                    <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                      <span>
+                        {apiStatus?.hasApiKey
+                          ? "PeakSuite.ai is ready to help"
+                          : "Add your XAI API key to enable AI responses"}
+                      </span>
+                      <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB)</span>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    ← Use the Quick Actions to get started
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
@@ -803,90 +823,94 @@ export function ChatInterface() {
 
         {/* Input Area - Only show when there are messages */}
         {messages.length > 0 && (
-          <div className="border-t border-border bg-card/50 backdrop-blur-sm p-6">
-            <div className="max-w-6xl mx-auto">
-              {/* Upload Error */}
-              {uploadError && (
-                <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm">{uploadError}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setUploadError(null)}
-                    className="ml-auto h-auto p-1"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Uploaded File Preview */}
-              {uploadedFile && (
-                <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 border border-green-200 rounded">
-                  <span className="text-lg">{getFileIcon(uploadedFile.type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
-                    <p className="text-xs text-green-600">{formatFileSize(uploadedFile.size)} • Ready for analysis</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeUploadedFile}
-                    className="h-auto p-1 text-green-600 hover:text-green-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Input
-                    value={input}
-                    onChange={handleInputChange}
-                    placeholder="Ask about financial analysis, tax strategies, or upload documents..."
-                    className="pr-10"
-                    disabled={isLoading || !apiStatus?.hasApiKey}
-                  />
-                </div>
-                
-                {/* Upload Button */}
-                <div className="relative">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
-                    disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                    onClick={() => {
-                      fileInputRef.current?.click()
-                    }}
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Paperclip className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-
-                <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
-                  <Send className="w-4 h-4" />
+          <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+          <div className="max-w-4xl mx-auto">
+            {/* Upload Error */}
+            {uploadError && (
+              <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{uploadError}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setUploadError(null)}
+                  className="ml-auto h-auto p-1"
+                >
+                  <X className="w-3 h-3" />
                 </Button>
-              </form>
-              
-              <div className="text-center mt-2">
-                <p className="text-xs text-muted-foreground">
-                  Upload: PDF, Excel, CSV, Word, TXT (max 10MB)
-                </p>
               </div>
+            )}
+
+            {/* Uploaded File Preview */}
+            {uploadedFile && (
+              <div className="flex items-center gap-2 mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                <span className="text-lg">{getFileIcon(uploadedFile.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
+                  <p className="text-xs text-green-600">{formatFileSize(uploadedFile.size)} • Ready for analysis</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeUploadedFile}
+                  className="h-auto p-1 text-green-600 hover:text-green-800"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex gap-3">
+              <div className="flex-1 relative">
+                <Input
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder="Ask about financial analysis, tax strategies, or upload documents..."
+                  className="pr-10"
+                  disabled={isLoading || !apiStatus?.hasApiKey}
+                />
+              </div>
+              
+              {/* Upload Button */}
+              <div className="relative">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                  disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                  }}
+                >
+                  {isUploading ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Paperclip className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+            
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">
+                {apiStatus?.hasApiKey
+                  ? "PeakSuite.ai is ready to help with financial analysis and document review"
+                  : "Add your XAI API key in environment variables to enable AI responses"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Upload: PDF, Excel, CSV, Word, TXT (max 10MB)
+              </p>
             </div>
           </div>
         )}

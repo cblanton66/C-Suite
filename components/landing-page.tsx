@@ -118,22 +118,76 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 bg-black">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Zap className="w-4 h-4" />
-AI that is easy to use and makes sense.
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              Artificial Intelligence for Your Business
+            </h3>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Every business deserves CFO-level financial intelligence. PEAK delivers everything you need to make confident financial decisions 24/7.
+            </p>
           </div>
-          <h2 className="text-4xl font-bold text-white/80 mb-6 leading-tight">
-            Artificial Intelligence for Your Business
-          </h2>
-          <p className="text-xl text-white/80 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Every business deserves CFO-level financial intelligence. PEAK delivers Performance, Efficiency, Analytics & Knowledge - from cash flow to compliance, from tax strategy to M&A prep. Make confident financial decisions 24/7.
-          </p>
-          <div className="flex justify-center">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={handleTryNowClick}>
-            See it in action
-            </Button>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            {/* Performance */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <TrendingUp className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                <span className="text-2xl font-bold text-primary">P</span>erformance
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Supercharge your business with tools that boost profits, optimize cash flow, and drive game-changing results.
+              </p>
+            </Card>
+
+            {/* Empower */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8 text-green-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                <span className="text-2xl font-bold text-primary">E</span>mpower
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Unleash your inner CFO with strategic insights to lead boldly and grow like a pro.
+              </p>
+            </Card>
+
+            {/* Analysis */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <BarChart3 className="w-8 h-8 text-purple-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                <span className="text-2xl font-bold text-primary">A</span>nalysis
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Dig into powerful insights with KPI dashboards and benchmarks that put you ahead of the competition.
+              </p>
+            </Card>
+
+            {/* Knowledge */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <FileText className="w-8 h-8 text-orange-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                <span className="text-2xl font-bold text-primary">K</span>nowledge
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Tap into a vast vault of financial wisdom—30+ years of CPA expertise plus AI-driven smarts—because knowledge is power.
+              </p>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
+              <Zap className="w-4 h-4" />
+              AI that is easy to use and makes sense.
+            </div>
           </div>
         </div>
       </section>

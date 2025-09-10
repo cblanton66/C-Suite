@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import "highlight.js/styles/github.css"
+import { ChartRenderer, parseChartFromText } from "@/components/chart-renderer"
 
 interface MarkdownRendererProps {
   content: string
@@ -10,8 +11,15 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+  // Check for embedded charts in the content
+  const chartData = parseChartFromText(content)
+  
+  // Remove chart syntax from content for normal markdown rendering
+  const cleanContent = content.replace(/CHART:(LINE|BAR|PIE):(.+?)\n([\s\S]*?)(?=\n\n|\n[A-Z]|$)/gi, '')
+  
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
+      {chartData && <ChartRenderer chartData={chartData} />}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
@@ -119,7 +127,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
           ),
         }}
       >
-        {content}
+        {cleanContent}
       </ReactMarkdown>
     </div>
   )
