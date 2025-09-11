@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -57,8 +57,16 @@ export function ChatInterface() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [showBookmarks, setShowBookmarks] = useState(false)
   const [bookmarkedMessages, setBookmarkedMessages] = useState<Message[]>([])
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchResults, setSearchResults] = useState<ChatSession[]>([])
+  const [currentMessageSearch, setCurrentMessageSearch] = useState<string>('')
+  const [showSearchBox, setShowSearchBox] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const multiFileInputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
 
   // Load chat history and current session on mount
   useEffect(() => {
@@ -241,6 +249,9 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+    
+    // Scroll to bottom immediately when user sends message
+    setTimeout(() => scrollToBottom(), 50)
 
     try {
       const chatPayload = {
@@ -761,6 +772,121 @@ export function ChatInterface() {
     }, 100)
   }
 
+  // Search functionality
+  const performSearch = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    const results = chatSessions.filter(session => {
+      // Search in session title
+      const titleMatch = session.title.toLowerCase().includes(query.toLowerCase())
+      
+      // Search in session messages
+      const messageMatch = session.messages.some(message => 
+        message.content.toLowerCase().includes(query.toLowerCase())
+      )
+      
+      return titleMatch || messageMatch
+    })
+
+    setSearchResults(results)
+  }
+
+  const highlightSearchTerm = (text: string, searchTerm: string) => {
+    if (!searchTerm.trim()) return text
+    
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>')
+  }
+
+  const searchCurrentMessages = (query: string) => {
+    setCurrentMessageSearch(query)
+    
+    if (!query.trim()) {
+      // Remove all highlights
+      const highlightedElements = document.querySelectorAll('.search-highlight')
+      highlightedElements.forEach(el => el.classList.remove('search-highlight'))
+      return
+    }
+
+    // Find and highlight matching messages
+    const messageElements = document.querySelectorAll('[id^="message-"]')
+    messageElements.forEach(el => {
+      const messageText = el.textContent?.toLowerCase() || ''
+      if (messageText.includes(query.toLowerCase())) {
+        el.classList.add('search-highlight')
+      } else {
+        el.classList.remove('search-highlight')
+      }
+    })
+  }
+
+  useEffect(() => {
+    performSearch(searchQuery)
+  }, [searchQuery, chatSessions])
+
+  // Handle search box interactions
+  const toggleSearchBox = () => {
+    if (showSearchBox) {
+      // Closing search box - clear search
+      setSearchQuery('')
+      setSearchResults([])
+      setShowSearchBox(false)
+    } else {
+      // Opening search box - focus input
+      setShowSearchBox(true)
+      setTimeout(() => searchInputRef.current?.focus(), 100)
+    }
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      toggleSearchBox()
+    }
+  }
+
+  // Click outside to close search box
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showSearchBox && 
+          searchContainerRef.current && 
+          !searchContainerRef.current.contains(event.target as Node)) {
+        toggleSearchBox()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showSearchBox])
+
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = (smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'end'
+      })
+    }
+  }
+
+  // Scroll to bottom when messages change (new message added or streaming update)
+  useEffect(() => {
+    // Small delay to ensure DOM has updated
+    const timer = setTimeout(() => scrollToBottom(), 100)
+    return () => clearTimeout(timer)
+  }, [messages])
+
+  // Also scroll when loading state changes (when response starts)
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => scrollToBottom(), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading])
+
   const exportConversationAsText = () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
@@ -797,44 +923,298 @@ export function ChatInterface() {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
 
-    // Create a simple HTML version for PDF
+    // Create a beautifully styled HTML version matching the app design
     let htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${currentSession.title}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-          .header { border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .message { margin-bottom: 25px; padding: 15px; border-radius: 8px; }
-          .user { background-color: #e3f2fd; margin-left: 20%; }
-          .assistant { background-color: #f5f5f5; margin-right: 20%; }
-          .role { font-weight: bold; margin-bottom: 5px; text-transform: uppercase; font-size: 12px; }
-          .timestamp { font-size: 11px; color: #666; margin-top: 10px; }
-          .file { background-color: #fff3cd; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 12px; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; 
+            color: #1f2937;
+            background: #f9fafb;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+          }
+          
+          .header { 
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-bottom: 3px solid #3b82f6;
+          }
+          
+          .header h1 { 
+            color: #1f2937;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 15px;
+          }
+          
+          .header-info { 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+          }
+          
+          .header-info-item {
+            background: #f3f4f6;
+            padding: 12px 16px;
+            border-radius: 8px;
+          }
+          
+          .header-info-item strong { 
+            color: #374151;
+            font-weight: 600;
+          }
+          
+          .conversation {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          }
+          
+          .message { 
+            display: flex;
+            width: 100%;
+          }
+          
+          .message.user {
+            justify-content: flex-end;
+          }
+          
+          .message.assistant {
+            justify-content: flex-start;
+          }
+          
+          .message-content {
+            max-width: 80%;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+          }
+          
+          .message.user .message-content {
+            background: #6b7280;
+            color: white;
+          }
+          
+          .message.assistant .message-content {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+          }
+          
+          .role-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+          }
+          
+          .message.user .role-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+          }
+          
+          .message.assistant .role-badge {
+            background: #f3f4f6;
+            color: #6b7280;
+          }
+          
+          .file-attachment {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #1e40af;
+          }
+          
+          .file-icon {
+            margin-right: 8px;
+          }
+          
+          .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+          }
+          
+          .message.user .message-text {
+            color: white;
+          }
+          
+          .message.assistant .message-text {
+            color: #374151;
+          }
+          
+          /* Markdown styling for assistant messages */
+          .message.assistant .message-text h1,
+          .message.assistant .message-text h2,
+          .message.assistant .message-text h3 {
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+            color: #1f2937;
+          }
+          
+          .message.assistant .message-text h1 { font-size: 18px; }
+          .message.assistant .message-text h2 { font-size: 16px; }
+          .message.assistant .message-text h3 { font-size: 14px; }
+          
+          .message.assistant .message-text p {
+            margin: 8px 0;
+          }
+          
+          .message.assistant .message-text ul,
+          .message.assistant .message-text ol {
+            margin: 8px 0;
+            padding-left: 20px;
+          }
+          
+          .message.assistant .message-text li {
+            margin: 4px 0;
+          }
+          
+          .message.assistant .message-text code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+          }
+          
+          .message.assistant .message-text pre {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+          }
+          
+          .message.assistant .message-text blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            margin: 12px 0;
+            font-style: italic;
+            color: #6b7280;
+          }
+          
+          .message.assistant .message-text table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          
+          .message.assistant .message-text th,
+          .message.assistant .message-text td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+          }
+          
+          .message.assistant .message-text th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+          }
+          
+          .message.assistant .message-text strong {
+            font-weight: 600;
+            color: #1f2937;
+          }
+          
+          .timestamp {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 8px;
+            font-weight: 500;
+          }
+          
+          .message.user .timestamp {
+            color: rgba(255,255,255,0.7);
+          }
+          
+          @media print {
+            body { background: white; }
+            .message-content { box-shadow: none; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>PeakSuite.ai Conversation</h1>
-          <p><strong>Title:</strong> ${currentSession.title}</p>
-          <p><strong>Date:</strong> ${currentSession.createdAt.toLocaleDateString()}</p>
-          <p><strong>Messages:</strong> ${currentSession.messages.length}</p>
+          <h1>🧮 PeakSuite.ai Conversation Export</h1>
+          <div class="header-info">
+            <div class="header-info-item">
+              <strong>Title:</strong> ${currentSession.title}
+            </div>
+            <div class="header-info-item">
+              <strong>Date:</strong> ${currentSession.createdAt.toLocaleDateString()}
+            </div>
+            <div class="header-info-item">
+              <strong>Messages:</strong> ${currentSession.messages.length}
+            </div>
+            <div class="header-info-item">
+              <strong>Export Date:</strong> ${new Date().toLocaleDateString()}
+            </div>
+          </div>
         </div>
+        
+        <div class="conversation">
     `
 
     currentSession.messages.forEach(message => {
+      const fileAttachment = message.file ? `
+        <div class="file-attachment">
+          <span class="file-icon">📎</span>
+          <strong>Attached:</strong> ${message.file.name} (${formatFileSize(message.file.size)})
+        </div>` : ''
+      
+      const multipleFiles = message.files && message.files.length > 0 ? `
+        <div class="file-attachment">
+          <span class="file-icon">📎</span>
+          <strong>Attached ${message.files.length} files:</strong> ${message.files.map(f => f.name).join(', ')}
+        </div>` : ''
+
       htmlContent += `
         <div class="message ${message.role}">
-          <div class="role">${message.role}</div>
-          ${message.file ? `<div class="file">📎 File: ${message.file.name} (${formatFileSize(message.file.size)})</div>` : ''}
-          <div>${message.content.replace(/\\n/g, '<br>')}</div>
-          <div class="timestamp">${message.createdAt.toLocaleString()}</div>
+          <div class="message-content">
+            <div class="role-badge">${message.role === 'user' ? 'You' : 'Assistant'}</div>
+            ${fileAttachment}
+            ${multipleFiles}
+            <div class="message-text">${message.content.replace(/\\n/g, '<br>')}</div>
+            <div class="timestamp">${message.createdAt.toLocaleDateString()} at ${message.createdAt.toLocaleTimeString()}</div>
+          </div>
         </div>
       `
     })
 
-    htmlContent += '</body></html>'
+    htmlContent += `
+        </div>
+      </body>
+      </html>
+    `
 
     const blob = new Blob([htmlContent], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
@@ -937,12 +1317,57 @@ export function ChatInterface() {
       {showHistory && (
         <div className="border-b border-border bg-card/50 backdrop-blur-sm">
           <div className="max-h-60 overflow-y-auto p-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">Recent Conversations</h3>
+            
+            {/* Search Interface */}
+            <div ref={searchContainerRef} className="mb-3">
+              {!showSearchBox ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">Recent Conversations</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={toggleSearchBox}
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                    title="Search conversations"
+                  >
+                    <Search className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search conversations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    className="pl-10 pr-8 h-8 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={toggleSearchBox}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                    title="Close search"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            
             {chatSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">No conversations yet</p>
             ) : (
               <div className="space-y-2">
-                {chatSessions.map((session) => (
+                {searchQuery && searchResults.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">No conversations found for "{searchQuery}"</p>
+                  </div>
+                ) : (
+                  (searchQuery ? searchResults : chatSessions).map((session) => (
                   <div
                     key={session.id}
                     className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
@@ -967,7 +1392,8 @@ export function ChatInterface() {
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             )}
           </div>
@@ -1218,7 +1644,33 @@ export function ChatInterface() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
+            {/* Search within current conversation */}
+            {messages.length > 3 && (
+              <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border border-border rounded-lg p-3 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search in this conversation..."
+                    value={currentMessageSearch}
+                    onChange={(e) => searchCurrentMessages(e.target.value)}
+                    className="pl-10 h-8 text-sm"
+                  />
+                  {currentMessageSearch && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => searchCurrentMessages('')}
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {messages.map((message) => (
               <div key={message.id} id={`message-${message.id}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
@@ -1401,6 +1853,9 @@ export function ChatInterface() {
                 </Card>
               </div>
             )}
+            
+            {/* Invisible element to scroll to */}
+            <div ref={messagesEndRef} />
           </div>
         )}
 
