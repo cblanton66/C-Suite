@@ -274,7 +274,7 @@ export function ChatInterface() {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
   }
 
@@ -677,11 +677,11 @@ export function ChatInterface() {
 
                   <form onSubmit={handleSubmit} className="flex gap-3 justify-center">
                     <div className="flex-1 relative max-w-lg">
-                      <Input
+                      <textarea
                         value={input}
                         onChange={handleInputChange}
-                        placeholder="Ask about financial analysis, tax strategies, or upload documents..."
-                        className="pr-10"
+                        placeholder="How can I help you today?"
+                        className="pr-10 h-20 w-full rounded-md border border-input bg-gray-100 dark:bg-gray-800 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
                         disabled={isLoading || !apiStatus?.hasApiKey}
                       />
                     </div>
@@ -842,11 +842,11 @@ export function ChatInterface() {
 
               <form onSubmit={handleSubmit} className="flex gap-3">
                 <div className="flex-1 relative">
-                  <Input
+                  <textarea
                     value={input}
                     onChange={handleInputChange}
-                    placeholder="Ask about financial analysis, tax strategies, or upload documents..."
-                    className="pr-10"
+                    placeholder="How can I help you today?"
+                    className="pr-10 h-20 w-full rounded-md border border-input bg-gray-100 dark:bg-gray-800 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
                     disabled={isLoading || !apiStatus?.hasApiKey}
                   />
                 </div>
