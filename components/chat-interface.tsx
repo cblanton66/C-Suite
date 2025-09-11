@@ -1085,12 +1085,40 @@ export function ChatInterface() {
           
           .message.assistant .message-text ul,
           .message.assistant .message-text ol {
-            margin: 8px 0;
-            padding-left: 20px;
+            margin: 12px 0;
+            padding-left: 0;
+            list-style: none;
           }
           
           .message.assistant .message-text li {
-            margin: 4px 0;
+            margin: 8px 0;
+            padding-left: 28px;
+            position: relative;
+            line-height: 1.6;
+          }
+          
+          .message.assistant .message-text ul > li::before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: #6b7280;
+            font-weight: bold;
+          }
+          
+          .message.assistant .message-text ol {
+            counter-reset: list-counter;
+          }
+          
+          .message.assistant .message-text ol > li {
+            counter-increment: list-counter;
+          }
+          
+          .message.assistant .message-text ol > li::before {
+            content: counter(list-counter) ".";
+            position: absolute;
+            left: 8px;
+            color: #6b7280;
+            font-weight: 500;
           }
           
           .message.assistant .message-text code {
@@ -1458,7 +1486,7 @@ export function ChatInterface() {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-semibold text-foreground mb-3">The advantage is yours now.</h2>
+                <h2 className="text-4xl font-semibold text-foreground mb-3">Now You Have the Advantage!</h2>
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
                   Let's get to work.
                 </p>
@@ -1539,14 +1567,120 @@ export function ChatInterface() {
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-3">
+                    {/* Quick Actions Bar */}
                     <div className="flex justify-center">
-                      <div className="flex-1 relative max-w-lg">
+                      <div className="max-w-2xl w-full">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {/* Data Analysis Actions - Show when input contains numbers/data */}
+                          {(input.match(/\d+/g) || input.includes(',') || input.includes('\t')) && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Analyze the trends in this data:\n' + input)}
+                                className="text-xs"
+                              >
+                                📊 Analyze Trends
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Create a table from this data:\n' + input)}
+                                className="text-xs"
+                              >
+                                📋 Create Table
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Summarize the key insights from:\n' + input)}
+                                className="text-xs"
+                              >
+                                📝 Summarize Data
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* Text/Content Actions - Show when input has substantial text */}
+                          {input.length > 50 && !input.match(/\d{3,}/g) && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Convert to bullet points:\n' + input)}
+                                className="text-xs"
+                              >
+                                • Bullet Points
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Create an executive summary of:\n' + input)}
+                                className="text-xs"
+                              >
+                                📄 Executive Summary
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Extract action items from:\n' + input)}
+                                className="text-xs"
+                              >
+                                ✅ Action Items
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* Analysis Mode Actions - Always visible but subtle */}
+                          {input.length > 0 && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Provide a detailed analysis of:\n' + input)}
+                                className="text-xs"
+                              >
+                                🔍 Deep Analysis
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('List pros and cons for:\n' + input)}
+                                className="text-xs"
+                              >
+                                ⚖️ Pros & Cons
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setInput('Provide step-by-step instructions for:\n' + input)}
+                                className="text-xs"
+                              >
+                                📚 Step-by-Step
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-center">
+                      <div className="flex-1 relative max-w-2xl">
                         <textarea
                           value={input}
                           onChange={handleInputChange}
                           onKeyDown={handleKeyDown}
                           placeholder="How can I help you today?"
-                          className="pr-10 h-20 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
+                          className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />
                       </div>
@@ -1937,14 +2071,120 @@ export function ChatInterface() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Quick Actions Bar */}
                 <div className="flex justify-center">
-                  <div className="flex-1 relative max-w-lg">
+                  <div className="max-w-2xl w-full">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {/* Data Analysis Actions - Show when input contains numbers/data */}
+                      {(input.match(/\d+/g) || input.includes(',') || input.includes('\t')) && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Analyze the trends in this data:\n' + input)}
+                            className="text-xs"
+                          >
+                            📊 Analyze Trends
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Create a table from this data:\n' + input)}
+                            className="text-xs"
+                          >
+                            📋 Create Table
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Summarize the key insights from:\n' + input)}
+                            className="text-xs"
+                          >
+                            📝 Summarize Data
+                          </Button>
+                        </>
+                      )}
+                      
+                      {/* Text/Content Actions - Show when input has substantial text */}
+                      {input.length > 50 && !input.match(/\d{3,}/g) && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Convert to bullet points:\n' + input)}
+                            className="text-xs"
+                          >
+                            • Bullet Points
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Create an executive summary of:\n' + input)}
+                            className="text-xs"
+                          >
+                            📄 Executive Summary
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Extract action items from:\n' + input)}
+                            className="text-xs"
+                          >
+                            ✅ Action Items
+                          </Button>
+                        </>
+                      )}
+                      
+                      {/* Analysis Mode Actions - Always visible but subtle */}
+                      {input.length > 0 && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Provide a detailed analysis of:\n' + input)}
+                            className="text-xs"
+                          >
+                            🔍 Deep Analysis
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('List pros and cons for:\n' + input)}
+                            className="text-xs"
+                          >
+                            ⚖️ Pros & Cons
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput('Provide step-by-step instructions for:\n' + input)}
+                            className="text-xs"
+                          >
+                            📚 Step-by-Step
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <div className="flex-1 relative max-w-2xl">
                     <textarea
                       value={input}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
                       placeholder="How can I help you today?"
-                      className="pr-10 h-20 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
+                      className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                       disabled={isLoading || !apiStatus?.hasApiKey}
                     />
                   </div>

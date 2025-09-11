@@ -75,17 +75,17 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc list-inside text-sm text-foreground mb-2 space-y-1">
+            <ul className="list-disc list-outside ml-6 text-sm text-foreground mb-2 space-y-1">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside text-sm text-foreground mb-2 space-y-1">
+            <ol className="list-decimal list-outside ml-6 text-sm text-foreground mb-2 space-y-1">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="text-sm leading-relaxed">{children}</li>
+            <li className="text-sm leading-relaxed pl-1">{children}</li>
           ),
           code: ({ children, className }) => {
             const isInline = !className
