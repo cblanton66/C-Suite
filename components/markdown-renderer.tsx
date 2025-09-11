@@ -4,6 +4,9 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import "highlight.js/styles/github.css"
 import { ChartRenderer, parseChartFromText } from "@/components/chart-renderer"
+import { Button } from "@/components/ui/button"
+import { Copy, CheckCheck } from "lucide-react"
+import { useState } from "react"
 
 interface MarkdownRendererProps {
   content: string
@@ -11,11 +14,37 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null)
+  
   // Check for embedded charts in the content
   const chartData = parseChartFromText(content)
   
   // Remove chart syntax from content for normal markdown rendering
   const cleanContent = content.replace(/CHART:(LINE|BAR|PIE):(.+?)\n([\s\S]*?)(?=\n\n|\n[A-Z]|$)/gi, '')
+  
+  const copyCodeToClipboard = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedCodeId(id)
+      setTimeout(() => setCopiedCodeId(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy code: ', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = code
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopiedCodeId(id)
+        setTimeout(() => setCopiedCodeId(null), 2000)
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed: ', fallbackErr)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
   
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
@@ -73,11 +102,34 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
               </code>
             )
           },
-          pre: ({ children }) => (
-            <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-xs font-mono mb-2">
-              {children}
-            </pre>
-          ),
+          pre: ({ children }) => {
+            // Extract the code content from children
+            const codeContent = typeof children === 'object' && children && 'props' in children 
+              ? children.props.children 
+              : String(children)
+            const codeId = `code-${Math.random().toString(36).substr(2, 9)}`
+            
+            return (
+              <div className="relative group mb-2">
+                <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-xs font-mono">
+                  {children}
+                </pre>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyCodeToClipboard(codeContent, codeId)}
+                  className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:bg-muted-foreground/10"
+                  title="Copy code"
+                >
+                  {copiedCodeId === codeId ? (
+                    <CheckCheck className="w-3 h-3" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                </Button>
+              </div>
+            )
+          },
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-primary/20 pl-4 py-2 bg-muted/30 rounded-r-lg mb-2">
               {children}

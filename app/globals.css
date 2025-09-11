@@ -66,3 +66,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .highlight-message {
+    @apply ring-2 ring-primary ring-opacity-50 transition-all duration-500 ease-out;
+    animation: highlight-pulse 2s ease-out;
+  }
+  
+  @keyframes highlight-pulse {
+    0% {
+      @apply ring-opacity-50 bg-primary/10;
+    }
+    50% {
+      @apply ring-opacity-75 bg-primary/5;
+    }
+    100% {
+      @apply ring-opacity-0 bg-transparent;
+    }
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
