@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Send, Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -857,15 +857,10 @@ export function ChatInterface() {
               <Calculator className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
+              </Link>
             </div>
-            <Link 
-              href="/" 
-              className="ml-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              <span>Back to Home</span>
-            </Link>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -1037,11 +1032,8 @@ export function ChatInterface() {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Calculator className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-semibold text-foreground mb-3">The advantage is yours now.</h2>
-                <p className="text-muted-foreground mb-8 text-balance">
+                <h2 className="text-4xl font-semibold text-foreground mb-3">The advantage is yours now.</h2>
+                <p className="text-2xl text-muted-foreground mb-8 text-balance">
                   Let's get to work.
                 </p>
 
@@ -1120,79 +1112,79 @@ export function ChatInterface() {
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="flex gap-3 justify-center">
-                    <div className="flex-1 relative max-w-lg">
-                      <textarea
-                        value={input}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="How can I help you today?"
-                        className="pr-10 h-20 w-full rounded-md border border-input bg-gray-100 dark:bg-gray-800 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
-                        disabled={isLoading || !apiStatus?.hasApiKey}
-                      />
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="flex justify-center">
+                      <div className="flex-1 relative max-w-lg">
+                        <textarea
+                          value={input}
+                          onChange={handleInputChange}
+                          onKeyDown={handleKeyDown}
+                          placeholder="How can I help you today?"
+                          className="pr-10 h-20 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                        />
+                      </div>
                     </div>
                     
-                    {/* Upload Buttons */}
-                    <div className="flex gap-2">
-                      {/* Single File Upload */}
-                      <div className="relative">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          onClick={() => {
-                            fileInputRef.current?.click()
-                          }}
-                          title="Upload single file"
-                        >
-                          {isUploading ? (
-                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Paperclip className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
+                    {/* Centered Upload Buttons */}
+                    <div className="flex justify-center">
+                      <div className="flex gap-2">
+                        {/* Single File Upload */}
+                        <div className="relative">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileUpload}
+                            accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                            onClick={() => {
+                              fileInputRef.current?.click()
+                            }}
+                            title="Upload single file"
+                          >
+                            {isUploading ? (
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Paperclip className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
 
-                      {/* Multiple Files Upload */}
-                      <div className="relative">
-                        <input
-                          type="file"
-                          ref={multiFileInputRef}
-                          className="hidden"
-                          onChange={handleMultipleFileUpload}
-                          accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
-                          multiple
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          onClick={() => {
-                            multiFileInputRef.current?.click()
-                          }}
-                          title="Upload multiple files (up to 5)"
-                        >
-                          <Upload className="w-4 h-4" />
-                        </Button>
+                        {/* Multiple Files Upload */}
+                        <div className="relative">
+                          <input
+                            type="file"
+                            ref={multiFileInputRef}
+                            className="hidden"
+                            onChange={handleMultipleFileUpload}
+                            accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                            multiple
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                            onClick={() => {
+                              multiFileInputRef.current?.click()
+                            }}
+                            title="Upload multiple files (up to 5)"
+                          >
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-
-                    <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
-                      <Send className="w-4 h-4" />
-                    </Button>
                   </form>
                   
                   <div className="text-center mt-2 text-xs text-muted-foreground">
-                    <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files) • Press Enter to send, Shift+Enter for new line</span>
+                    <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files)</span>
                   </div>
                 </div>
 
@@ -1231,7 +1223,7 @@ export function ChatInterface() {
               <div key={message.id} id={`message-${message.id}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
                   className={`max-w-[80%] p-4 ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
+                    message.role === "user" ? "bg-gray-400 dark:bg-gray-500 text-foreground" : "bg-card"
                   }`}
                 >
                   {message.role === "user" ? (
@@ -1404,7 +1396,7 @@ export function ChatInterface() {
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-100"></div>
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
-                    <span className="text-sm text-muted-foreground ml-2">Thinking...</span>
+                    <span className="text-sm text-muted-foreground ml-2">Working on it...</span>
                   </div>
                 </Card>
               </div>
@@ -1489,63 +1481,63 @@ export function ChatInterface() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <textarea
-                    value={input}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder="How can I help you today?"
-                    className="pr-10 h-20 w-full rounded-md border border-input bg-gray-100 dark:bg-gray-800 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
-                    disabled={isLoading || !apiStatus?.hasApiKey}
-                  />
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="flex justify-center">
+                  <div className="flex-1 relative max-w-lg">
+                    <textarea
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder="How can I help you today?"
+                      className="pr-10 h-20 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
+                      disabled={isLoading || !apiStatus?.hasApiKey}
+                    />
+                  </div>
                 </div>
                 
-                {/* Upload Buttons */}
-                <div className="flex gap-2">
-                  {/* Single File Upload */}
-                  <div className="relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                      onClick={() => {
-                        fileInputRef.current?.click()
-                      }}
-                      title="Upload single file"
-                    >
-                      {isUploading ? (
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Paperclip className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
+                {/* Centered Upload Buttons */}
+                <div className="flex justify-center">
+                  <div className="flex gap-2">
+                    {/* Single File Upload */}
+                    <div className="relative">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        onClick={() => {
+                          fileInputRef.current?.click()
+                        }}
+                        title="Upload single file"
+                      >
+                        {isUploading ? (
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Paperclip className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
 
-                  {/* Multiple Files Upload */}
-                  <div className="relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                      onClick={() => {
-                        multiFileInputRef.current?.click()
-                      }}
-                      title="Upload multiple files (up to 5)"
-                    >
-                      <Upload className="w-4 h-4" />
-                    </Button>
+                    {/* Multiple Files Upload */}
+                    <div className="relative">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        onClick={() => {
+                          multiFileInputRef.current?.click()
+                        }}
+                        title="Upload multiple files (up to 5)"
+                      >
+                        <Upload className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-
-                <Button type="submit" disabled={isLoading || !input.trim() || !apiStatus?.hasApiKey}>
-                  <Send className="w-4 h-4" />
-                </Button>
               </form>
               
               <div className="text-center mt-2">
                 <p className="text-xs text-muted-foreground">
-                  Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files) • Press Enter to send, Shift+Enter for new line
+                  Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files)
                 </p>
               </div>
             </div>
