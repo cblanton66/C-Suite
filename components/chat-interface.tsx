@@ -554,9 +554,9 @@ export function ChatInterface() {
   const quickActions = [
     {
       icon: <DollarSign className="w-4 h-4" />,
-      title: "Cash Flow Forecast",
-      description: "13-week cash flow projection",
-      prompt: "Help me create a 13-week cash flow forecast. What information do you need from me to get started?"
+      title: "Amortization Schedule",
+      description: "Amortization schedule for a loan",
+      prompt: "Help me create an amortization schedule for a loan. What information do you need from me to get started?"
     },
     {
       icon: <BarChart3 className="w-4 h-4" />,
@@ -1486,7 +1486,7 @@ export function ChatInterface() {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-semibold text-foreground mb-3">Now You Have the Advantage!</h2>
+                <h2 className="text-4xl font-semibold text-foreground mb-3">Now you have an Edge!</h2>
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
                   Let's get to work.
                 </p>
@@ -1567,111 +1567,6 @@ export function ChatInterface() {
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-3">
-                    {/* Quick Actions Bar */}
-                    <div className="flex justify-center">
-                      <div className="max-w-2xl w-full">
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {/* Data Analysis Actions - Show when input contains numbers/data */}
-                          {(input.match(/\d+/g) || input.includes(',') || input.includes('\t')) && (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Analyze the trends in this data:\n' + input)}
-                                className="text-xs"
-                              >
-                                📊 Analyze Trends
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Create a table from this data:\n' + input)}
-                                className="text-xs"
-                              >
-                                📋 Create Table
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Summarize the key insights from:\n' + input)}
-                                className="text-xs"
-                              >
-                                📝 Summarize Data
-                              </Button>
-                            </>
-                          )}
-                          
-                          {/* Text/Content Actions - Show when input has substantial text */}
-                          {input.length > 50 && !input.match(/\d{3,}/g) && (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Convert to bullet points:\n' + input)}
-                                className="text-xs"
-                              >
-                                • Bullet Points
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Create an executive summary of:\n' + input)}
-                                className="text-xs"
-                              >
-                                📄 Executive Summary
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Extract action items from:\n' + input)}
-                                className="text-xs"
-                              >
-                                ✅ Action Items
-                              </Button>
-                            </>
-                          )}
-                          
-                          {/* Analysis Mode Actions - Always visible but subtle */}
-                          {input.length > 0 && (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Provide a detailed analysis of:\n' + input)}
-                                className="text-xs"
-                              >
-                                🔍 Deep Analysis
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('List pros and cons for:\n' + input)}
-                                className="text-xs"
-                              >
-                                ⚖️ Pros & Cons
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput('Provide step-by-step instructions for:\n' + input)}
-                                className="text-xs"
-                              >
-                                📚 Step-by-Step
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
                     
                     <div className="flex justify-center">
                       <div className="flex-1 relative max-w-2xl">
@@ -1742,6 +1637,66 @@ export function ChatInterface() {
                       </div>
                     </div>
                   </form>
+                  
+                  {/* Always Visible Quick Actions - Centered */}
+                  <div className="flex justify-center mt-4">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Summarize Data & Averages - Summarize data and provide average calculations"
+                      >
+                        😀
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Create Table - Format your data into a structured table"
+                      >
+                        📋
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Summarize Data - Extract key insights and highlights"
+                      >
+                        📝
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Bullet Points - Convert content to organized bullet points"
+                      >
+                        •
+                      </Button>
+                      
+                      {/* Send Button */}
+                      <Button
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
+                        onClick={handleSubmit}
+                        className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                        title="Send Message - Send your message to the AI"
+                      >
+                        ▶️
+                      </Button>
+                      
+                    </div>
+                  </div>
                   
                   <div className="text-center mt-2 text-xs text-muted-foreground">
                     <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files)</span>
@@ -2071,111 +2026,6 @@ export function ChatInterface() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Quick Actions Bar */}
-                <div className="flex justify-center">
-                  <div className="max-w-2xl w-full">
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {/* Data Analysis Actions - Show when input contains numbers/data */}
-                      {(input.match(/\d+/g) || input.includes(',') || input.includes('\t')) && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Analyze the trends in this data:\n' + input)}
-                            className="text-xs"
-                          >
-                            📊 Analyze Trends
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Create a table from this data:\n' + input)}
-                            className="text-xs"
-                          >
-                            📋 Create Table
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Summarize the key insights from:\n' + input)}
-                            className="text-xs"
-                          >
-                            📝 Summarize Data
-                          </Button>
-                        </>
-                      )}
-                      
-                      {/* Text/Content Actions - Show when input has substantial text */}
-                      {input.length > 50 && !input.match(/\d{3,}/g) && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Convert to bullet points:\n' + input)}
-                            className="text-xs"
-                          >
-                            • Bullet Points
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Create an executive summary of:\n' + input)}
-                            className="text-xs"
-                          >
-                            📄 Executive Summary
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Extract action items from:\n' + input)}
-                            className="text-xs"
-                          >
-                            ✅ Action Items
-                          </Button>
-                        </>
-                      )}
-                      
-                      {/* Analysis Mode Actions - Always visible but subtle */}
-                      {input.length > 0 && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Provide a detailed analysis of:\n' + input)}
-                            className="text-xs"
-                          >
-                            🔍 Deep Analysis
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('List pros and cons for:\n' + input)}
-                            className="text-xs"
-                          >
-                            ⚖️ Pros & Cons
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput('Provide step-by-step instructions for:\n' + input)}
-                            className="text-xs"
-                          >
-                            📚 Step-by-Step
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
                 
                 <div className="flex justify-center">
                   <div className="flex-1 relative max-w-2xl">
@@ -2229,6 +2079,65 @@ export function ChatInterface() {
                   </div>
                 </div>
               </form>
+              
+              {/* Always Visible Quick Actions - Centered */}
+              <div className="flex justify-center mt-4">
+                <div className="flex flex-wrap gap-2 justify-center">
+                <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Summarize Data & Averages - Summarize data and provide average calculations"
+                      >
+                        😀
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Create Table - Format your data into a structured table"
+                      >
+                        📋
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Summarize Data - Extract key insights and highlights"
+                      >
+                        📝
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                        className="text-xs hover:bg-primary/10"
+                        title="Bullet Points - Convert content to organized bullet points"
+                      >
+                        •
+                      </Button>
+                        {/* Send Button */}
+                        <Button
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
+                        onClick={handleSubmit}
+                        className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                        title="Send Message - Send your message to the AI"
+                      >
+                        ▶️
+                      </Button>
+                  
+                </div>
+              </div>
               
               <div className="text-center mt-2">
                 <p className="text-xs text-muted-foreground">
