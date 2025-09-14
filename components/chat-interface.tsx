@@ -92,6 +92,7 @@ export function ChatInterface() {
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const multiFileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
@@ -196,6 +197,24 @@ export function ChatInterface() {
     }
   }, [messages, currentSessionId])
 
+  // Clear silence timeout helper
+  const clearSilenceTimeout = () => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current)
+      silenceTimeoutRef.current = null
+    }
+  }
+
+  // Auto-stop recording after silence
+  const startSilenceTimeout = () => {
+    clearSilenceTimeout()
+    silenceTimeoutRef.current = setTimeout(() => {
+      if (recognition && isListening) {
+        recognition.stop()
+      }
+    }, 15000) // 15 seconds
+  }
+
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -211,18 +230,29 @@ export function ChatInterface() {
         recognitionInstance.onstart = () => {
           setIsListening(true)
           finalTranscript = ''
+          startSilenceTimeout()
         }
 
         recognitionInstance.onresult = (event) => {
           let interimTranscript = ''
+          let hasNewSpeech = false
           
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript
             if (event.results[i].isFinal) {
               finalTranscript += transcript
+              hasNewSpeech = true
             } else {
               interimTranscript += transcript
+              if (transcript.trim().length > 0) {
+                hasNewSpeech = true
+              }
             }
+          }
+          
+          // Reset silence timer when new speech is detected
+          if (hasNewSpeech) {
+            startSilenceTimeout()
           }
           
           // Update input with final transcript
@@ -241,17 +271,26 @@ export function ChatInterface() {
         recognitionInstance.onend = () => {
           setIsListening(false)
           finalTranscript = ''
+          clearSilenceTimeout()
         }
 
         recognitionInstance.onerror = (event) => {
           console.error('Speech recognition error:', event.error)
           if (event.error !== 'no-speech') {
             setIsListening(false)
+            clearSilenceTimeout()
           }
         }
 
         setRecognition(recognitionInstance)
       }
+    }
+  }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      clearSilenceTimeout()
     }
   }, [])
 
@@ -263,12 +302,14 @@ export function ChatInterface() {
 
     if (isListening) {
       recognition.stop()
+      clearSilenceTimeout()
     } else {
       try {
         recognition.start()
       } catch (error) {
         console.error('Error starting speech recognition:', error)
         setIsListening(false)
+        clearSilenceTimeout()
       }
     }
   }
@@ -1605,7 +1646,7 @@ export function ChatInterface() {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-semibold text-foreground mb-3">Now you have an Edge!</h2>
+                <h2 className="text-4xl font-semibold text-foreground mb-3">You Have the Advantage Today!</h2>
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
                   Let's get to work.
                 </p>
