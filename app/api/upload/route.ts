@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import * as XLSX from 'xlsx'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -35,22 +36,65 @@ export async function POST(request: NextRequest) {
 
     let content = ''
 
-    // Process different file types
-    if (file.type === 'text/plain' || file.type === 'text/csv') {
-      // For text and CSV files, read as text
-      content = await file.text()
-    } else if (file.type === 'application/pdf') {
-      // For PDF files, we'll need to implement PDF parsing
-      // For now, return a placeholder that indicates PDF processing is needed
-      content = `[PDF Document: ${file.name}]\nThis is a PDF document that requires processing. The AI will analyze the document structure and content.`
-    } else if (file.type.includes('spreadsheet') || file.type.includes('excel')) {
-      // For Excel files, we'll need to implement Excel parsing
-      // For now, return a placeholder
-      content = `[Excel Document: ${file.name}]\nThis is an Excel spreadsheet that contains financial data. The AI will analyze the data structure, formulas, and values.`
-    } else if (file.type.includes('word') || file.type.includes('document')) {
-      // For Word documents, we'll need to implement Word parsing
-      // For now, return a placeholder
-      content = `[Word Document: ${file.name}]\nThis is a Word document that requires processing. The AI will analyze the document content and structure.`
+    try {
+      // Process different file types
+      if (file.type === 'text/plain' || file.type === 'text/csv') {
+        // For text and CSV files, read as text
+        content = await file.text()
+      } else if (file.type === 'application/pdf') {
+        // For now, provide detailed PDF metadata and instructions for the AI
+        const arrayBuffer = await file.arrayBuffer()
+        const fileSize = (file.size / 1024).toFixed(1)
+        
+        content = `[PDF Document: ${file.name}]
+
+File Details:
+- Size: ${fileSize} KB
+- Type: ${file.type}
+- Pages: Cannot determine exact count without parsing
+
+This PDF document has been uploaded successfully. While I cannot extract the exact text content at the moment due to parsing limitations, I can help you analyze this document in several ways:
+
+1. **Financial Analysis**: If this contains financial data (income statements, balance sheets, tax documents), I can help interpret common financial patterns and calculations.
+
+2. **Document Structure Guidance**: I can provide guidance on how to organize or interpret the type of document this appears to be.
+
+3. **Specific Questions**: Ask me specific questions about what you're looking for in this document, and I'll provide targeted analysis and guidance.
+
+4. **Data Extraction Help**: If you can tell me key numbers or sections you see, I can help analyze and organize them.
+
+What specific information are you looking to extract or analyze from this PDF? For example:
+- Financial calculations or ratios?
+- Tax planning insights?
+- Data organization into tables?
+- Compliance or regulatory analysis?
+
+Please describe what you see in the document or what analysis you need, and I'll provide comprehensive assistance.`
+      } else if (file.type.includes('spreadsheet') || file.type.includes('excel')) {
+        // Parse Excel files
+        const arrayBuffer = await file.arrayBuffer()
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+        
+        let excelContent = `[Excel Document: ${file.name}]\n\nWorksheet Data:\n\n`
+        workbook.SheetNames.forEach((sheetName, index) => {
+          const sheet = workbook.Sheets[sheetName]
+          const csvData = XLSX.utils.sheet_to_csv(sheet)
+          excelContent += `=== Sheet ${index + 1}: ${sheetName} ===\n${csvData}\n\n`
+        })
+        content = excelContent
+      } else if (file.type.includes('word') || file.type.includes('document')) {
+        // Parse Word documents using dynamic import
+        const mammoth = await import('mammoth')
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        content = `[Word Document: ${file.name}]\n\nDocument Content:\n${result.value}`
+      } else {
+        // Fallback for unsupported file types
+        content = `[${file.name}]\n\nDocument uploaded successfully (${file.type}, ${(file.size / 1024).toFixed(1)} KB).\n\nThis file type requires manual analysis. Please describe what information you're looking for or what analysis you need.`
+      }
+    } catch (parseError) {
+      console.error(`Error parsing ${file.type} file:`, parseError)
+      content = `[${file.name}]\n\nDocument uploaded but could not be parsed automatically (${file.type}, ${(file.size / 1024).toFixed(1)} KB).\n\nError: ${parseError.message}\n\nPlease describe what information you're looking for and I'll help analyze the document based on its type and your specific questions.`
     }
 
     // Log file upload for debugging

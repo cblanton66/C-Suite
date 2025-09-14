@@ -3,12 +3,40 @@ import { useState, useEffect, useRef } from "react"
 import type React from "react"
 import Link from "next/link"
 
+// Extend Window interface for Speech Recognition
+declare global {
+  interface Window {
+    SpeechRecognition: any
+    webkitSpeechRecognition: any
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start(): void
+  stop(): void
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+}
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -61,6 +89,8 @@ export function ChatInterface() {
   const [searchResults, setSearchResults] = useState<ChatSession[]>([])
   const [currentMessageSearch, setCurrentMessageSearch] = useState<string>('')
   const [showSearchBox, setShowSearchBox] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const multiFileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -165,6 +195,83 @@ export function ChatInterface() {
       updateCurrentSession()
     }
   }, [messages, currentSessionId])
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (SpeechRecognition) {
+        const recognitionInstance = new SpeechRecognition()
+        recognitionInstance.continuous = true  // Keep listening continuously
+        recognitionInstance.interimResults = true  // Show intermediate results
+        recognitionInstance.lang = 'en-US'
+
+        let finalTranscript = ''
+
+        recognitionInstance.onstart = () => {
+          setIsListening(true)
+          finalTranscript = ''
+        }
+
+        recognitionInstance.onresult = (event) => {
+          let interimTranscript = ''
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript
+            } else {
+              interimTranscript += transcript
+            }
+          }
+          
+          // Update input with final transcript
+          if (finalTranscript) {
+            setInput(prev => {
+              const baseText = prev || ''
+              // Only add if this is new content
+              if (!baseText.includes(finalTranscript.trim())) {
+                return baseText ? baseText + ' ' + finalTranscript.trim() : finalTranscript.trim()
+              }
+              return baseText
+            })
+          }
+        }
+
+        recognitionInstance.onend = () => {
+          setIsListening(false)
+          finalTranscript = ''
+        }
+
+        recognitionInstance.onerror = (event) => {
+          console.error('Speech recognition error:', event.error)
+          if (event.error !== 'no-speech') {
+            setIsListening(false)
+          }
+        }
+
+        setRecognition(recognitionInstance)
+      }
+    }
+  }, [])
+
+  const toggleSpeechRecognition = () => {
+    if (!recognition) {
+      alert('Speech recognition is not supported in your browser. Please try Chrome, Safari, or Edge.')
+      return
+    }
+
+    if (isListening) {
+      recognition.stop()
+    } else {
+      try {
+        recognition.start()
+      } catch (error) {
+        console.error('Error starting speech recognition:', error)
+        setIsListening(false)
+      }
+    }
+  }
 
   const startNewChat = () => {
     const newSessionId = Date.now().toString()
@@ -1634,6 +1741,22 @@ export function ChatInterface() {
                             <Upload className="w-4 h-4" />
                           </Button>
                         </div>
+
+                        {/* Speech-to-Text Button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                          onClick={toggleSpeechRecognition}
+                          className={`${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' : ''}`}
+                          title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                        >
+                          {isListening ? (
+                            <MicOff className="w-4 h-4" />
+                          ) : (
+                            <Mic className="w-4 h-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </form>
@@ -2076,6 +2199,22 @@ export function ChatInterface() {
                         <Upload className="w-4 h-4" />
                       </Button>
                     </div>
+
+                    {/* Speech-to-Text Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isLoading || !apiStatus?.hasApiKey}
+                      onClick={toggleSpeechRecognition}
+                      className={`${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' : ''}`}
+                      title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-4 h-4" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               </form>
