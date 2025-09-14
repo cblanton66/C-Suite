@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
 
     // Validate file type
     const allowedTypes = [
-      'application/pdf',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
       'text/csv',
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Unsupported file type. Please upload PDF, Excel, CSV, Word, or text files.' 
+        error: 'Unsupported file type. Please upload Excel, CSV, Word, or text files.' 
       }, { status: 400 })
     }
 
@@ -41,35 +40,6 @@ export async function POST(request: NextRequest) {
       if (file.type === 'text/plain' || file.type === 'text/csv') {
         // For text and CSV files, read as text
         content = await file.text()
-      } else if (file.type === 'application/pdf') {
-        // For now, provide detailed PDF metadata and instructions for the AI
-        const arrayBuffer = await file.arrayBuffer()
-        const fileSize = (file.size / 1024).toFixed(1)
-        
-        content = `[PDF Document: ${file.name}]
-
-File Details:
-- Size: ${fileSize} KB
-- Type: ${file.type}
-- Pages: Cannot determine exact count without parsing
-
-This PDF document has been uploaded successfully. While I cannot extract the exact text content at the moment due to parsing limitations, I can help you analyze this document in several ways:
-
-1. **Financial Analysis**: If this contains financial data (income statements, balance sheets, tax documents), I can help interpret common financial patterns and calculations.
-
-2. **Document Structure Guidance**: I can provide guidance on how to organize or interpret the type of document this appears to be.
-
-3. **Specific Questions**: Ask me specific questions about what you're looking for in this document, and I'll provide targeted analysis and guidance.
-
-4. **Data Extraction Help**: If you can tell me key numbers or sections you see, I can help analyze and organize them.
-
-What specific information are you looking to extract or analyze from this PDF? For example:
-- Financial calculations or ratios?
-- Tax planning insights?
-- Data organization into tables?
-- Compliance or regulatory analysis?
-
-Please describe what you see in the document or what analysis you need, and I'll provide comprehensive assistance.`
       } else if (file.type.includes('spreadsheet') || file.type.includes('excel')) {
         // Parse Excel files
         const arrayBuffer = await file.arrayBuffer()

@@ -496,7 +496,7 @@ export function ChatInterface() {
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('Unsupported file type. Please upload PDF, Excel, CSV, Word, or text files.')
+      setUploadError('Unsupported file type. Please upload Excel, CSV, Word, or text files.')
       return
     }
 
@@ -586,7 +586,7 @@ export function ChatInterface() {
         return
       }
       if (!allowedTypes.includes(file.type)) {
-        setUploadError(`File "${file.name}" has an unsupported type. Please upload PDF, Excel, CSV, Word, or text files.`)
+        setUploadError(`File "${file.name}" has an unsupported type. Please upload Excel, CSV, Word, or text files.`)
         setIsUploading(false)
         return
       }
@@ -1698,7 +1698,7 @@ export function ChatInterface() {
                             ref={fileInputRef}
                             className="hidden"
                             onChange={handleFileUpload}
-                            accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
                             disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
                           />
                           <Button
@@ -1725,7 +1725,7 @@ export function ChatInterface() {
                             ref={multiFileInputRef}
                             className="hidden"
                             onChange={handleMultipleFileUpload}
-                            accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
                             multiple
                             disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
                           />
@@ -1815,14 +1815,14 @@ export function ChatInterface() {
                         className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
                         title="Send Message - Send your message to the AI"
                       >
-                        ▶️
+                       Submit ▲
                       </Button>
                       
                     </div>
                   </div>
                   
                   <div className="text-center mt-2 text-xs text-muted-foreground">
-                    <span>Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files)</span>
+                    <span>Upload: Excel, CSV, Word, TXT (max 10MB each, up to 5 files)</span>
                   </div>
                 </div>
 
@@ -2280,7 +2280,7 @@ export function ChatInterface() {
               
               <div className="text-center mt-2">
                 <p className="text-xs text-muted-foreground">
-                  Upload: PDF, Excel, CSV, Word, TXT (max 10MB each, up to 5 files)
+                  Upload: Excel, CSV, Word, TXT (max 10MB each, up to 5 files)
                 </p>
               </div>
             </div>
