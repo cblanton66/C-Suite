@@ -387,6 +387,12 @@ export function ChatInterface() {
     e.preventDefault()
     if (!input.trim() || isLoading || !apiStatus?.hasApiKey) return
 
+    // Stop recording if currently listening
+    if (isListening && recognition) {
+      recognition.stop()
+      clearSilenceTimeout()
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -1846,10 +1852,10 @@ export function ChatInterface() {
                         type="submit"
                         variant="default"
                         size="sm"
-                        disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
+                        disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
                         onClick={handleSubmit}
                         className={`text-xs text-primary-foreground transition-colors ${
-                          (inputHasFocus && input.trim()) || (isListening && input.trim())
+                          (inputHasFocus && input.trim()) || isListening
                             ? 'bg-green-400 hover:bg-green-500'
                             : 'bg-primary hover:bg-primary/90'
                         }`}
@@ -2298,10 +2304,10 @@ export function ChatInterface() {
                     type="submit"
                     variant="default"
                     size="sm"
-                    disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
+                    disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
                     onClick={handleSubmit}
                     className={`text-xs text-primary-foreground transition-colors ${
-                      (inputHasFocus && input.trim()) || (isListening && input.trim())
+                      (inputHasFocus && input.trim()) || isListening
                         ? 'bg-green-400 hover:bg-green-500'
                         : 'bg-primary hover:bg-primary/90'
                     }`}
