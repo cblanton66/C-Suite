@@ -91,7 +91,7 @@ export function ChatInterface() {
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [inputHasFocus, setInputHasFocus] = useState(false)
   const multiFileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
@@ -1441,8 +1441,20 @@ export function ChatInterface() {
             )}
             <ThemeToggle />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
-              <span>{apiStatus?.hasApiKey ? "Connected" : "API Key Required"}</span>
+              {isListening ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                  <span className="text-red-500 font-medium">
+                    Recording
+                    <span className="animate-pulse">...</span>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
+                  <span>{apiStatus?.hasApiKey ? "Connected" : "API Key Required"}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1681,6 +1693,8 @@ export function ChatInterface() {
                           value={input}
                           onChange={handleInputChange}
                           onKeyDown={handleKeyDown}
+                          onFocus={() => setInputHasFocus(true)}
+                          onBlur={() => setInputHasFocus(false)}
                           placeholder="How can I help you today?"
                           className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                           disabled={isLoading || !apiStatus?.hasApiKey}
@@ -1688,80 +1702,9 @@ export function ChatInterface() {
                       </div>
                     </div>
                     
-                    {/* Centered Upload Buttons */}
-                    <div className="flex justify-center">
-                      <div className="flex gap-2">
-                        {/* Single File Upload */}
-                        <div className="relative">
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={handleFileUpload}
-                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                            onClick={() => {
-                              fileInputRef.current?.click()
-                            }}
-                            title="Upload single file"
-                          >
-                            {isUploading ? (
-                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Paperclip className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-
-                        {/* Multiple Files Upload */}
-                        <div className="relative">
-                          <input
-                            type="file"
-                            ref={multiFileInputRef}
-                            className="hidden"
-                            onChange={handleMultipleFileUpload}
-                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
-                            multiple
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                            onClick={() => {
-                              multiFileInputRef.current?.click()
-                            }}
-                            title="Upload multiple files (up to 5)"
-                          >
-                            <Upload className="w-4 h-4" />
-                          </Button>
-                        </div>
-
-                        {/* Speech-to-Text Button */}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isLoading || !apiStatus?.hasApiKey}
-                          onClick={toggleSpeechRecognition}
-                          className={`${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' : ''}`}
-                          title={isListening ? 'Stop voice recording' : 'Start voice recording'}
-                        >
-                          {isListening ? (
-                            <MicOff className="w-4 h-4" />
-                          ) : (
-                            <Mic className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
                   </form>
                   
-                  {/* Always Visible Quick Actions - Centered */}
+                  {/* Always Visible Quick Actions - Top Row */}
                   <div className="flex justify-center mt-4">
                     <div className="flex flex-wrap gap-2 justify-center">
                       <Button
@@ -1804,20 +1747,75 @@ export function ChatInterface() {
                       >
                         •
                       </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Bottom Row - File Upload, Microphone, Submit */}
+                  <div className="flex justify-center mt-2">
+                    <div className="flex gap-2 justify-center">
+                      {/* Multiple Files Upload with Paperclip Icon */}
+                      <div className="relative">
+                        <input
+                          type="file"
+                          ref={multiFileInputRef}
+                          className="hidden"
+                          onChange={handleMultipleFileUpload}
+                          accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
+                          multiple
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          onClick={() => {
+                            multiFileInputRef.current?.click()
+                          }}
+                          title="Upload multiple files (up to 5)"
+                          className="text-xs"
+                        >
+                          {isUploading ? (
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Paperclip className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Speech-to-Text Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isLoading || !apiStatus?.hasApiKey}
+                        onClick={toggleSpeechRecognition}
+                        className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                        title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                      >
+                        {isListening ? (
+                          <MicOff className="w-4 h-4 animate-pulse" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                      </Button>
                       
-                      {/* Send Button */}
+                      {/* Submit Button */}
                       <Button
                         type="submit"
                         variant="default"
                         size="sm"
                         disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
                         onClick={handleSubmit}
-                        className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                        className={`text-xs text-primary-foreground transition-colors ${
+                          (inputHasFocus && input.trim()) || (isListening && input.trim())
+                            ? 'bg-green-400 hover:bg-green-500'
+                            : 'bg-primary hover:bg-primary/90'
+                        }`}
                         title="Send Message - Send your message to the AI"
                       >
                        Submit ▲
                       </Button>
-                      
                     </div>
                   </div>
                   
@@ -2156,6 +2154,8 @@ export function ChatInterface() {
                       value={input}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
+                      onFocus={() => setInputHasFocus(true)}
+                      onBlur={() => setInputHasFocus(false)}
                       placeholder="How can I help you today?"
                       className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                       disabled={isLoading || !apiStatus?.hasApiKey}
@@ -2163,118 +2163,111 @@ export function ChatInterface() {
                   </div>
                 </div>
                 
-                {/* Centered Upload Buttons */}
-                <div className="flex justify-center">
-                  <div className="flex gap-2">
-                    {/* Single File Upload */}
-                    <div className="relative">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        onClick={() => {
-                          fileInputRef.current?.click()
-                        }}
-                        title="Upload single file"
-                      >
-                        {isUploading ? (
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Paperclip className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* Multiple Files Upload */}
-                    <div className="relative">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        onClick={() => {
-                          multiFileInputRef.current?.click()
-                        }}
-                        title="Upload multiple files (up to 5)"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    {/* Speech-to-Text Button */}
+              </form>
+              
+              {/* Always Visible Quick Actions - Top Row */}
+              <div className="flex justify-center mt-4">
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                    className="text-xs hover:bg-primary/10"
+                    title="Summarize Data & Averages - Summarize data and provide average calculations"
+                  >
+                    😀
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                    className="text-xs hover:bg-primary/10"
+                    title="Create Table - Format your data into a structured table"
+                  >
+                    📋
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                    className="text-xs hover:bg-primary/10"
+                    title="Summarize Data - Extract key insights and highlights"
+                  >
+                    📝
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                    className="text-xs hover:bg-primary/10"
+                    title="Bullet Points - Convert content to organized bullet points"
+                  >
+                    •
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Bottom Row - File Upload, Microphone, Submit */}
+              <div className="flex justify-center mt-2">
+                <div className="flex gap-2 justify-center">
+                  {/* Multiple Files Upload with Paperclip Icon */}
+                  <div className="relative">
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={isLoading || !apiStatus?.hasApiKey}
-                      onClick={toggleSpeechRecognition}
-                      className={`${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' : ''}`}
-                      title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                      size="sm"
+                      disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                      onClick={() => {
+                        multiFileInputRef.current?.click()
+                      }}
+                      title="Upload multiple files (up to 5)"
+                      className="text-xs"
                     >
-                      {isListening ? (
-                        <MicOff className="w-4 h-4" />
+                      {isUploading ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Mic className="w-4 h-4" />
+                        <Paperclip className="w-4 h-4" />
                       )}
                     </Button>
                   </div>
-                </div>
-              </form>
-              
-              {/* Always Visible Quick Actions - Centered */}
-              <div className="flex justify-center mt-4">
-                <div className="flex flex-wrap gap-2 justify-center">
-                <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Summarize Data & Averages - Summarize data and provide average calculations"
-                      >
-                        😀
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Create Table - Format your data into a structured table"
-                      >
-                        📋
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Summarize Data - Extract key insights and highlights"
-                      >
-                        📝
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Bullet Points - Convert content to organized bullet points"
-                      >
-                        •
-                      </Button>
-                        {/* Send Button */}
-                        <Button
-                        type="submit"
-                        variant="default"
-                        size="sm"
-                        disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
-                        onClick={handleSubmit}
-                        className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
-                        title="Send Message - Send your message to the AI"
-                      >
-                        ▶️
-                      </Button>
+
+                  {/* Speech-to-Text Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading || !apiStatus?.hasApiKey}
+                    onClick={toggleSpeechRecognition}
+                    className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                    title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4 animate-pulse" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </Button>
                   
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    variant="default"
+                    size="sm"
+                    disabled={!input.trim() || isLoading || !apiStatus?.hasApiKey}
+                    onClick={handleSubmit}
+                    className={`text-xs text-primary-foreground transition-colors ${
+                      (inputHasFocus && input.trim()) || (isListening && input.trim())
+                        ? 'bg-green-400 hover:bg-green-500'
+                        : 'bg-primary hover:bg-primary/90'
+                    }`}
+                    title="Send Message - Send your message to the AI"
+                  >
+                   Submit ▲
+                  </Button>
                 </div>
               </div>
               
