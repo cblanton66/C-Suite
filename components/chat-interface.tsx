@@ -1861,7 +1861,7 @@ export function ChatInterface() {
                         }`}
                         title="Send Message - Send your message to the AI"
                       >
-                       Submit ▲
+                       Send ▲
                       </Button>
                     </div>
                   </div>
@@ -2313,7 +2313,7 @@ export function ChatInterface() {
                     }`}
                     title="Send Message - Send your message to the AI"
                   >
-                   Submit ▲
+                   Send ▲
                   </Button>
                 </div>
               </div>
