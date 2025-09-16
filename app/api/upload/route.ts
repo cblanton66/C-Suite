@@ -24,12 +24,13 @@ export async function POST(request: NextRequest) {
       'text/csv',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
-      'text/plain'
+      'text/plain',
+      'text/html'
     ]
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Unsupported file type. Please upload Excel, CSV, Word, or text files.' 
+        error: 'Unsupported file type. Please upload Excel, CSV, Word, HTML, or text files.' 
       }, { status: 400 })
     }
 
@@ -40,6 +41,13 @@ export async function POST(request: NextRequest) {
       if (file.type === 'text/plain' || file.type === 'text/csv') {
         // For text and CSV files, read as text
         content = await file.text()
+      } else if (file.type === 'text/html') {
+        // Parse HTML files to extract clean text
+        const { JSDOM } = await import('jsdom')
+        const htmlContent = await file.text()
+        const dom = new JSDOM(htmlContent)
+        const textContent = dom.window.document.body?.textContent || dom.window.document.textContent || ''
+        content = `[HTML Document: ${file.name}]\n\nExtracted Content:\n${textContent.trim()}`
       } else if (file.type.includes('spreadsheet') || file.type.includes('excel')) {
         // Parse Excel files
         const arrayBuffer = await file.arrayBuffer()

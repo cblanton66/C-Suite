@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AccessCodeModal } from "@/components/access-code-modal"
+import { EmailLoginModal } from "@/components/email-login-modal"
 import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
 import { 
   Calculator, 
@@ -30,26 +30,16 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
-  const [showAccessModal, setShowAccessModal] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [showWaitlistModal, setShowWaitlistModal] = useState(false)
 
-  const handleAccessSuccess = () => {
-    setShowAccessModal(false)
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false)
     onNavigateToChat()
   }
 
   const handleTryNowClick = () => {
-    // Check if user already has access
-    if (typeof window !== 'undefined') {
-      const hasAccess = sessionStorage.getItem('peaksuiteai_access_granted') === 'true'
-      if (hasAccess) {
-        onNavigateToChat()
-      } else {
-        setShowAccessModal(true)
-      }
-    } else {
-      setShowAccessModal(true)
-    }
+    setShowLoginModal(true)
   }
   const benefits = [
     {
@@ -105,7 +95,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">PeakSuite.ai</h1>
-                <p className="text-sm text-muted-foreground">Financial Knowledge at Your Fingertips</p>
+                <p className="text-sm text-muted-foreground">AI-Powered Business Intelligence Built for Small Business</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -127,7 +117,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               Artificial Intelligence for Your Business
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Every business deserves CFO-level financial intelligence. PEAK delivers everything you need to make confident financial decisions 24/7.
+            From financial analysis to daily operations, PeakSuite.ai empowers every employee with expert-level business insights. Built by a CPA with 30+ years of real-world business experience—because your business deserves more than generic AI.
             </p>
           </div>
           
@@ -141,8 +131,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <span className="text-2xl font-bold text-primary">P</span>erformance
               </h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Supercharge your business with tools that boost profits, optimize cash flow, and drive game-changing results.
-              </p>
+              Boost productivity across all departments with AI tools that streamline operations, optimize decision-making, and drive measurable results for your entire team.              </p>
             </Card>
 
             {/* Empower */}
@@ -154,7 +143,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <span className="text-2xl font-bold text-primary">E</span>mpower
               </h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Unleash your inner CFO with strategic insights to lead boldly and grow like a pro.
+              Transform every employee into a strategic contributor with business intelligence that turns data into actionable insights, regardless of their role or experience level.
               </p>
             </Card>
 
@@ -167,7 +156,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <span className="text-2xl font-bold text-primary">A</span>nalysis
               </h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Dig into powerful insights with KPI dashboards and benchmarks that put you ahead of the competition.
+              Get comprehensive business insights—from financial KPIs to operational metrics—that help you compete with larger companies while maintaining your small business agility.
               </p>
             </Card>
 
@@ -180,7 +169,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <span className="text-2xl font-bold text-primary">K</span>nowledge
               </h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Tap into a vast vault of financial wisdom—30+ years of CPA expertise plus AI-driven smarts—because knowledge is power.
+              Access three decades of proven business expertise combined with cutting-edge AI. It's like having a seasoned business advisor available 24/7 for your entire team.
               </p>
             </Card>
           </div>
@@ -199,7 +188,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Built for Three Types of Financial Leaders
+            Built for Growing Small Businesses and Their Teams
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Whether you're wearing multiple hats or leading a finance team, PeakSuite.ai adapts to your role
@@ -207,15 +196,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* The Owner-CFO */}
+            {/* The Multi-Hat Owner */}
             <Card className="p-8 text-center hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Briefcase className="w-8 h-8 text-blue-600" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Owner-CFO</h4>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Multi-Hat Owner</h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                You built the business but need CFO-level financial intelligence without the CFO salary. Get strategic insights, cash flow forecasting, and M&A readiness.
-              </p>
+              You wear every hat in your business. Get executive-level insights for financial decisions, strategic planning, and daily operations—without hiring expensive consultants or full-time specialists.              </p>
               <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -232,15 +220,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
             </Card>
 
-            {/* The Accounting Head */}
+            {/* The Growing Team */}
             <Card className="p-8 text-center hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <BarChart3 className="w-8 h-8 text-green-600" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Accounting Head</h4>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Growing Team</h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                You manage the books but want to provide strategic value. Transform from number-cruncher to business advisor with executive-level analysis tools.
-              </p>
+              Your employees want to contribute more strategically. Give them access to business intelligence tools that elevate their impact and help them think like business owners.              </p>
               <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -257,15 +244,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
             </Card>
 
-            {/* The Strategic CFO */}
+            {/* The Accounting Professional */}
             <Card className="p-8 text-center hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Target className="w-8 h-8 text-purple-600" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Strategic CFO</h4>
+              <h4 className="text-xl font-bold text-foreground mb-4">The Accounting Professional</h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                You're already strategic but need deeper insights and faster analysis. Enhance your capabilities with AI-powered modeling and industry benchmarking.
-              </p>
+              Whether you're serving clients or managing internal operations, deliver advisory-level insights that position you as a strategic partner, not just a number-cruncher.              </p>
               <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -290,11 +276,9 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Your Complete Financial Command Center
-            </h3>
+Your Complete Business Intelligence Platform            </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Strategic CFO capabilities designed for businesses from $500K to $50M in revenue
-            </p>
+            Professional-grade business tools designed for companies from Start-up to $50M in revenue            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
@@ -323,11 +307,9 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
       <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-3xl font-bold mb-4">
-            Every Business Deserves a CFO
-          </h3>
+          Every Small Business Deserves Enterprise-Level Intelligence          </h3>
           <p className="text-xl mb-8 opacity-90">
-            Join growing companies that are making smarter financial decisions with AI-powered CFO intelligence.
-          </p>
+          Join growing companies that are making smarter decisions faster with AI-powered business insights built by someone who understands your challenges.          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={handleTryNowClick}>
               Start Your Free Trial
@@ -417,11 +399,11 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         </div>
       </footer>
 
-      {/* Access Code Modal */}
-      <AccessCodeModal
-        isOpen={showAccessModal}
-        onClose={() => setShowAccessModal(false)}
-        onSuccess={handleAccessSuccess}
+      {/* Email Login Modal */}
+      <EmailLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
       />
 
       {/* Exclusive Waitlist Modal */}
