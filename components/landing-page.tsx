@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccessCodeModal } from "@/components/access-code-modal"
+import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
 import { 
   Calculator, 
   FileText, 
@@ -30,6 +31,7 @@ interface LandingPageProps {
 
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const [showAccessModal, setShowAccessModal] = useState(false)
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false)
 
   const handleAccessSuccess = () => {
     setShowAccessModal(false)
@@ -362,7 +364,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                     </li>
                   ))}
                 </ul>
-                <Button size="lg" className="w-full">
+                <Button size="lg" className="w-full" onClick={() => setShowWaitlistModal(true)}>
                   Start Monthly Plan
                 </Button>
               </div>
@@ -388,7 +390,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                     </li>
                   ))}
                 </ul>
-                <Button size="lg" className="w-full">
+                <Button size="lg" className="w-full" onClick={() => setShowWaitlistModal(true)}>
                   Start Annual Plan
                 </Button>
               </div>
@@ -420,6 +422,12 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         isOpen={showAccessModal}
         onClose={() => setShowAccessModal(false)}
         onSuccess={handleAccessSuccess}
+      />
+
+      {/* Exclusive Waitlist Modal */}
+      <ExclusiveWaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
       />
     </div>
   )
