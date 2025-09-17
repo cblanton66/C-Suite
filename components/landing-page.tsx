@@ -311,18 +311,15 @@ Your Complete Business Intelligence Platform            </h3>
           <p className="text-xl mb-8 opacity-90">
           Join growing companies that are making smarter decisions faster with AI-powered business insights built by someone who understands your challenges.          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6" onClick={handleTryNowClick}>
-              Start Your Free Trial
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={handleTryNowClick}>
-              See It In Action
+            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => setShowWaitlistModal(true)}>
+              Beta Signup
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 px-4 bg-muted/30">
+      {/* Pricing Section - Hidden for Beta */}
+      <section className="py-20 px-4 bg-muted/30 hidden">
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-3xl font-bold text-foreground mb-4">
             Simple, Transparent Pricing

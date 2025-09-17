@@ -155,7 +155,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={handleEmailBlur}
-                    className="pl-10"
+                    className="pl-10 border-2 border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
@@ -176,7 +176,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 border-2 border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
