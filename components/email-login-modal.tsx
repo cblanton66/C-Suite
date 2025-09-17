@@ -10,9 +10,10 @@ interface EmailLoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  onOpenWaitlist?: () => void
 }
 
-export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalProps) {
+export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: EmailLoginModalProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -182,16 +183,22 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" disabled={isSubmitting}>
                 {isSubmitting ? "Logging in..." : "Access Chat"}
               </Button>
+              
+              <Button 
+                type="button" 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                size="lg"
+                onClick={() => {
+                  onClose()
+                  onOpenWaitlist?.()
+                }}
+              >
+                Join Waiting List
+              </Button>
             </form>
-
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                Don't have access? Contact support for beta enrollment
-              </p>
-            </div>
           </div>
         )}
       </Card>

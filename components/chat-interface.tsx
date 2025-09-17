@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -79,6 +79,7 @@ export function ChatInterface() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -107,6 +108,7 @@ export function ChatInterface() {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Load chat history and current session on mount
   useEffect(() => {
@@ -1052,6 +1054,20 @@ export function ChatInterface() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showSearchBox])
 
+  // Click outside to close user menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu && 
+          userMenuRef.current && 
+          !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showUserMenu])
+
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = (smooth = true) => {
@@ -1451,94 +1467,117 @@ export function ChatInterface() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between p-4">
+          {/* Left side - Logo */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Calculator className="w-4 h-4 text-primary-foreground" />
             </div>
-            <div>
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
-              </Link>
-            </div>
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
+            </Link>
           </div>
+
+          {/* Right side - User Menu + Theme + Status */}
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={startNewChat}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              New Chat
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center gap-2 relative"
-            >
-              <History className="w-4 h-4" />
-              History
-              {chatSessions.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {chatSessions.length}
-                </span>
+            {/* User Menu Dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">Menu</span>
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+              
+              {showUserMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-20">
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setShowHistory(!showHistory)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <History className="w-4 h-4" />
+                      History
+                      {chatSessions.length > 0 && (
+                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {chatSessions.length}
+                        </span>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setShowBookmarks(!showBookmarks)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Bookmark className="w-4 h-4" />
+                      Bookmarks
+                      {bookmarkedMessages.length > 0 && (
+                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {bookmarkedMessages.length}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {messages.length > 0 && (
+                      <>
+                        <div className="border-t border-border my-2"></div>
+                        <button
+                          onClick={() => {
+                            exportConversationAsText()
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          Export as Text
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            exportConversationAsPDF()
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          Export as HTML
+                        </button>
+                      </>
+                    )}
+                    
+                    <div className="border-t border-border my-2"></div>
+                    <button
+                      onClick={() => {
+                        handleSignOut()
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
               )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowBookmarks(!showBookmarks)}
-              className="flex items-center gap-2 relative"
-            >
-              <Bookmark className="w-4 h-4" />
-              Bookmarks
-              {bookmarkedMessages.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {bookmarkedMessages.length}
-                </span>
-              )}
-            </Button>
-            {messages.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={exportConversationAsText}
-                  className="flex items-center gap-2"
-                  title="Export as Text"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={exportConversationAsPDF}
-                  className="flex items-center gap-2"
-                  title="Export as HTML"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">HTML</span>
-                </Button>
-              </>
-            )}
+            </div>
+            
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
+            
+            {/* Status Indicator */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {isListening ? (
                 <>
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="text-red-500 font-medium">
+                  <span className="text-red-500 font-medium hidden sm:inline">
                     Recording
                     <span className="animate-pulse">...</span>
                   </span>
@@ -1546,7 +1585,7 @@ export function ChatInterface() {
               ) : (
                 <>
                   <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
-                  <span>{apiStatus?.hasApiKey ? "Connected" : "API Key Required"}</span>
+                  <span className="hidden sm:inline">{apiStatus?.hasApiKey ? "Connected" : "API Key Required"}</span>
                 </>
               )}
             </div>
@@ -1803,118 +1842,135 @@ export function ChatInterface() {
                     
                   </form>
                   
-                  {/* Always Visible Quick Actions - Top Row */}
+                  {/* Control Panel - 2 Column Layout */}
                   <div className="flex justify-center mt-4">
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Summarize Data & Averages - Summarize data and provide average calculations"
-                      >
-                        😀
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Create Table - Format your data into a structured table"
-                      >
-                        📋
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Summarize Data - Extract key insights and highlights"
-                      >
-                        📝
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                        className="text-xs hover:bg-primary/10"
-                        title="Bullet Points - Convert content to organized bullet points"
-                      >
-                        •
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Bottom Row - File Upload, Microphone, Submit */}
-                  <div className="flex justify-center mt-2">
-                    <div className="flex gap-2 justify-center">
-                      {/* Multiple Files Upload with Paperclip Icon */}
-                      <div className="relative">
-                        <input
-                          type="file"
-                          ref={multiFileInputRef}
-                          className="hidden"
-                          onChange={handleMultipleFileUpload}
-                          accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
-                          multiple
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+                      {/* Left Column - Action Buttons */}
+                      <div className="space-y-3">
+                        {/* Quick Actions Row */}
+                        <div className="flex flex-wrap gap-2 justify-center">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          onClick={() => {
-                            multiFileInputRef.current?.click()
-                          }}
-                          title="Upload multiple files (up to 5)"
-                          className="text-xs"
+                          onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                          className="text-xs hover:bg-primary/10"
+                          title="Summarize Data & Averages - Summarize data and provide average calculations"
                         >
-                          {isUploading ? (
-                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Paperclip className="w-4 h-4" />
-                          )}
+                          😀
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                          className="text-xs hover:bg-primary/10"
+                          title="Create Table - Format your data into a structured table"
+                        >
+                          📋
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                          className="text-xs hover:bg-primary/10"
+                          title="Summarize Data - Extract key insights and highlights"
+                        >
+                          📝
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                          className="text-xs hover:bg-primary/10"
+                          title="Bullet Points - Convert content to organized bullet points"
+                        >
+                          •
                         </Button>
                       </div>
-
-                      {/* Speech-to-Text Button */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isLoading || !apiStatus?.hasApiKey}
-                        onClick={toggleSpeechRecognition}
-                        className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
-                        title={isListening ? 'Stop voice recording' : 'Start voice recording'}
-                      >
-                        {isListening ? (
-                          <MicOff className="w-4 h-4 animate-pulse" />
-                        ) : (
-                          <Mic className="w-4 h-4" />
-                        )}
-                      </Button>
                       
-                      {/* Submit Button */}
-                      <Button
-                        type="submit"
-                        variant="default"
-                        size="sm"
-                        disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                        onClick={handleSubmit}
-                        className={`text-xs text-primary-foreground transition-colors ${
-                          (inputHasFocus && input.trim()) || isListening
-                            ? 'bg-green-400 hover:bg-green-500'
-                            : 'bg-primary hover:bg-primary/90'
-                        }`}
-                        title="Send Message - Send your message to the AI"
-                      >
-                       Send ▲
-                      </Button>
+                        {/* Input Actions Row */}
+                        <div className="flex gap-2 justify-center">
+                        {/* Multiple Files Upload with Paperclip Icon */}
+                        <div className="relative">
+                          <input
+                            type="file"
+                            ref={multiFileInputRef}
+                            className="hidden"
+                            onChange={handleMultipleFileUpload}
+                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
+                            multiple
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                            onClick={() => {
+                              multiFileInputRef.current?.click()
+                            }}
+                            title="Upload multiple files (up to 5)"
+                            className="text-xs"
+                          >
+                            {isUploading ? (
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Paperclip className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Speech-to-Text Button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                          onClick={toggleSpeechRecognition}
+                          className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                          title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                        >
+                          {isListening ? (
+                            <MicOff className="w-4 h-4 animate-pulse" />
+                          ) : (
+                            <Mic className="w-4 h-4" />
+                          )}
+                        </Button>
+                        
+                        {/* Submit Button */}
+                        <Button
+                          type="submit"
+                          variant="default"
+                          size="sm"
+                          disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                          onClick={handleSubmit}
+                          className={`text-xs text-primary-foreground transition-colors ${
+                            (inputHasFocus && input.trim()) || isListening
+                              ? 'bg-green-400 hover:bg-green-500'
+                              : 'bg-primary hover:bg-primary/90'
+                          }`}
+                          title="Send Message - Send your message to the AI"
+                        >
+                         Send ▲
+                        </Button>
+                        </div>
+                      </div>
+
+                      {/* Right Column - New Chat Button */}
+                      <div className="flex justify-center items-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={startNewChat}
+                          className="flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          New Chat
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   
@@ -2264,109 +2320,126 @@ export function ChatInterface() {
                 
               </form>
               
-              {/* Always Visible Quick Actions - Top Row */}
+              {/* Control Panel - 2 Column Layout */}
               <div className="flex justify-center mt-4">
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                    className="text-xs hover:bg-primary/10"
-                    title="Summarize Data & Averages - Summarize data and provide average calculations"
-                  >
-                    😀
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                    className="text-xs hover:bg-primary/10"
-                    title="Create Table - Format your data into a structured table"
-                  >
-                    📋
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                    className="text-xs hover:bg-primary/10"
-                    title="Summarize Data - Extract key insights and highlights"
-                  >
-                    📝
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                    className="text-xs hover:bg-primary/10"
-                    title="Bullet Points - Convert content to organized bullet points"
-                  >
-                    •
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Bottom Row - File Upload, Microphone, Submit */}
-              <div className="flex justify-center mt-2">
-                <div className="flex gap-2 justify-center">
-                  {/* Multiple Files Upload with Paperclip Icon */}
-                  <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+                  {/* Left Column - Action Buttons */}
+                  <div className="space-y-3">
+                    {/* Quick Actions Row */}
+                    <div className="flex flex-wrap gap-2 justify-center">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                      onClick={() => {
-                        multiFileInputRef.current?.click()
-                      }}
-                      title="Upload multiple files (up to 5)"
-                      className="text-xs"
+                      onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                      className="text-xs hover:bg-primary/10"
+                      title="Summarize Data & Averages - Summarize data and provide average calculations"
                     >
-                      {isUploading ? (
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Paperclip className="w-4 h-4" />
-                      )}
+                      😀
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                      className="text-xs hover:bg-primary/10"
+                      title="Create Table - Format your data into a structured table"
+                    >
+                      📋
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                      className="text-xs hover:bg-primary/10"
+                      title="Summarize Data - Extract key insights and highlights"
+                    >
+                      📝
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                      className="text-xs hover:bg-primary/10"
+                      title="Bullet Points - Convert content to organized bullet points"
+                    >
+                      •
                     </Button>
                   </div>
-
-                  {/* Speech-to-Text Button */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isLoading || !apiStatus?.hasApiKey}
-                    onClick={toggleSpeechRecognition}
-                    className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
-                    title={isListening ? 'Stop voice recording' : 'Start voice recording'}
-                  >
-                    {isListening ? (
-                      <MicOff className="w-4 h-4 animate-pulse" />
-                    ) : (
-                      <Mic className="w-4 h-4" />
-                    )}
-                  </Button>
                   
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    variant="default"
-                    size="sm"
-                    disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                    onClick={handleSubmit}
-                    className={`text-xs text-primary-foreground transition-colors ${
-                      (inputHasFocus && input.trim()) || isListening
-                        ? 'bg-green-400 hover:bg-green-500'
-                        : 'bg-primary hover:bg-primary/90'
-                    }`}
-                    title="Send Message - Send your message to the AI"
-                  >
-                   Send ▲
-                  </Button>
+                    {/* Input Actions Row */}
+                    <div className="flex gap-2 justify-center">
+                    {/* Multiple Files Upload with Paperclip Icon */}
+                    <div className="relative">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        onClick={() => {
+                          multiFileInputRef.current?.click()
+                        }}
+                        title="Upload multiple files (up to 5)"
+                        className="text-xs"
+                      >
+                        {isUploading ? (
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Paperclip className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Speech-to-Text Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoading || !apiStatus?.hasApiKey}
+                      onClick={toggleSpeechRecognition}
+                      className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                      title={isListening ? 'Stop voice recording' : 'Start voice recording'}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-4 h-4 animate-pulse" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
+                    
+                    {/* Submit Button */}
+                    <Button
+                      type="submit"
+                      variant="default"
+                      size="sm"
+                      disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                      onClick={handleSubmit}
+                      className={`text-xs text-primary-foreground transition-colors ${
+                        (inputHasFocus && input.trim()) || isListening
+                          ? 'bg-green-400 hover:bg-green-500'
+                          : 'bg-primary hover:bg-primary/90'
+                      }`}
+                      title="Send Message - Send your message to the AI"
+                    >
+                     Send ▲
+                    </Button>
+                    </div>
+                  </div>
+
+                  {/* Right Column - New Chat Button */}
+                  <div className="flex justify-center items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={startNewChat}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Chat
+                    </Button>
+                  </div>
                 </div>
               </div>
               

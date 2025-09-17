@@ -174,12 +174,6 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             </Card>
           </div>
 
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
-              <Zap className="w-4 h-4" />
-              AI that is easy to use and makes sense.
-            </div>
-          </div>
         </div>
       </section>
 
@@ -401,6 +395,7 @@ Your Complete Business Intelligence Platform            </h3>
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleLoginSuccess}
+        onOpenWaitlist={() => setShowWaitlistModal(true)}
       />
 
       {/* Exclusive Waitlist Modal */}
