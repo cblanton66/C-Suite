@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Read all data from the sheet to check for matching credentials
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'A:J', // Covers all columns including Status
+      range: 'A:K', // Covers all columns including Status and Permissions
     })
 
     const rows = response.data.values || []
@@ -38,14 +38,21 @@ export async function POST(request: NextRequest) {
     // Skip header row and find matching email/password
     let userFound = false
     let userName = ''
+    let userPermissions: string[] = ['chat'] // Default permission
     
     for (let i = 1; i < rows.length; i++) {
-      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus] = rows[i]
+      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus, permissions] = rows[i]
       
       // Compare emails case-insensitively
       if (userEmail && userEmail.toLowerCase() === normalizedEmail && userPassword === password && userStatus === 'Active') {
         userFound = true
         userName = `${firstName} ${lastName}`
+        
+        // Parse permissions (comma-separated string to array)
+        if (permissions && typeof permissions === 'string') {
+          userPermissions = permissions.split(',').map(p => p.trim().toLowerCase())
+        }
+        
         break
       }
     }
@@ -85,7 +92,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Login successful',
-      userName 
+      userName,
+      userEmail: normalizedEmail,
+      permissions: userPermissions
     })
 
   } catch (error) {

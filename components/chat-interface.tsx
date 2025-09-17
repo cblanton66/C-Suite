@@ -37,6 +37,7 @@ import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown } from "lucide-react"
+import { FileUploadModal } from "@/components/file-upload-modal"
 
 interface UploadedFile {
   name: string
@@ -78,8 +79,11 @@ export function ChatInterface() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showFileUpload, setShowFileUpload] = useState(false)
+  const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -117,11 +121,27 @@ export function ChatInterface() {
       .then(setApiStatus)
       .catch(console.error)
 
-    // Load user name and chat sessions from localStorage/sessionStorage
+    // Load user data, permissions and chat sessions from localStorage/sessionStorage
     if (typeof window !== 'undefined') {
       const savedUserName = sessionStorage.getItem('peaksuite_user_name')
       if (savedUserName) {
         setUserName(savedUserName)
+      }
+      
+      const savedUserEmail = sessionStorage.getItem('peaksuite_user_email')
+      if (savedUserEmail) {
+        setUserEmail(savedUserEmail)
+      }
+      
+      const savedPermissions = sessionStorage.getItem('peaksuite_user_permissions')
+      if (savedPermissions) {
+        try {
+          const permissions = JSON.parse(savedPermissions)
+          setUserPermissions(permissions)
+        } catch (error) {
+          console.error('Error parsing permissions:', error)
+          setUserPermissions(['chat'])
+        }
       }
       
       const savedSessions = localStorage.getItem('peaksuiteai_chat_sessions')
@@ -334,6 +354,8 @@ export function ChatInterface() {
     // Clear session storage
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('peaksuite_user_name')
+      sessionStorage.removeItem('peaksuite_user_email')
+      sessionStorage.removeItem('peaksuite_user_permissions')
       localStorage.removeItem('peaksuiteai_chat_sessions')
       localStorage.removeItem('peaksuiteai_current_session')
       localStorage.removeItem('peaksuiteai_bookmarks')
@@ -341,6 +363,8 @@ export function ChatInterface() {
     
     // Reset state
     setUserName(null)
+    setUserEmail(null)
+    setUserPermissions(['chat'])
     setChatSessions([])
     setMessages([])
     setBookmarkedMessages([])
@@ -1555,6 +1579,21 @@ export function ChatInterface() {
                     )}
                     
                     <div className="border-t border-border my-2"></div>
+                    
+                    {/* Upload Files - only show if user has upload permission */}
+                    {userPermissions.includes('upload') && (
+                      <button
+                        onClick={() => {
+                          setShowFileUpload(true)
+                          setShowUserMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload Files
+                      </button>
+                    )}
+                    
                     <button
                       onClick={() => {
                         handleSignOut()
@@ -2452,6 +2491,16 @@ export function ChatInterface() {
           </div>
         )}
       </div>
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        isOpen={showFileUpload}
+        onClose={() => setShowFileUpload(false)}
+        onUploadSuccess={() => {
+          console.log('File uploaded successfully')
+        }}
+        userEmail={userEmail || undefined}
+      />
     </div>
   )
 }

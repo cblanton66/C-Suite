@@ -52,9 +52,17 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
         const data = await response.json()
 
         if (response.ok) {
-          // Store user name for personalized greeting
-          if (data.userName && typeof window !== 'undefined') {
-            sessionStorage.setItem('peaksuite_user_name', data.userName)
+          // Store user name, email and permissions for personalized experience
+          if (typeof window !== 'undefined') {
+            if (data.userName) {
+              sessionStorage.setItem('peaksuite_user_name', data.userName)
+            }
+            if (data.userEmail) {
+              sessionStorage.setItem('peaksuite_user_email', data.userEmail)
+            }
+            if (data.permissions) {
+              sessionStorage.setItem('peaksuite_user_permissions', JSON.stringify(data.permissions))
+            }
           }
           
           setSuccess(true)
