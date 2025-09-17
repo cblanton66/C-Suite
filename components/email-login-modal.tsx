@@ -18,6 +18,20 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [emailError, setEmailError] = useState("")
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const handleEmailBlur = () => {
+    if (email && !validateEmail(email)) {
+      setEmailError("Please enter a valid email")
+    } else {
+      setEmailError("")
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +51,11 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
         const data = await response.json()
 
         if (response.ok) {
+          // Store user name for personalized greeting
+          if (data.userName && typeof window !== 'undefined') {
+            sessionStorage.setItem('peaksuite_user_name', data.userName)
+          }
+          
           setSuccess(true)
           setTimeout(() => {
             setSuccess(false)
@@ -62,6 +81,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
     setPassword("")
     setError("")
     setSuccess(false)
+    setEmailError("")
     onClose()
   }
 
@@ -134,10 +154,14 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess }: EmailLoginModalP
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={handleEmailBlur}
                     className="pl-10"
                     required
                   />
                 </div>
+                {emailError && (
+                  <p className="text-sm text-red-600 mt-1">{emailError}</p>
+                )}
               </div>
               
               <div>

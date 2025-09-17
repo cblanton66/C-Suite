@@ -24,9 +24,10 @@ export async function POST(request: NextRequest) {
 
     const sheets = google.sheets({ version: 'v4', auth })
 
-    // Prepare the data to append
+    // Prepare the data to append (convert email to lowercase)
     const timestamp = new Date().toISOString()
-    const values = [[firstName, lastName, industry, companyName || '', email, phoneNumber, timestamp, 'Beta Waitlist', '', '']]
+    const normalizedEmail = email.toLowerCase()
+    const values = [[firstName, lastName, industry, companyName || '', normalizedEmail, phoneNumber, timestamp, 'Beta Waitlist', '', '']]
 
     // Append to the sheet
     await sheets.spreadsheets.values.append({
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Log successful signup (keep this for business monitoring)
-    console.log(`New beta signup: ${firstName} ${lastName} - ${email}`)
+    console.log(`New beta signup: ${firstName} ${lastName} - ${normalizedEmail}`)
 
     return NextResponse.json({ 
       success: true, 

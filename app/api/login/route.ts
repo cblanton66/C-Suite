@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
 
     const rows = response.data.values || []
     
+    // Normalize email for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase()
+    
     // Skip header row and find matching email/password
     let userFound = false
     let userName = ''
@@ -39,7 +42,8 @@ export async function POST(request: NextRequest) {
     for (let i = 1; i < rows.length; i++) {
       const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus] = rows[i]
       
-      if (userEmail === email && userPassword === password && userStatus === 'Active') {
+      // Compare emails case-insensitively
+      if (userEmail && userEmail.toLowerCase() === normalizedEmail && userPassword === password && userStatus === 'Active') {
         userFound = true
         userName = `${firstName} ${lastName}`
         break
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (!userFound) {
       // Log failed login attempt
       const timestamp = new Date().toISOString()
-      const values = [['', '', '', '', email, '', timestamp, 'Chat Access - Failed', password, 'Failed Login']]
+      const values = [['', '', '', '', normalizedEmail, '', timestamp, 'Chat Access - Failed', password, 'Failed Login']]
       
       await sheets.spreadsheets.values.append({
         spreadsheetId: process.env.GOOGLE_SHEET_ID,
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Log successful login attempt
     const timestamp = new Date().toISOString()
-    const values = [['', '', '', '', email, '', timestamp, 'Chat Access - Success', password, 'Successful Login']]
+    const values = [['', '', '', '', normalizedEmail, '', timestamp, 'Chat Access - Success', password, 'Successful Login']]
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log(`Successful login: ${userName} (${email})`)
+    console.log(`Successful login: ${userName} (${normalizedEmail})`)
 
     return NextResponse.json({ 
       success: true, 

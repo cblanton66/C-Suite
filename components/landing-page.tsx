@@ -95,7 +95,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">PeakSuite.ai</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Business Intelligence Built for Small Business</p>
+                <p className="text-sm text-muted-foreground">AI-Powered Intelligence Built for Small Business</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

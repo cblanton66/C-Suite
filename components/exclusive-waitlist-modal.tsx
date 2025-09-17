@@ -21,6 +21,35 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
   const [phoneNumber, setPhoneNumber] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [emailError, setEmailError] = useState("")
+  const [phoneError, setPhoneError] = useState("")
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const handleEmailBlur = () => {
+    if (email && !validateEmail(email)) {
+      setEmailError("Please enter a valid email")
+    } else {
+      setEmailError("")
+    }
+  }
+
+  const validatePhone = (phone: string) => {
+    // Remove all non-digits to check if we have 10 digits
+    const digitsOnly = phone.replace(/\D/g, '')
+    return digitsOnly.length === 10
+  }
+
+  const handlePhoneBlur = () => {
+    if (phoneNumber && !validatePhone(phoneNumber)) {
+      setPhoneError("Please enter a valid phone number")
+    } else {
+      setPhoneError("")
+    }
+  }
 
   const industries = [
     "Accounting/CPA Firm",
@@ -96,6 +125,8 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
     setCompanyName("")
     setEmail("")
     setPhoneNumber("")
+    setEmailError("")
+    setPhoneError("")
     onClose()
   }
 
@@ -246,10 +277,14 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
                     placeholder="Enter your business email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={handleEmailBlur}
                     className="pl-10"
                     required
                   />
                 </div>
+                {emailError && (
+                  <p className="text-sm text-red-600 mt-1">{emailError}</p>
+                )}
               </div>
 
               <div>
@@ -262,8 +297,12 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
                   placeholder="(555) 123-4567"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
+                  onBlur={handlePhoneBlur}
                   required
                 />
+                {phoneError && (
+                  <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>

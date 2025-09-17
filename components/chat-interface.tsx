@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut } from "lucide-react"
 
 interface UploadedFile {
   name: string
@@ -77,7 +77,16 @@ export function ChatInterface() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
+
+  // Get time-appropriate greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 17) return "Good afternoon"
+    return "Good evening"
+  }
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -106,8 +115,13 @@ export function ChatInterface() {
       .then(setApiStatus)
       .catch(console.error)
 
-    // Load chat sessions from localStorage
+    // Load user name and chat sessions from localStorage/sessionStorage
     if (typeof window !== 'undefined') {
+      const savedUserName = sessionStorage.getItem('peaksuite_user_name')
+      if (savedUserName) {
+        setUserName(savedUserName)
+      }
+      
       const savedSessions = localStorage.getItem('peaksuiteai_chat_sessions')
       const savedCurrentSession = localStorage.getItem('peaksuiteai_current_session')
       
@@ -312,6 +326,29 @@ export function ChatInterface() {
         clearSilenceTimeout()
       }
     }
+  }
+
+  const handleSignOut = () => {
+    // Clear session storage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('peaksuite_user_name')
+      localStorage.removeItem('peaksuiteai_chat_sessions')
+      localStorage.removeItem('peaksuiteai_current_session')
+      localStorage.removeItem('peaksuiteai_bookmarks')
+    }
+    
+    // Reset state
+    setUserName(null)
+    setChatSessions([])
+    setMessages([])
+    setBookmarkedMessages([])
+    setCurrentSessionId('')
+    setUploadedFile(null)
+    setUploadedFiles([])
+    setUploadError(null)
+    
+    // Navigate back to landing page
+    window.location.href = '/'
   }
 
   const startNewChat = () => {
@@ -1487,6 +1524,16 @@ export function ChatInterface() {
               </>
             )}
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {isListening ? (
                 <>
@@ -1653,6 +1700,11 @@ export function ChatInterface() {
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-4xl font-semibold text-foreground mb-3">You Have the Advantage Today!</h2>
+                {userName && (
+                  <p className="text-2xl text-muted-foreground mb-4">
+                    {getGreeting()}, {userName.split(' ')[0].charAt(0).toUpperCase() + userName.split(' ')[0].slice(1).toLowerCase()}!
+                  </p>
+                )}
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
                   Let's get to work.
                 </p>
@@ -1742,8 +1794,8 @@ export function ChatInterface() {
                           onKeyDown={handleKeyDown}
                           onFocus={() => setInputHasFocus(true)}
                           onBlur={() => setInputHasFocus(false)}
-                          placeholder="How can I help you today?"
-                          className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
+                          placeholder="What's on your agenda today?"
+                          className={`pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y ${messages.length === 0 && !input ? 'text-center placeholder:text-center' : ''}`}
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />
                       </div>
@@ -2203,8 +2255,8 @@ export function ChatInterface() {
                       onKeyDown={handleKeyDown}
                       onFocus={() => setInputHasFocus(true)}
                       onBlur={() => setInputHasFocus(false)}
-                      placeholder="How can I help you today?"
-                      className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
+                      placeholder="What's on your agenda today?"
+                      className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                       disabled={isLoading || !apiStatus?.hasApiKey}
                     />
                   </div>
