@@ -36,8 +36,11 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
+import { ChatHistoryModal } from "@/components/chat-history-modal"
+import { BookmarksModal } from "@/components/bookmarks-modal"
+import { FastTooltip } from "@/components/fast-tooltip"
 
 interface UploadedFile {
   name: string
@@ -103,7 +106,11 @@ export function ChatInterface() {
   const [searchResults, setSearchResults] = useState<ChatSession[]>([])
   const [currentMessageSearch, setCurrentMessageSearch] = useState<string>('')
   const [showSearchBox, setShowSearchBox] = useState(false)
+  const [showConversationSearch, setShowConversationSearch] = useState(false)
   const [isListening, setIsListening] = useState(false)
+  const [isInputExpanded, setIsInputExpanded] = useState(true)
+  const [isHoveringBottom, setIsHoveringBottom] = useState(false)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -437,8 +444,8 @@ export function ChatInterface() {
     setChatSessions(prev => prev.filter(s => s.id !== sessionId))
     
     if (sessionId === currentSessionId) {
-      if (chatSessions.length > 1) {
-        const remainingSessions = chatSessions.filter(s => s.id !== sessionId)
+      const remainingSessions = chatSessions.filter(s => s.id !== sessionId)
+      if (remainingSessions.length > 0) {
         loadChatSession(remainingSessions[0].id)
       } else {
         startNewChat()
@@ -466,6 +473,13 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+    
+    // Auto-hide input area after sending message (Apple-style)
+    setIsInputExpanded(false)
+    setIsHoveringBottom(false)
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
     
     // Scroll to bottom immediately when user sends message
     setTimeout(() => scrollToBottom(), 50)
@@ -1166,58 +1180,102 @@ export function ChatInterface() {
           * { margin: 0; padding: 0; box-sizing: border-box; }
           
           body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6; 
-            color: #1f2937;
-            background: #f9fafb;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7; 
+            color: #0f172a;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             padding: 40px 20px;
             max-width: 1200px;
             margin: 0 auto;
+            min-height: 100vh;
           }
           
           .header { 
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-bottom: 3px solid #3b82f6;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8, #6366f1);
           }
           
           .header h1 { 
-            color: #1f2937;
+            color: #1e293b;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          
+          .header h1::before {
+            content: '🧮';
             font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 15px;
           }
           
           .header-info { 
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
           }
           
           .header-info-item {
-            background: #f3f4f6;
-            padding: 12px 16px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+          }
+          
+          .header-info-item:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
           }
           
           .header-info-item strong { 
-            color: #374151;
+            color: #334155;
             font-weight: 600;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+          }
+          
+          .header-info-item span {
+            color: #64748b;
+            font-size: 14px;
           }
           
           .conversation {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
+            padding: 20px 0;
           }
           
           .message { 
             display: flex;
             width: 100%;
+            animation: fadeInUp 0.3s ease-out;
+          }
+          
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
           }
           
           .message.user {
@@ -1229,53 +1287,80 @@ export function ChatInterface() {
           }
           
           .message-content {
-            max-width: 80%;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 75%;
+            padding: 20px 24px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
             position: relative;
+            backdrop-filter: blur(10px);
           }
           
           .message.user .message-content {
-            background: #6b7280;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             color: white;
+            border-bottom-right-radius: 6px;
           }
           
           .message.assistant .message-content {
-            background: white;
-            color: #1f2937;
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 6px;
           }
           
           .role-badge {
-            display: inline-block;
-            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
-            padding: 4px 8px;
-            border-radius: 6px;
-            margin-bottom: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 14px;
             letter-spacing: 0.5px;
+            backdrop-filter: blur(10px);
+          }
+          
+          .role-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
           }
           
           .message.user .role-badge {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.25);
             color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+          }
+          
+          .message.user .role-badge::before {
+            background: rgba(255, 255, 255, 0.8);
           }
           
           .message.assistant .role-badge {
-            background: #f3f4f6;
-            color: #6b7280;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+          }
+          
+          .message.assistant .role-badge::before {
+            background: #3b82f6;
           }
           
           .file-attachment {
-            background: rgba(59, 130, 246, 0.1);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
             border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
             font-size: 14px;
             color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
           }
           
           .file-icon {
@@ -1353,19 +1438,38 @@ export function ChatInterface() {
           }
           
           .message.assistant .message-text code {
-            background: #f3f4f6;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Menlo', monospace;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
             font-size: 13px;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            font-weight: 500;
           }
           
           .message.assistant .message-text pre {
-            background: #f3f4f6;
-            padding: 16px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
             overflow-x: auto;
-            margin: 12px 0;
+            margin: 16px 0;
+            border: 1px solid #334155;
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          }
+          
+          .message.assistant .message-text pre::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 20px 0 0 #f59e0b, 40px 0 0 #10b981;
           }
           
           .message.assistant .message-text blockquote {
@@ -1405,19 +1509,65 @@ export function ChatInterface() {
           }
           
           .timestamp {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 8px;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 12px;
             font-weight: 500;
+            opacity: 0.8;
           }
           
           .message.user .timestamp {
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.75);
           }
           
+          /* Responsive Design */
+          @media (max-width: 768px) {
+            body { padding: 20px 16px; }
+            .header { padding: 24px; margin-bottom: 24px; }
+            .header h1 { font-size: 24px; }
+            .header-info { grid-template-columns: 1fr; gap: 12px; }
+            .message-content { 
+              max-width: 90%; 
+              padding: 16px 20px;
+              border-radius: 16px;
+            }
+            .conversation { gap: 20px; }
+          }
+          
+          @media (max-width: 480px) {
+            body { padding: 16px 12px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 20px; }
+            .message-content { 
+              max-width: 95%; 
+              padding: 14px 18px;
+            }
+          }
+          
+          /* Print Styles */
           @media print {
-            body { background: white; }
-            .message-content { box-shadow: none; }
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+            body { 
+              background: white !important; 
+              font-size: 12px;
+              padding: 20px;
+            }
+            .header { 
+              background: white !important; 
+              border: 1px solid #e2e8f0 !important;
+              page-break-inside: avoid;
+            }
+            .message-content { 
+              box-shadow: none !important; 
+              border: 1px solid #e2e8f0 !important;
+              page-break-inside: avoid;
+            }
+            .message.user .message-content {
+              background: #f1f5f9 !important;
+              color: #1e293b !important;
+            }
+            .conversation { gap: 16px; }
+            .message { page-break-inside: avoid; }
           }
         </style>
       </head>
@@ -1486,6 +1636,220 @@ export function ChatInterface() {
     URL.revokeObjectURL(url)
   }
 
+  const copyAsRichText = async () => {
+    const currentSession = chatSessions.find(s => s.id === currentSessionId)
+    if (!currentSession) return
+
+    try {
+      // Create rich HTML content for clipboard
+      const richContent = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 800px;">
+          <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+              🧮 ${currentSession.title}
+            </h2>
+            <p style="margin: 0; opacity: 0.9; font-size: 14px;">
+              Exported on ${new Date().toLocaleDateString()} • ${currentSession.messages.length} messages
+            </p>
+          </div>
+          
+          ${currentSession.messages.map(message => {
+            const isUser = message.role === 'user'
+            const bgColor = isUser ? 'background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white;' : 'background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0;'
+            const alignment = isUser ? 'margin-left: 60px;' : 'margin-right: 60px;'
+            
+            return `
+              <div style="margin: 16px 0; ${alignment}">
+                <div style="${bgColor} padding: 16px 20px; border-radius: 16px; ${isUser ? 'border-bottom-right-radius: 4px;' : 'border-bottom-left-radius: 4px;'}">
+                  <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; opacity: 0.8;">
+                    ${isUser ? 'You' : 'Assistant'}
+                  </div>
+                  <div style="white-space: pre-wrap; word-wrap: break-word;">
+                    ${message.content.replace(/\n/g, '<br>')}
+                  </div>
+                  <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">
+                    ${message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            `
+          }).join('')}
+        </div>
+      `
+
+      // Create clipboard item with both HTML and plain text
+      const plainText = `${currentSession.title}\nExported on ${new Date().toLocaleDateString()}\n\n${currentSession.messages.map(msg => 
+        `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`
+      ).join('\n\n')}`
+
+      const clipboardItem = new ClipboardItem({
+        'text/html': new Blob([richContent], { type: 'text/html' }),
+        'text/plain': new Blob([plainText], { type: 'text/plain' })
+      })
+
+      await navigator.clipboard.write([clipboardItem])
+      
+      // Show success feedback
+      const existingToast = document.querySelector('.copy-toast')
+      if (existingToast) existingToast.remove()
+      
+      const toast = document.createElement('div')
+      toast.className = 'copy-toast'
+      toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        background: #10b981; color: white; padding: 12px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 500;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease-out;
+      `
+      toast.textContent = '✓ Rich text copied! Ready to paste in email or documents'
+      
+      const style = document.createElement('style')
+      style.textContent = '@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }'
+      document.head.appendChild(style)
+      
+      document.body.appendChild(toast)
+      setTimeout(() => {
+        toast.remove()
+        style.remove()
+      }, 3000)
+
+    } catch (error) {
+      console.error('Failed to copy rich text:', error)
+      // Fallback to plain text
+      const plainText = `${currentSession.title}\n\n${currentSession.messages.map(msg => 
+        `${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content}`
+      ).join('\n\n')}`
+      
+      await navigator.clipboard.writeText(plainText)
+      alert('Copied as plain text (rich text not supported by your browser)')
+    }
+  }
+
+  const exportAsEmailFormat = () => {
+    const currentSession = chatSessions.find(s => s.id === currentSessionId)
+    if (!currentSession) return
+
+    // Create email-optimized content
+    const emailContent = `
+📧 PEAKSUITE.AI CONVERSATION REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 CONVERSATION DETAILS
+• Title: ${currentSession.title}
+• Date: ${currentSession.createdAt.toLocaleDateString()}
+• Time: ${currentSession.createdAt.toLocaleTimeString()}
+• Messages: ${currentSession.messages.length}
+• Exported: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💬 CONVERSATION TRANSCRIPT
+
+${currentSession.messages.map((message, index) => {
+  const prefix = message.role === 'user' ? '👤 YOU' : '🤖 ASSISTANT'
+  const timestamp = message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  
+  return `${index + 1}. ${prefix} (${timestamp})
+${message.content.split('\n').map(line => `   ${line}`).join('\n')}
+
+`
+}).join('')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 CONVERSATION SUMMARY
+• Total exchanges: ${Math.ceil(currentSession.messages.length / 2)}
+• User messages: ${currentSession.messages.filter(m => m.role === 'user').length}
+• AI responses: ${currentSession.messages.filter(m => m.role === 'assistant').length}
+
+This report was generated by PeakSuite.ai
+For more information, visit: https://peaksuite.ai
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `.trim()
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(emailContent).then(() => {
+      // Show success feedback
+      const existingToast = document.querySelector('.copy-toast')
+      if (existingToast) existingToast.remove()
+      
+      const toast = document.createElement('div')
+      toast.className = 'copy-toast'
+      toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        background: #3b82f6; color: white; padding: 12px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 500;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease-out;
+      `
+      toast.textContent = '📧 Email format copied! Ready to paste'
+      
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+    }).catch(() => {
+      alert('Failed to copy to clipboard')
+    })
+  }
+
+  const copyAsMarkdown = () => {
+    const currentSession = chatSessions.find(s => s.id === currentSessionId)
+    if (!currentSession) return
+
+    // Create clean markdown content
+    const markdownContent = `# 🧮 ${currentSession.title}
+
+**Date:** ${currentSession.createdAt.toLocaleDateString()}  
+**Time:** ${currentSession.createdAt.toLocaleTimeString()}  
+**Messages:** ${currentSession.messages.length}  
+**Exported:** ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+
+---
+
+${currentSession.messages.map((message, index) => {
+  const role = message.role === 'user' ? '👤 **You**' : '🤖 **Assistant**'
+  const timestamp = message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  
+  return `## ${role} *(${timestamp})*
+
+${message.content}
+
+---`
+}).join('\n\n')}
+
+## 📊 Conversation Summary
+
+- **Total Exchanges:** ${Math.ceil(currentSession.messages.length / 2)}
+- **Your Messages:** ${currentSession.messages.filter(m => m.role === 'user').length}
+- **AI Responses:** ${currentSession.messages.filter(m => m.role === 'assistant').length}
+
+*Generated by PeakSuite.ai*`
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(markdownContent).then(() => {
+      // Show success feedback
+      const existingToast = document.querySelector('.copy-toast')
+      if (existingToast) existingToast.remove()
+      
+      const toast = document.createElement('div')
+      toast.className = 'copy-toast'
+      toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        background: #6366f1; color: white; padding: 12px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 500;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease-out;
+      `
+      toast.textContent = '📝 Markdown copied! Paste in any markdown editor'
+      
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+    }).catch(() => {
+      alert('Failed to copy to clipboard')
+    })
+  }
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -1521,7 +1885,7 @@ export function ChatInterface() {
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        setShowHistory(!showHistory)
+                        setShowHistory(true)
                         setShowUserMenu(false)
                       }}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
@@ -1537,7 +1901,7 @@ export function ChatInterface() {
                     
                     <button
                       onClick={() => {
-                        setShowBookmarks(!showBookmarks)
+                        setShowBookmarks(true)
                         setShowUserMenu(false)
                       }}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
@@ -1574,6 +1938,39 @@ export function ChatInterface() {
                         >
                           <Share2 className="w-4 h-4" />
                           Export as HTML
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            copyAsRichText()
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Clipboard className="w-4 h-4" />
+                          Copy Rich Text
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            exportAsEmailFormat()
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Mail className="w-4 h-4" />
+                          Copy Email Format
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            copyAsMarkdown()
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <FileDown className="w-4 h-4" />
+                          Copy as Markdown
                         </button>
                       </>
                     )}
@@ -1632,144 +2029,7 @@ export function ChatInterface() {
         </div>
       </header>
 
-      {/* Chat History Dropdown */}
-      {showHistory && (
-        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-          <div className="max-h-60 overflow-y-auto p-4">
-            
-            {/* Search Interface */}
-            <div ref={searchContainerRef} className="mb-3">
-              {!showSearchBox ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Recent Conversations</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={toggleSearchBox}
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                    title="Search conversations"
-                  >
-                    <Search className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                    className="pl-10 pr-8 h-8 text-sm"
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={toggleSearchBox}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                    title="Close search"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            {chatSessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No conversations yet</p>
-            ) : (
-              <div className="space-y-2">
-                {searchQuery && searchResults.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No conversations found for "{searchQuery}"</p>
-                  </div>
-                ) : (
-                  (searchQuery ? searchResults : chatSessions).map((session) => (
-                  <div
-                    key={session.id}
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
-                      session.id === currentSessionId ? 'bg-primary/10 border border-primary/20' : ''
-                    }`}
-                    onClick={() => loadChatSession(session.id)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {session.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.lastUpdated.toLocaleDateString()} • {session.messages.length} messages
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => deleteChatSession(session.id, e)}
-                      className="h-auto p-1 ml-2 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Bookmarks Dropdown */}
-      {showBookmarks && (
-        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-          <div className="max-h-60 overflow-y-auto p-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">Bookmarked Messages</h3>
-            {bookmarkedMessages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No bookmarked messages yet</p>
-            ) : (
-              <div className="space-y-3">
-                {bookmarkedMessages.map((bookmark) => (
-                  <div
-                    key={bookmark.id}
-                    className="flex items-start justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => jumpToBookmarkedMessage(bookmark)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          bookmark.role === 'user' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {bookmark.role === 'user' ? 'You' : 'Assistant'}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {(bookmark as any).sessionTitle || 'Unknown Session'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {bookmark.content.slice(0, 150)}{bookmark.content.length > 150 ? '...' : ''}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {bookmark.createdAt.toLocaleDateString()} at {bookmark.createdAt.toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeBookmark(bookmark.id)
-                      }}
-                      className="h-auto p-1 ml-2 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -1888,46 +2148,50 @@ export function ChatInterface() {
                       <div className="space-y-3">
                         {/* Quick Actions Row */}
                         <div className="flex flex-wrap gap-2 justify-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                          className="text-xs hover:bg-primary/10"
-                          title="Summarize Data & Averages - Summarize data and provide average calculations"
-                        >
-                          😀
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                          className="text-xs hover:bg-primary/10"
-                          title="Create Table - Format your data into a structured table"
-                        >
-                          📋
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                          className="text-xs hover:bg-primary/10"
-                          title="Summarize Data - Extract key insights and highlights"
-                        >
-                          📝
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                          className="text-xs hover:bg-primary/10"
-                          title="Bullet Points - Convert content to organized bullet points"
-                        >
-                          •
-                        </Button>
+                        <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                            className="text-xs hover:bg-primary/10"
+                          >
+                            😀
+                          </Button>
+                        </FastTooltip>
+                        <FastTooltip content="Create Table - Format your data into a structured table">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                            className="text-xs hover:bg-primary/10"
+                          >
+                            📋
+                          </Button>
+                        </FastTooltip>
+                        <FastTooltip content="Summarize Data - Extract key insights and highlights">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                            className="text-xs hover:bg-primary/10"
+                          >
+                            📝
+                          </Button>
+                        </FastTooltip>
+                        <FastTooltip content="Bullet Points - Convert content to organized bullet points">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                            className="text-xs hover:bg-primary/10"
+                          >
+                            •
+                          </Button>
+                        </FastTooltip>
                       </div>
                       
                         {/* Input Actions Row */}
@@ -1943,58 +2207,61 @@ export function ChatInterface() {
                             multiple
                             disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
                           />
+                          <FastTooltip content="Upload multiple files (up to 5)">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                              onClick={() => {
+                                multiFileInputRef.current?.click()
+                              }}
+                              className="text-xs"
+                            >
+                              {isUploading ? (
+                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Paperclip className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </FastTooltip>
+                        </div>
+
+                        {/* Speech-to-Text Button */}
+                        <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                            onClick={() => {
-                              multiFileInputRef.current?.click()
-                            }}
-                            title="Upload multiple files (up to 5)"
-                            className="text-xs"
+                            disabled={isLoading || !apiStatus?.hasApiKey}
+                            onClick={toggleSpeechRecognition}
+                            className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
                           >
-                            {isUploading ? (
-                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            {isListening ? (
+                              <MicOff className="w-4 h-4 animate-pulse" />
                             ) : (
-                              <Paperclip className="w-4 h-4" />
+                              <Mic className="w-4 h-4" />
                             )}
                           </Button>
-                        </div>
-
-                        {/* Speech-to-Text Button */}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isLoading || !apiStatus?.hasApiKey}
-                          onClick={toggleSpeechRecognition}
-                          className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
-                          title={isListening ? 'Stop voice recording' : 'Start voice recording'}
-                        >
-                          {isListening ? (
-                            <MicOff className="w-4 h-4 animate-pulse" />
-                          ) : (
-                            <Mic className="w-4 h-4" />
-                          )}
-                        </Button>
+                        </FastTooltip>
                         
                         {/* Submit Button */}
-                        <Button
-                          type="submit"
-                          variant="default"
-                          size="sm"
-                          disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                          onClick={handleSubmit}
-                          className={`text-xs text-primary-foreground transition-colors ${
-                            (inputHasFocus && input.trim()) || isListening
-                              ? 'bg-green-400 hover:bg-green-500'
-                              : 'bg-primary hover:bg-primary/90'
-                          }`}
-                          title="Send Message - Send your message to the AI"
-                        >
-                         Send ▲
-                        </Button>
+                        <FastTooltip content="Send Message - Send your message to the AI">
+                          <Button
+                            type="submit"
+                            variant="default"
+                            size="sm"
+                            disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                            onClick={handleSubmit}
+                            className={`text-xs text-primary-foreground transition-colors ${
+                              (inputHasFocus && input.trim()) || isListening
+                                ? 'bg-green-400 hover:bg-green-500'
+                                : 'bg-primary hover:bg-primary/90'
+                            }`}
+                          >
+                           Send ▲
+                          </Button>
+                        </FastTooltip>
                         </div>
                       </div>
 
@@ -2051,27 +2318,57 @@ export function ChatInterface() {
           <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
             {/* Search within current conversation */}
             {messages.length > 3 && (
-              <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border border-border rounded-lg p-3 mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search in this conversation..."
-                    value={currentMessageSearch}
-                    onChange={(e) => searchCurrentMessages(e.target.value)}
-                    className="pl-10 h-8 text-sm"
-                  />
-                  {currentMessageSearch && (
+              <div className="sticky top-0 z-10 mb-4">
+                {!showConversationSearch ? (
+                  <div className="flex justify-end">
                     <Button
-                      size="sm"
                       variant="ghost"
-                      onClick={() => searchCurrentMessages('')}
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      size="sm"
+                      onClick={() => setShowConversationSearch(true)}
+                      className="bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground transition-all"
                     >
-                      <X className="w-3 h-3" />
+                      <Search className="w-4 h-4 mr-2" />
+                      Search conversation
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="bg-background/80 backdrop-blur-sm border border-border rounded-lg p-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search in this conversation..."
+                        value={currentMessageSearch}
+                        onChange={(e) => searchCurrentMessages(e.target.value)}
+                        className="pl-10 pr-20 h-8 text-sm"
+                        autoFocus
+                      />
+                      <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
+                        {currentMessageSearch && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => searchCurrentMessages('')}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setShowConversationSearch(false)
+                            searchCurrentMessages('')
+                          }}
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
@@ -2246,12 +2543,12 @@ export function ChatInterface() {
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
-                <Card className="max-w-[80%] p-4 bg-card">
+              <div className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
+                <Card className="p-4 bg-card shadow-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-100"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse delay-100"></div>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse delay-200"></div>
                     <span className="text-sm text-muted-foreground ml-2">Working on it...</span>
                   </div>
                 </Card>
@@ -2263,10 +2560,86 @@ export function ChatInterface() {
           </div>
         )}
 
+        {/* Hover Detection Zone - Invisible area at bottom for Apple-style hover */}
+        {messages.length > 0 && !isInputExpanded && (
+          <>
+            <div 
+              className="fixed bottom-0 left-0 right-0 h-20 z-40"
+              onMouseEnter={() => {
+                if (hoverTimeoutRef.current) {
+                  clearTimeout(hoverTimeoutRef.current)
+                }
+                setIsHoveringBottom(true)
+              }}
+              onMouseLeave={() => {
+                hoverTimeoutRef.current = setTimeout(() => {
+                  setIsHoveringBottom(false)
+                }, 1000) // 1 second delay
+              }}
+            />
+            {/* Subtle indicator when input is hidden */}
+            <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-30">
+              <div className="bg-primary/20 hover:bg-primary/40 rounded-full px-3 py-1 transition-all duration-200 backdrop-blur-sm">
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse" />
+                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse delay-100" />
+                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse delay-200" />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Input Area - Only show when there are messages */}
         {messages.length > 0 && (
-          <div className="border-t border-border bg-card/50 backdrop-blur-sm p-6">
-            <div className="max-w-6xl mx-auto">
+          <div 
+            className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out ${
+              isInputExpanded || isHoveringBottom 
+                ? 'translate-y-0' 
+                : 'translate-y-full'
+            }`}
+            onMouseEnter={() => {
+              if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current)
+              }
+              setIsHoveringBottom(true)
+            }}
+            onMouseLeave={() => {
+              hoverTimeoutRef.current = setTimeout(() => {
+                setIsHoveringBottom(false)
+              }, 1000) // 1 second delay
+            }}
+          >
+            <div className="max-w-6xl mx-auto p-6">
+              {/* Close Button - Only show when hovering */}
+              {!isInputExpanded && isHoveringBottom && (
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => setIsInputExpanded(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Hide
+                  </Button>
+                </div>
+              )}
+              
+              {/* Pin Button - Only show when expanded */}
+              {isInputExpanded && (
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => setIsInputExpanded(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Auto-hide
+                  </Button>
+                </div>
+              )}
               {/* Upload Error */}
               {uploadError && (
                 <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
@@ -2366,104 +2739,111 @@ export function ChatInterface() {
                   <div className="space-y-3">
                     {/* Quick Actions Row */}
                     <div className="flex flex-wrap gap-2 justify-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                      className="text-xs hover:bg-primary/10"
-                      title="Summarize Data & Averages - Summarize data and provide average calculations"
-                    >
-                      😀
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                      className="text-xs hover:bg-primary/10"
-                      title="Create Table - Format your data into a structured table"
-                    >
-                      📋
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                      className="text-xs hover:bg-primary/10"
-                      title="Summarize Data - Extract key insights and highlights"
-                    >
-                      📝
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                      className="text-xs hover:bg-primary/10"
-                      title="Bullet Points - Convert content to organized bullet points"
-                    >
-                      •
-                    </Button>
+                    <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
+                        className="text-xs hover:bg-primary/10"
+                      >
+                        😀
+                      </Button>
+                    </FastTooltip>
+                    <FastTooltip content="Create Table - Format your data into a structured table">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                        className="text-xs hover:bg-primary/10"
+                      >
+                        📋
+                      </Button>
+                    </FastTooltip>
+                    <FastTooltip content="Summarize Data - Extract key insights and highlights">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                        className="text-xs hover:bg-primary/10"
+                      >
+                        📝
+                      </Button>
+                    </FastTooltip>
+                    <FastTooltip content="Bullet Points - Convert content to organized bullet points">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                        className="text-xs hover:bg-primary/10"
+                      >
+                        •
+                      </Button>
+                    </FastTooltip>
                   </div>
                   
                     {/* Input Actions Row */}
                     <div className="flex gap-2 justify-center">
                     {/* Multiple Files Upload with Paperclip Icon */}
                     <div className="relative">
+                      <FastTooltip content="Upload multiple files (up to 5)">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                          onClick={() => {
+                            multiFileInputRef.current?.click()
+                          }}
+                          className="text-xs"
+                        >
+                          {isUploading ? (
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Paperclip className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </FastTooltip>
+                    </div>
+
+                    {/* Speech-to-Text Button */}
+                    <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        onClick={() => {
-                          multiFileInputRef.current?.click()
-                        }}
-                        title="Upload multiple files (up to 5)"
-                        className="text-xs"
+                        disabled={isLoading || !apiStatus?.hasApiKey}
+                        onClick={toggleSpeechRecognition}
+                        className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
                       >
-                        {isUploading ? (
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        {isListening ? (
+                          <MicOff className="w-4 h-4 animate-pulse" />
                         ) : (
-                          <Paperclip className="w-4 h-4" />
+                          <Mic className="w-4 h-4" />
                         )}
                       </Button>
-                    </div>
-
-                    {/* Speech-to-Text Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isLoading || !apiStatus?.hasApiKey}
-                      onClick={toggleSpeechRecognition}
-                      className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
-                      title={isListening ? 'Stop voice recording' : 'Start voice recording'}
-                    >
-                      {isListening ? (
-                        <MicOff className="w-4 h-4 animate-pulse" />
-                      ) : (
-                        <Mic className="w-4 h-4" />
-                      )}
-                    </Button>
+                    </FastTooltip>
                     
                     {/* Submit Button */}
-                    <Button
-                      type="submit"
-                      variant="default"
-                      size="sm"
-                      disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                      onClick={handleSubmit}
-                      className={`text-xs text-primary-foreground transition-colors ${
-                        (inputHasFocus && input.trim()) || isListening
-                          ? 'bg-green-400 hover:bg-green-500'
-                          : 'bg-primary hover:bg-primary/90'
-                      }`}
-                      title="Send Message - Send your message to the AI"
-                    >
-                     Send ▲
-                    </Button>
+                    <FastTooltip content="Send Message - Send your message to the AI">
+                      <Button
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                        onClick={handleSubmit}
+                        className={`text-xs text-primary-foreground transition-colors ${
+                          (inputHasFocus && input.trim()) || isListening
+                            ? 'bg-green-400 hover:bg-green-500'
+                            : 'bg-primary hover:bg-primary/90'
+                        }`}
+                      >
+                       Send ▲
+                      </Button>
+                    </FastTooltip>
                     </div>
                   </div>
 
@@ -2500,6 +2880,26 @@ export function ChatInterface() {
           console.log('File uploaded successfully')
         }}
         userEmail={userEmail || undefined}
+      />
+
+      {/* Chat History Modal */}
+      <ChatHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        chatSessions={chatSessions}
+        currentSessionId={currentSessionId}
+        onLoadSession={loadChatSession}
+        onDeleteSession={deleteChatSession}
+        onStartNewChat={startNewChat}
+      />
+
+      {/* Bookmarks Modal */}
+      <BookmarksModal
+        isOpen={showBookmarks}
+        onClose={() => setShowBookmarks(false)}
+        bookmarkedMessages={bookmarkedMessages}
+        onRemoveBookmark={removeBookmark}
+        onCopyMessage={copyToClipboard}
       />
     </div>
   )
