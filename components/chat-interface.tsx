@@ -278,12 +278,13 @@ export function ChatInterface() {
 
         recognitionInstance.onresult = (event) => {
           let interimTranscript = ''
+          let newFinalTranscript = ''
           let hasNewSpeech = false
           
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript
             if (event.results[i].isFinal) {
-              finalTranscript += transcript
+              newFinalTranscript += transcript
               hasNewSpeech = true
             } else {
               interimTranscript += transcript
@@ -298,16 +299,19 @@ export function ChatInterface() {
             startSilenceTimeout()
           }
           
-          // Update input with final transcript
-          if (finalTranscript) {
+          // Update input with new final transcript only
+          if (newFinalTranscript) {
+            const newText = newFinalTranscript.trim()
             setInput(prev => {
               const baseText = prev || ''
-              // Only add if this is new content
-              if (!baseText.includes(finalTranscript.trim())) {
-                return baseText ? baseText + ' ' + finalTranscript.trim() : finalTranscript.trim()
+              // Only add if this specific new text isn't already at the end
+              if (!baseText.endsWith(newText)) {
+                return baseText ? baseText + ' ' + newText : newText
               }
               return baseText
             })
+            // Update the accumulated final transcript
+            finalTranscript += newFinalTranscript
           }
         }
 
