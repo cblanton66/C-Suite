@@ -18,10 +18,11 @@ export async function POST(request: NextRequest) {
 
     const bucket = storage.bucket('peaksuite-files')
 
-    // Get the file and user email from the form data
+    // Get the file, user email, and folder from the form data
     const formData = await request.formData()
     const file = formData.get('file') as File
     const userEmail = formData.get('userEmail') as string
+    const folder = formData.get('folder') as string
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -75,10 +76,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 })
     }
 
-    // Create a unique filename
+    // Create a unique filename with folder path
     const timestamp = Date.now()
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `${timestamp}_${sanitizedName}`
+    
+    // Determine the full path based on folder selection
+    let fileName: string
+    if (folder && folder !== 'root') {
+      fileName = `${folder}/${timestamp}_${sanitizedName}`
+    } else {
+      fileName = `${timestamp}_${sanitizedName}`
+    }
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Upload, X, File, CheckCircle, AlertCircle } from "lucide-react"
+import { Upload, X, File, CheckCircle, AlertCircle, FolderOpen } from "lucide-react"
 
 interface FileUploadModalProps {
   isOpen: boolean
@@ -25,6 +25,7 @@ export function FileUploadModal({ isOpen, onClose, onUploadSuccess, userEmail }:
   const [uploadSuccess, setUploadSuccess] = useState<UploadedFileInfo | null>(null)
   const [uploadError, setUploadError] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<string>("root")
 
   const handleFileSelect = (file: File) => {
     if (file.type !== 'application/pdf') {
@@ -77,6 +78,7 @@ export function FileUploadModal({ isOpen, onClose, onUploadSuccess, userEmail }:
     try {
       const formData = new FormData()
       formData.append('file', selectedFile)
+      formData.append('folder', selectedFolder)
       
       // Add user email for permission validation
       if (userEmail) {
@@ -110,6 +112,7 @@ export function FileUploadModal({ isOpen, onClose, onUploadSuccess, userEmail }:
     setUploadSuccess(null)
     setUploadError("")
     setIsDragging(false)
+    setSelectedFolder("root")
     onClose()
   }
 
@@ -166,6 +169,31 @@ export function FileUploadModal({ isOpen, onClose, onUploadSuccess, userEmail }:
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Folder Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                Destination Folder
+              </label>
+              <select 
+                value={selectedFolder} 
+                onChange={(e) => setSelectedFolder(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="root">Root Directory</option>
+                <option value="training-room/conversations-tax">Training Room - Tax Planning</option>
+                <option value="training-room/conversations-business">Training Room - Business Strategy</option>
+                <option value="training-room/conversations-retirement">Training Room - Retirement Planning</option>
+                <option value="training-room/conversations-accounting">Training Room - Accounting & Finance</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {selectedFolder === "root" 
+                  ? "Files will be uploaded to the main directory" 
+                  : `Files will be uploaded to ${selectedFolder.replace('training-room/conversations-', '').replace('-', ' ')}`
+                }
+              </p>
+            </div>
+
             {/* Upload Area */}
             <div 
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${

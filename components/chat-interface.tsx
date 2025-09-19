@@ -41,6 +41,8 @@ import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
 import { FastTooltip } from "@/components/fast-tooltip"
+import { AdminNavToggle } from "@/components/admin-nav-toggle"
+import { SessionManager } from "@/lib/session-manager"
 
 interface UploadedFile {
   name: string
@@ -128,27 +130,50 @@ export function ChatInterface() {
       .then(setApiStatus)
       .catch(console.error)
 
-    // Load user data, permissions and chat sessions from localStorage/sessionStorage
+    // Activity tracking to keep session alive
+    const handleActivity = () => {
+      SessionManager.updateActivity()
+    }
+
+    // Session validation interval (check every 5 minutes)
+    const sessionCheckInterval = setInterval(() => {
+      if (!SessionManager.isSessionValid()) {
+        console.log('Session expired, redirecting to home')
+        handleSignOut()
+      }
+    }, 5 * 60 * 1000) // 5 minutes
+
+    // Activity listeners
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    activityEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Cleanup
+    return () => {
+      clearInterval(sessionCheckInterval)
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    // Load user data and validate session
     if (typeof window !== 'undefined') {
-      const savedUserName = sessionStorage.getItem('peaksuite_user_name')
-      if (savedUserName) {
-        setUserName(savedUserName)
-      }
+      // Try to migrate old session first
+      SessionManager.migrateOldSession()
       
-      const savedUserEmail = sessionStorage.getItem('peaksuite_user_email')
-      if (savedUserEmail) {
-        setUserEmail(savedUserEmail)
-      }
-      
-      const savedPermissions = sessionStorage.getItem('peaksuite_user_permissions')
-      if (savedPermissions) {
-        try {
-          const permissions = JSON.parse(savedPermissions)
-          setUserPermissions(permissions)
-        } catch (error) {
-          console.error('Error parsing permissions:', error)
-          setUserPermissions(['chat'])
-        }
+      // Get current session
+      const session = SessionManager.getSession()
+      if (session) {
+        setUserName(session.userName)
+        setUserEmail(session.userEmail)
+        setUserPermissions(session.permissions)
+      } else {
+        // Session expired or doesn't exist
+        console.log('No valid session found')
+        setUserPermissions(['chat']) // Default permission
       }
       
       const savedSessions = localStorage.getItem('peaksuiteai_chat_sessions')
@@ -362,14 +387,13 @@ export function ChatInterface() {
   }
 
   const handleSignOut = () => {
-    // Clear session storage
+    // Clear session using SessionManager
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('peaksuite_user_name')
-      sessionStorage.removeItem('peaksuite_user_email')
-      sessionStorage.removeItem('peaksuite_user_permissions')
-      localStorage.removeItem('peaksuiteai_chat_sessions')
-      localStorage.removeItem('peaksuiteai_current_session')
-      localStorage.removeItem('peaksuiteai_bookmarks')
+      SessionManager.clearSession()
+      // Keep chat data - users may want to see their conversations when they log back in
+      // localStorage.removeItem('peaksuiteai_chat_sessions')
+      // localStorage.removeItem('peaksuiteai_current_session')
+      // localStorage.removeItem('peaksuiteai_bookmarks')
     }
     
     // Reset state
@@ -2009,6 +2033,11 @@ ${message.content}
                 </div>
               )}
             </div>
+            
+            <AdminNavToggle 
+              userEmail={userEmail} 
+              isAdmin={userPermissions.includes('admin') || userPermissions.includes('upload')} 
+            />
             
             <ThemeToggle />
             

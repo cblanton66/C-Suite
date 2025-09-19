@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { SessionManager } from "@/lib/session-manager"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,15 +33,79 @@ interface LandingPageProps {
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showWaitlistModal, setShowWaitlistModal] = useState(false)
+  const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userName, setUserName] = useState("")
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false)
+    // Update login state
+    const session = SessionManager.getSession()
+    if (session) {
+      setIsLoggedIn(true)
+      setUserName(session.userName)
+    }
     onNavigateToChat()
   }
 
   const handleTryNowClick = () => {
-    setShowLoginModal(true)
+    if (isLoggedIn) {
+      // User is already logged in, go directly to chat
+      onNavigateToChat()
+    } else {
+      // User needs to log in first
+      setShowLoginModal(true)
+    }
   }
+
+  // Check session and Training Room visibility on component mount
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = () => {
+      try {
+        console.log('LandingPage - checking session...')
+        
+        // Migrate old session if exists
+        const migrated = SessionManager.migrateOldSession()
+        console.log('LandingPage - migration result:', migrated)
+        
+        // Check current session
+        const session = SessionManager.getSession()
+        console.log('LandingPage - session result:', session)
+        
+        if (session) {
+          console.log('LandingPage - valid session found, setting logged in state')
+          setIsLoggedIn(true)
+          setUserName(session.userName)
+        } else {
+          console.log('LandingPage - no valid session, setting logged out state')
+          setIsLoggedIn(false)
+          setUserName("")
+        }
+      } catch (error) {
+        console.error('LandingPage - Error checking session:', error)
+        setIsLoggedIn(false)
+        setUserName("")
+      }
+    }
+
+    const checkTrainingRoomVisibility = async () => {
+      try {
+        const response = await fetch('/api/admin-settings')
+        const data = await response.json()
+        if (data.success) {
+          setTrainingRoomVisible(data.settings.trainingRoomVisible)
+        }
+      } catch (error) {
+        console.error('Error checking training room visibility:', error)
+        // Default to false if there's an error
+        setTrainingRoomVisible(false)
+      }
+    }
+
+    checkSession()
+    checkTrainingRoomVisibility()
+  }, [])
   const benefits = [
     {
       icon: <TrendingUp className="w-6 h-6" />,
@@ -99,9 +164,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {trainingRoomVisible && (
+                <Button variant="ghost" onClick={() => window.open('/training-room', '_blank')}>
+                  Training Room
+                </Button>
+              )}
               <ThemeToggle />
               <Button onClick={handleTryNowClick} variant="outline">
-                Login
+                {isLoggedIn ? 'Chat' : 'Login'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

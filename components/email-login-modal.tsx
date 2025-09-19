@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { SessionManager } from "@/lib/session-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -52,17 +53,13 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
         const data = await response.json()
 
         if (response.ok) {
-          // Store user name, email and permissions for personalized experience
+          // Create persistent session with 6-hour timeout
           if (typeof window !== 'undefined') {
-            if (data.userName) {
-              sessionStorage.setItem('peaksuite_user_name', data.userName)
-            }
-            if (data.userEmail) {
-              sessionStorage.setItem('peaksuite_user_email', data.userEmail)
-            }
-            if (data.permissions) {
-              sessionStorage.setItem('peaksuite_user_permissions', JSON.stringify(data.permissions))
-            }
+            SessionManager.createSession(
+              data.userName || data.userEmail,
+              data.userEmail,
+              data.permissions || []
+            )
           }
           
           setSuccess(true)
