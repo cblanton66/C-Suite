@@ -163,44 +163,54 @@ export default function TrainingRoom() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 px-4">
+      <section className="py-16 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-4xl mx-auto text-center">
-          <BookOpen className="w-16 h-16 text-primary mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-foreground mb-4">
+          <div className="bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <BookOpen className="w-10 h-10 text-primary" />
+          </div>
+          <h2 className="text-4xl font-bold text-foreground mb-6">
             Master AI-Powered Business Intelligence
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Learn how to get the most out of PeakSuite.ai with practical guidance and real-world examples from actual business conversations.
           </p>
         </div>
       </section>
 
       {/* Q&A Section */}
-      <section className="py-12 px-4">
+      <section className="py-16 px-4 bg-card/30">
         <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-foreground mb-8 text-center">
-            How to Use AI for Business Intelligence
-          </h3>
-          <div className="space-y-4">
+          <div className="text-center mb-12">
+            <div className="bg-primary/10 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">💡</span>
+            </div>
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              How to Use AI for Business Intelligence
+            </h3>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Master the art of asking the right questions to get powerful business insights
+            </p>
+          </div>
+          <div className="space-y-3">
             {qaItems.map((item, index) => (
-              <Card key={index} className="overflow-hidden">
+              <Card key={index} className="overflow-hidden border-2 hover:border-primary/30 transition-all duration-200">
                 <Button
                   variant="ghost"
                   onClick={() => toggleQA(index)}
-                  className="w-full p-6 text-left justify-between hover:bg-muted/50"
+                  className="w-full p-6 text-left justify-between hover:bg-primary/5"
                 >
                   <span className="text-lg font-semibold text-foreground pr-4">
                     {item.question}
                   </span>
                   {expandedQA === index ? (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-primary flex-shrink-0" />
                   )}
                 </Button>
                 {expandedQA === index && (
-                  <div className="px-6 pb-6 border-t border-border">
-                    <p className="text-muted-foreground leading-relaxed pt-4">
+                  <div className="px-6 pb-6 border-t border-primary/20 bg-primary/5">
+                    <p className="text-foreground leading-relaxed pt-4 text-base">
                       {item.answer}
                     </p>
                   </div>
@@ -212,46 +222,51 @@ export default function TrainingRoom() {
       </section>
 
       {/* Real Conversations Section */}
-      <section className="py-12 px-4 bg-muted/30">
+      <section className="py-16 px-4 bg-gradient-to-b from-background to-primary/5">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-foreground mb-4">
+            <div className="bg-primary/10 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">📚</span>
+            </div>
+            <h3 className="text-3xl font-bold text-foreground mb-4">
               See Real Business Conversations
             </h3>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Explore actual conversations between business owners and PeakSuite.ai to see how AI-powered insights work in practice.
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {pdfCategories.map((category) => (
-              <Card key={category.name} className="overflow-hidden">
+              <Card key={category.name} className="overflow-hidden border-2 hover:border-primary/30 transition-all duration-200 shadow-sm">
                 <Button
                   variant="ghost"
                   onClick={() => toggleCategory(category.name)}
-                  className="w-full p-6 text-left justify-between hover:bg-muted/50"
+                  className="w-full p-6 text-left justify-between hover:bg-primary/5"
                 >
-                  <div className="flex items-center gap-3">
-                    <FolderOpen className="w-5 h-5 text-primary" />
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 rounded-lg p-2">
+                      <FolderOpen className="w-6 h-6 text-primary" />
+                    </div>
                     <div>
-                      <h4 className="text-lg font-semibold text-foreground">
+                      <h4 className="text-xl font-semibold text-foreground mb-1">
                         {category.name}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-base text-muted-foreground">
                         {category.description}
                       </p>
                     </div>
                   </div>
                   {expandedCategory === category.name ? (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ChevronDown className="w-6 h-6 text-primary flex-shrink-0" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ChevronRight className="w-6 h-6 text-primary flex-shrink-0" />
                   )}
                 </Button>
                 
                 {expandedCategory === category.name && (
-                  <div className="border-t border-border bg-muted/50">
-                    <div className="p-6 space-y-4">
+                  <div className="border-t border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                    <div className="p-6 space-y-3">
                       {loading ? (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -270,23 +285,26 @@ export default function TrainingRoom() {
                         </div>
                       ) : category.pdfs.length > 0 ? (
                         category.pdfs.map((pdf, index) => (
-                          <div key={pdf.fileName} className="flex items-center gap-4 p-4 bg-background rounded-lg border border-border hover:border-primary/50 transition-colors">
-                            <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                          <div key={pdf.fileName} className="flex items-center gap-4 p-5 bg-background rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200">
+                            <div className="bg-primary/10 rounded-lg p-2">
+                              <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                            </div>
                             <div className="flex-1">
-                              <h5 className="font-semibold text-foreground">
+                              <h5 className="font-semibold text-foreground text-lg mb-1">
                                 {pdf.title}
                               </h5>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-base text-muted-foreground mb-2">
                                 {pdf.description}
                               </p>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-sm text-muted-foreground">
                                 Uploaded: {new Date(pdf.uploadedAt).toLocaleDateString()}
                               </p>
                             </div>
                             <Button
                               variant="outline"
-                              size="sm"
+                              size="default"
                               onClick={() => window.open(pdf.url, '_blank')}
+                              className="border-primary/30 hover:bg-primary hover:text-primary-foreground transition-colors"
                             >
                               <ExternalLink className="w-4 h-4 mr-2" />
                               View PDF
@@ -294,9 +312,11 @@ export default function TrainingRoom() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No conversations available yet. Check back soon!
-                        </p>
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground text-lg">
+                            No conversations available yet. Check back soon!
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -308,13 +328,22 @@ export default function TrainingRoom() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
+      <footer className="py-12 px-4 border-t border-border bg-card/20">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-muted-foreground">
-            Ready to start using PeakSuite.ai? <Button variant="link" className="p-0 h-auto text-primary" onClick={() => window.open('/', '_blank')}>
-              Return to main site
-            </Button>
+          <div className="bg-primary/10 rounded-lg w-12 h-12 flex items-center justify-center mx-auto mb-4">
+            <span className="text-xl">🚀</span>
+          </div>
+          <p className="text-lg text-muted-foreground mb-4">
+            Ready to start using PeakSuite.ai?
           </p>
+          <Button 
+            variant="default" 
+            size="lg"
+            onClick={() => window.open('/', '_blank')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Return to Main Site
+          </Button>
         </div>
       </footer>
     </div>
