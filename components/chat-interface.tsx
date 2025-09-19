@@ -109,9 +109,11 @@ export function ChatInterface() {
   const [currentMessageSearch, setCurrentMessageSearch] = useState<string>('')
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [showConversationSearch, setShowConversationSearch] = useState(false)
+  const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isInputExpanded, setIsInputExpanded] = useState(true)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
+  const [isInputPinned, setIsInputPinned] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
@@ -217,6 +219,25 @@ export function ChatInterface() {
         startNewChat()
       }
     }
+  }, [])
+
+  // Check Training Room visibility on component mount
+  useEffect(() => {
+    const checkTrainingRoomVisibility = async () => {
+      try {
+        const response = await fetch('/api/admin-settings')
+        const data = await response.json()
+        if (data.success) {
+          setTrainingRoomVisible(data.settings.trainingRoomVisible)
+        }
+      } catch (error) {
+        console.error('Error checking training room visibility:', error)
+        // Default to false if there's an error
+        setTrainingRoomVisible(false)
+      }
+    }
+
+    checkTrainingRoomVisibility()
   }, [])
 
   // Load bookmarks on mount
@@ -384,6 +405,11 @@ export function ChatInterface() {
         clearSilenceTimeout()
       }
     }
+  }
+
+  const handlePinToggle = () => {
+    setIsInputPinned(!isInputPinned)
+    // No complex scrolling - keep it simple!
   }
 
   const handleSignOut = () => {
@@ -2034,6 +2060,12 @@ ${message.content}
               )}
             </div>
             
+            {trainingRoomVisible && (
+              <Button variant="ghost" onClick={() => window.open('/training-room', '_blank')}>
+                Training Room
+              </Button>
+            )}
+            
             <AdminNavToggle 
               userEmail={userEmail} 
               isAdmin={userPermissions.includes('admin') || userPermissions.includes('upload')} 
@@ -2348,7 +2380,10 @@ ${message.content}
             </div>
           </div>
         ) : (
-          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
+          <div 
+            ref={chatContainerRef} 
+            className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-96"
+          >
             {/* Search within current conversation */}
             {messages.length > 3 && (
               <div className="sticky top-0 z-10 mb-4">
@@ -2409,7 +2444,7 @@ ${message.content}
               <div key={message.id} id={`message-${message.id}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
                   className={`max-w-[80%] p-4 ${
-                    message.role === "user" ? "bg-gray-400 dark:bg-gray-500 text-foreground" : "bg-card"
+                    message.role === "user" ? "bg-blue-500 dark:bg-blue-600 text-white" : "bg-card"
                   }`}
                 >
                   {message.role === "user" ? (
@@ -2481,7 +2516,7 @@ ${message.content}
                         </div>
                       ) : (
                         <div>
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap font-bold italic">{message.content}</p>
                         </div>
                       )}
                       
@@ -2623,11 +2658,24 @@ ${message.content}
           </>
         )}
 
+        {/* Hover Indicator - Three dots at bottom when input is hidden */}
+        {messages.length > 0 && !isInputExpanded && !isInputPinned && !isHoveringBottom && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
+            <div className="bg-muted/80 backdrop-blur-sm rounded-full px-4 py-2 border border-border shadow-lg">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input Area - Only show when there are messages */}
         {messages.length > 0 && (
           <div 
             className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out ${
-              isInputExpanded || isHoveringBottom 
+              isInputExpanded || isInputPinned || isHoveringBottom 
                 ? 'translate-y-0' 
                 : 'translate-y-full'
             }`}
@@ -2640,37 +2688,37 @@ ${message.content}
             onMouseLeave={() => {
               hoverTimeoutRef.current = setTimeout(() => {
                 setIsHoveringBottom(false)
-              }, 1000) // 1 second delay
+              }, 1000)
             }}
           >
             <div className="max-w-6xl mx-auto p-6">
-              {/* Close Button - Only show when hovering */}
-              {!isInputExpanded && isHoveringBottom && (
+              {/* Pin Checkbox - Only show when not expanded */}
+              {!isInputExpanded && (
                 <div className="flex justify-end mb-4">
-                  <Button
-                    onClick={() => setIsInputExpanded(false)}
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                    Hide
-                  </Button>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={isInputPinned}
+                      onChange={handlePinToggle}
+                      className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                    />
+                    <span>Pin input</span>
+                  </label>
                 </div>
               )}
               
-              {/* Pin Button - Only show when expanded */}
+              {/* Pin Checkbox - Also show when expanded */}
               {isInputExpanded && (
                 <div className="flex justify-end mb-4">
-                  <Button
-                    onClick={() => setIsInputExpanded(false)}
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                    Auto-hide
-                  </Button>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={isInputPinned}
+                      onChange={handlePinToggle}
+                      className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                    />
+                    <span>Pin input</span>
+                  </label>
                 </div>
               )}
               {/* Upload Error */}
