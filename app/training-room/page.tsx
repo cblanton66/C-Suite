@@ -14,6 +14,7 @@ import {
   BookOpen,
   Loader2
 } from "lucide-react"
+import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
 
 interface QAItem {
   question: string
@@ -47,6 +48,7 @@ export default function TrainingRoom() {
   const [categoryFiles, setCategoryFiles] = useState<CategoryFiles | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false)
 
   // Load PDF files on component mount
   useEffect(() => {
@@ -152,7 +154,7 @@ export default function TrainingRoom() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Training Room</h1>
-                <p className="text-sm text-muted-foreground">Learn how to maximize PeakSuite.ai for your business</p>
+                <p className="text-sm text-muted-foreground">QuickStart guide to using PeakSuit.ai</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -168,12 +170,51 @@ export default function TrainingRoom() {
           <div className="bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
             <BookOpen className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-4xl font-bold text-foreground mb-6">
-            Master AI-Powered Business Intelligence
+          <h2 className="text-4xl font-bold text-foreground mb-8">
+            The PeakSuite Quickstart Guide
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Learn how to get the most out of PeakSuite.ai with practical guidance and real-world examples from actual business conversations.
-          </p>
+          <div className="max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-8">
+              Master PeakSuite.ai in 3 simple steps:
+            </p>
+            <div className="grid md:grid-cols-3 gap-6 text-left">
+              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                    1
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Read Common Questions</h3>
+                </div>
+                <p className="text-muted-foreground">
+                  Start with the most frequently asked questions below to understand how to ask effective questions.
+                </p>
+              </div>
+              
+              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                    2
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Review Real Conversations</h3>
+                </div>
+                <p className="text-muted-foreground">
+                  Explore actual user conversations to see the question-and-answer flow in action.
+                </p>
+              </div>
+              
+              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                    3
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Get Beta Access & Explore</h3>
+                </div>
+                <p className="text-muted-foreground">
+                  Start your beta journey and explore - your imagination is the limit!
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -181,14 +222,11 @@ export default function TrainingRoom() {
       <section className="py-16 px-4 bg-card/30">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <div className="bg-primary/10 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">💡</span>
-            </div>
+            
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              How to Use AI for Business Intelligence
+              Common questions and anwers about using PeakSuite.ai
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Master the art of asking the right questions to get powerful business insights
             </p>
           </div>
           <div className="space-y-3">
@@ -225,14 +263,12 @@ export default function TrainingRoom() {
       <section className="py-16 px-4 bg-gradient-to-b from-background to-primary/5">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <div className="bg-primary/10 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📚</span>
-            </div>
+          
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              See Real Business Conversations
+              Real Business Conversations Submitted by PeakSuite Users
             </h3>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Explore actual conversations between business owners and PeakSuite.ai to see how AI-powered insights work in practice.
+              Explore actual conversations between user's and PeakSuite. In most cases, the user's questions are indicated by Bold Italic Text
             </p>
           </div>
 
@@ -330,22 +366,26 @@ export default function TrainingRoom() {
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-border bg-card/20">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-primary/10 rounded-lg w-12 h-12 flex items-center justify-center mx-auto mb-4">
-            <span className="text-xl">🚀</span>
-          </div>
           <p className="text-lg text-muted-foreground mb-4">
-            Ready to start using PeakSuite.ai?
+            Become a Beta Tester - No Experience Required!   
           </p>
+         
           <Button 
             variant="default" 
             size="lg"
-            onClick={() => window.open('/', '_blank')}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            onClick={() => setShowWaitlistModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Return to Main Site
+            Join the Team Today
           </Button>
         </div>
       </footer>
+
+      {/* Exclusive Waitlist Modal */}
+      <ExclusiveWaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
+      />
     </div>
   )
 }
