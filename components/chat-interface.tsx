@@ -982,25 +982,50 @@ export function ChatInterface() {
 
   const copyToClipboard = async (text: string, messageId: string) => {
     try {
-      await navigator.clipboard.writeText(text)
+      // Create rich HTML content for the message
+      const richContent = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 800px;">
+          <div style="background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px;">
+            <div style="white-space: pre-wrap; word-wrap: break-word;">
+              ${text.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+        </div>
+      `
+
+      // Create clipboard item with both HTML and plain text
+      const clipboardItem = new ClipboardItem({
+        'text/html': new Blob([richContent], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })
+
+      await navigator.clipboard.write([clipboardItem])
       setCopiedMessageId(messageId)
       setTimeout(() => setCopiedMessageId(null), 2000) // Reset after 2 seconds
     } catch (err) {
-      console.error('Failed to copy text: ', err)
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
+      console.error('Failed to copy rich text: ', err)
+      // Fallback to plain text only
       try {
-        document.execCommand('copy')
+        await navigator.clipboard.writeText(text)
         setCopiedMessageId(messageId)
         setTimeout(() => setCopiedMessageId(null), 2000)
       } catch (fallbackErr) {
         console.error('Fallback copy failed: ', fallbackErr)
+        // Final fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        try {
+          document.execCommand('copy')
+          setCopiedMessageId(messageId)
+          setTimeout(() => setCopiedMessageId(null), 2000)
+        } catch (finalErr) {
+          console.error('Final fallback copy failed: ', finalErr)
+        }
+        document.body.removeChild(textArea)
       }
-      document.body.removeChild(textArea)
     }
   }
 
@@ -2206,13 +2231,11 @@ ${message.content}
                     
                   </form>
                   
-                  {/* Control Panel - 2 Column Layout */}
+                  {/* Control Panel - Single Row Layout */}
                   <div className="flex justify-center mt-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
-                      {/* Left Column - Action Buttons */}
-                      <div className="space-y-3">
-                        {/* Quick Actions Row */}
-                        <div className="flex flex-wrap gap-2 justify-center">
+                    <div className="flex items-center justify-center w-full max-w-4xl gap-4">
+                      {/* Left Side - Quick Action Buttons */}
+                      <div className="flex gap-2">
                         <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
                           <Button
                             type="button"
@@ -2224,6 +2247,7 @@ ${message.content}
                             😀
                           </Button>
                         </FastTooltip>
+                        
                         <FastTooltip content="Create Table - Format your data into a structured table">
                           <Button
                             type="button"
@@ -2235,6 +2259,7 @@ ${message.content}
                             📋
                           </Button>
                         </FastTooltip>
+                        
                         <FastTooltip content="Summarize Data - Extract key insights and highlights">
                           <Button
                             type="button"
@@ -2246,6 +2271,7 @@ ${message.content}
                             📝
                           </Button>
                         </FastTooltip>
+                        
                         <FastTooltip content="Bullet Points - Convert content to organized bullet points">
                           <Button
                             type="button"
@@ -2257,11 +2283,8 @@ ${message.content}
                             •
                           </Button>
                         </FastTooltip>
-                      </div>
-                      
-                        {/* Input Actions Row */}
-                        <div className="flex gap-2 justify-center">
-                        {/* Multiple Files Upload with Paperclip Icon */}
+                        
+                        {/* File Upload Button */}
                         <div className="relative">
                           <input
                             type="file"
@@ -2291,7 +2314,10 @@ ${message.content}
                             </Button>
                           </FastTooltip>
                         </div>
+                      </div>
 
+                      {/* Right Side - Primary Action Buttons (Same Size) */}
+                      <div className="flex gap-2">
                         {/* Speech-to-Text Button */}
                         <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
                           <Button
@@ -2300,7 +2326,7 @@ ${message.content}
                             size="sm"
                             disabled={isLoading || !apiStatus?.hasApiKey}
                             onClick={toggleSpeechRecognition}
-                            className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                            className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
                           >
                             {isListening ? (
                               <MicOff className="w-4 h-4 animate-pulse" />
@@ -2318,7 +2344,7 @@ ${message.content}
                             size="sm"
                             disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
                             onClick={handleSubmit}
-                            className={`text-xs text-primary-foreground transition-colors ${
+                            className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
                               (inputHasFocus && input.trim()) || isListening
                                 ? 'bg-green-400 hover:bg-green-500'
                                 : 'bg-primary hover:bg-primary/90'
@@ -2327,20 +2353,19 @@ ${message.content}
                            Send ▲
                           </Button>
                         </FastTooltip>
-                        </div>
-                      </div>
-
-                      {/* Right Column - New Chat Button */}
-                      <div className="flex justify-center items-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={startNewChat}
-                          className="flex items-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          New Chat
-                        </Button>
+                        
+                        {/* New Chat Button */}
+                        <FastTooltip content="Start a new conversation">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={startNewChat}
+                            className="w-20 h-9 text-xs flex items-center justify-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            New
+                          </Button>
+                        </FastTooltip>
                       </div>
                     </div>
                   </div>
@@ -2813,13 +2838,11 @@ ${message.content}
                 
               </form>
               
-              {/* Control Panel - 2 Column Layout */}
+              {/* Control Panel - Single Row Layout */}
               <div className="flex justify-center mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
-                  {/* Left Column - Action Buttons */}
-                  <div className="space-y-3">
-                    {/* Quick Actions Row */}
-                    <div className="flex flex-wrap gap-2 justify-center">
+                <div className="flex items-center justify-center w-full max-w-4xl gap-4">
+                  {/* Left Side - Quick Action Buttons */}
+                  <div className="flex gap-2">
                     <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
                       <Button
                         type="button"
@@ -2831,6 +2854,7 @@ ${message.content}
                         😀
                       </Button>
                     </FastTooltip>
+                    
                     <FastTooltip content="Create Table - Format your data into a structured table">
                       <Button
                         type="button"
@@ -2842,6 +2866,7 @@ ${message.content}
                         📋
                       </Button>
                     </FastTooltip>
+                    
                     <FastTooltip content="Summarize Data - Extract key insights and highlights">
                       <Button
                         type="button"
@@ -2853,6 +2878,7 @@ ${message.content}
                         📝
                       </Button>
                     </FastTooltip>
+                    
                     <FastTooltip content="Bullet Points - Convert content to organized bullet points">
                       <Button
                         type="button"
@@ -2864,11 +2890,8 @@ ${message.content}
                         •
                       </Button>
                     </FastTooltip>
-                  </div>
-                  
-                    {/* Input Actions Row */}
-                    <div className="flex gap-2 justify-center">
-                    {/* Multiple Files Upload with Paperclip Icon */}
+                    
+                    {/* File Upload Button */}
                     <div className="relative">
                       <FastTooltip content="Upload multiple files (up to 5)">
                         <Button
@@ -2889,7 +2912,10 @@ ${message.content}
                         </Button>
                       </FastTooltip>
                     </div>
+                  </div>
 
+                  {/* Right Side - Primary Action Buttons (Same Size) */}
+                  <div className="flex gap-2">
                     {/* Speech-to-Text Button */}
                     <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
                       <Button
@@ -2898,7 +2924,7 @@ ${message.content}
                         size="sm"
                         disabled={isLoading || !apiStatus?.hasApiKey}
                         onClick={toggleSpeechRecognition}
-                        className={`text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                        className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
                       >
                         {isListening ? (
                           <MicOff className="w-4 h-4 animate-pulse" />
@@ -2916,7 +2942,7 @@ ${message.content}
                         size="sm"
                         disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
                         onClick={handleSubmit}
-                        className={`text-xs text-primary-foreground transition-colors ${
+                        className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
                           (inputHasFocus && input.trim()) || isListening
                             ? 'bg-green-400 hover:bg-green-500'
                             : 'bg-primary hover:bg-primary/90'
@@ -2925,20 +2951,19 @@ ${message.content}
                        Send ▲
                       </Button>
                     </FastTooltip>
-                    </div>
-                  </div>
-
-                  {/* Right Column - New Chat Button */}
-                  <div className="flex justify-center items-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={startNewChat}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Chat
-                    </Button>
+                    
+                    {/* New Chat Button */}
+                    <FastTooltip content="Start a new conversation">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={startNewChat}
+                        className="w-20 h-9 text-xs flex items-center justify-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        New
+                      </Button>
+                    </FastTooltip>
                   </div>
                 </div>
               </div>
