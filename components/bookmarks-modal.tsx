@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Bookmark, X, Search, Copy, BookmarkCheck } from "lucide-react"
+import { Bookmark, X, Search, Copy, BookmarkCheck, MessageCircle } from "lucide-react"
 
 interface Message {
   id: string
@@ -21,6 +21,7 @@ interface BookmarksModalProps {
   bookmarkedMessages: Message[]
   onRemoveBookmark: (messageId: string) => void
   onCopyMessage: (content: string) => void
+  onContinueConversation?: (message: Message & { sessionId?: string }) => void
 }
 
 export function BookmarksModal({ 
@@ -28,7 +29,8 @@ export function BookmarksModal({
   onClose, 
   bookmarkedMessages, 
   onRemoveBookmark,
-  onCopyMessage 
+  onCopyMessage,
+  onContinueConversation 
 }: BookmarksModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -124,6 +126,17 @@ export function BookmarksModal({
                     </div>
                     
                     <div className="flex items-center gap-1">
+                      {onContinueConversation && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onContinueConversation(message as Message & { sessionId?: string })}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          title="Continue conversation"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

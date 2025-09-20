@@ -3088,6 +3088,7 @@ ${message.content}
         bookmarkedMessages={bookmarkedMessages}
         onRemoveBookmark={removeBookmark}
         onCopyMessage={copyToClipboard}
+        onContinueConversation={jumpToBookmarkedMessage}
       />
 
       {/* Feedback Modal */}
