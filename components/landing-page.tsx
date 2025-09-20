@@ -165,15 +165,14 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             </div>
             <div className="flex items-center gap-4">
               {trainingRoomVisible && (
-                <Button variant="ghost" onClick={() => window.open('/training-room', '_blank')}>
-                  Training Room
+                <Button variant="ghost" onClick={() => window.open('/quick-start-guide', '_blank')}>
+                  Quick-Start Guide
                 </Button>
               )}
-              <ThemeToggle />
-              <Button onClick={handleTryNowClick} variant="outline">
+              <Button onClick={handleTryNowClick} variant="ghost">
                 {isLoggedIn ? 'Chat' : 'Login'}
-                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
+              <ThemeToggle />
             </div>
           </div>
         </div>

@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getAnalyticsData, clearAnalyticsData } from '@/lib/analytics'
-import { BarChart3, Clock, Users, Eye, Trash2 } from 'lucide-react'
+import { BarChart3, Clock, Users, Eye, Trash2, Lock, Settings, EyeOff } from 'lucide-react'
 import { usePageAnalytics } from "@/hooks/use-analytics"
+import { SessionManager } from "@/lib/session-manager"
+import { useRouter } from 'next/navigation'
 
 interface PageView {
   userCode: string;
@@ -24,9 +26,33 @@ interface UserStats {
 
 export default function AdminPage() {
   usePageAnalytics('admin')
+  const router = useRouter()
   
   const [analytics, setAnalytics] = useState<{ pageViews: PageView[] }>({ pageViews: [] })
   const [userStats, setUserStats] = useState<UserStats[]>([])
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+  const [userPermissions, setUserPermissions] = useState<string[]>([])
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [trainingRoomSettings, setTrainingRoomSettings] = useState<{trainingRoomVisible: boolean} | null>(null)
+  const [updatingSettings, setUpdatingSettings] = useState(false)
+
+  // Check authorization
+  useEffect(() => {
+    const session = SessionManager.getSession()
+    if (!session) {
+      router.push('/')
+      return
+    }
+    
+    const hasAdminAccess = session.permissions.includes('admin')
+    setUserPermissions(session.permissions)
+    setUserEmail(session.userEmail)
+    setIsAuthorized(hasAdminAccess)
+    
+    if (!hasAdminAccess) {
+      setTimeout(() => router.push('/'), 2000) // Redirect after showing error
+    }
+  }, [router])
 
   const loadData = () => {
     const data = getAnalyticsData()
@@ -70,8 +96,61 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (isAuthorized) {
+      loadData()
+    }
+  }, [isAuthorized])
+
+  // Fetch training room settings
+  const fetchTrainingRoomSettings = async () => {
+    try {
+      const response = await fetch('/api/admin-settings')
+      const data = await response.json()
+      
+      if (data.success) {
+        setTrainingRoomSettings(data.settings)
+      }
+    } catch (err) {
+      console.error('Error fetching training room settings:', err)
+    }
+  }
+
+  // Toggle training room visibility
+  const toggleTrainingRoom = async () => {
+    if (!trainingRoomSettings || !userEmail) return
+
+    try {
+      setUpdatingSettings(true)
+
+      const response = await fetch('/api/admin-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trainingRoomVisible: !trainingRoomSettings.trainingRoomVisible,
+          userEmail
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTrainingRoomSettings(data.settings)
+      }
+    } catch (err) {
+      console.error('Error updating training room settings:', err)
+    } finally {
+      setUpdatingSettings(false)
+    }
+  }
+
+  // Load training room settings when authorized
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchTrainingRoomSettings()
+    }
+  }, [isAuthorized])
 
   const handleClearData = () => {
     if (confirm('Are you sure you want to clear all analytics data? This cannot be undone.')) {
@@ -89,6 +168,38 @@ export default function AdminPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
+  }
+
+  // Show loading while checking authorization
+  if (isAuthorized === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking permissions...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show access denied for non-admin users
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8 max-w-md mx-4 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            You need admin permissions to access this page.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Redirecting you back to the main page...
+          </p>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -163,6 +274,42 @@ export default function AdminPage() {
                   }
                 </p>
               </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Admin Controls Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-foreground mb-4">Admin Controls</h2>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">Quick-Start Guide Visibility</h3>
+                <p className="text-muted-foreground">
+                  Control whether the Quick-Start Guide button appears in the navigation for all users
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={toggleTrainingRoom}
+                disabled={updatingSettings || !trainingRoomSettings}
+                className={`flex items-center gap-2 min-w-24 ${
+                  trainingRoomSettings?.trainingRoomVisible 
+                    ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700' 
+                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                }`}
+              >
+                {updatingSettings ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : trainingRoomSettings?.trainingRoomVisible ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
+                <span>
+                  {trainingRoomSettings?.trainingRoomVisible ? 'Visible' : 'Hidden'}
+                </span>
+              </Button>
             </div>
           </Card>
         </div>

@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       if (sheetUserEmail && sheetUserEmail.toLowerCase() === userEmail.toLowerCase() && userStatus === 'Active') {
         if (permissions && typeof permissions === 'string') {
           const userPermissions = permissions.split(',').map(p => p.trim().toLowerCase())
-          isAdmin = userPermissions.includes('admin') || userPermissions.includes('upload')
+          isAdmin = userPermissions.includes('admin')
         }
         break
       }

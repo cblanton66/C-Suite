@@ -42,7 +42,7 @@ interface CategoryFiles {
   accounting: TrainingFile[]
 }
 
-export default function TrainingRoom() {
+export default function QuickStartGuide() {
   const [expandedQA, setExpandedQA] = useState<number | null>(null)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const [categoryFiles, setCategoryFiles] = useState<CategoryFiles | null>(null)
@@ -153,8 +153,8 @@ export default function TrainingRoom() {
                 <Building2 className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Training Room</h1>
-                <p className="text-sm text-muted-foreground">QuickStart guide to using PeakSuit.ai</p>
+                <h1 className="text-3xl font-bold text-foreground">Quick-Start Guide</h1>
+                <p className="text-sm text-muted-foreground">Your complete guide to using PeakSuite.ai</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

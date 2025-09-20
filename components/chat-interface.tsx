@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -1942,9 +1942,21 @@ ${message.content}
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Calculator className="w-4 h-4 text-primary-foreground" />
             </div>
-            <Link href="/" className="hover:opacity-80 transition-opacity">
-              <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
-            </Link>
+            <div>
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
+              </Link>
+              {userName && (
+                <div className="flex items-center gap-2">
+                  <FastTooltip content={apiStatus?.hasApiKey ? "AI Connected - Ready to chat" : "AI Disconnected - Check connection"}>
+                    <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
+                  </FastTooltip>
+                  <p className="text-sm text-muted-foreground">
+                    {userName}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right side - Feedback + User Menu + Theme + Status */}
@@ -1954,10 +1966,10 @@ ${message.content}
               variant="outline"
               size="sm"
               onClick={() => setShowFeedback(true)}
-              className="flex items-center gap-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 hover:text-orange-800"
+              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-200 text-green-400 hover:text-green-800"
             >
               <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Beta Feedback</span>
+              <span className="hidden sm:inline">Share Feedback</span>
             </Button>
             
             {/* User Menu Dropdown */}
@@ -2007,6 +2019,20 @@ ${message.content}
                         </span>
                       )}
                     </button>
+                    
+                    {/* Quick-Start Guide - only show if visible */}
+                    {trainingRoomVisible && (
+                      <button
+                        onClick={() => {
+                          window.open('/quick-start-guide', '_blank')
+                          setShowUserMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Quick-Start Guide
+                      </button>
+                    )}
                     
                     {messages.length > 0 && (
                       <>
@@ -2070,8 +2096,8 @@ ${message.content}
                     
                     <div className="border-t border-border my-2"></div>
                     
-                    {/* Upload Files - only show if user has upload permission */}
-                    {userPermissions.includes('upload') && (
+                    {/* Upload Files - only show if user has admin or upload permission */}
+                    {(userPermissions.includes('admin') || userPermissions.includes('upload')) && (
                       <button
                         onClick={() => {
                           setShowFileUpload(true)
@@ -2099,36 +2125,32 @@ ${message.content}
               )}
             </div>
             
-            {trainingRoomVisible && (
-              <Button variant="ghost" onClick={() => window.open('/training-room', '_blank')}>
-                Training Room
+            
+            {/* Admin Button - Only visible to admin users */}
+            {userPermissions.includes('admin') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('/admin', '_blank')}
+                className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 hover:text-purple-800"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
               </Button>
             )}
             
-            <AdminNavToggle 
-              userEmail={userEmail} 
-              isAdmin={userPermissions.includes('admin') || userPermissions.includes('upload')} 
-            />
-            
             <ThemeToggle />
             
-            {/* Status Indicator */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {isListening ? (
-                <>
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="text-red-500 font-medium hidden sm:inline">
-                    Recording
-                    <span className="animate-pulse">...</span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
-                  <span className="hidden sm:inline">{apiStatus?.hasApiKey ? "Connected" : "API Key Required"}</span>
-                </>
-              )}
-            </div>
+            {/* Recording Status Indicator */}
+            {isListening && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                <span className="text-red-500 font-medium hidden sm:inline">
+                  Recording
+                  <span className="animate-pulse">...</span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
