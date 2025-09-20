@@ -44,6 +44,7 @@ import { FeedbackModal } from "@/components/feedback-modal"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
 import { SessionManager } from "@/lib/session-manager"
+import { VercelAnalytics } from "@/lib/vercel-analytics"
 
 interface UploadedFile {
   name: string
@@ -415,6 +416,9 @@ export function ChatInterface() {
   }
 
   const handleSignOut = () => {
+    // Track logout
+    VercelAnalytics.trackLogout()
+    
     // Clear session using SessionManager
     if (typeof window !== 'undefined') {
       SessionManager.clearSession()
@@ -529,6 +533,9 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+    
+    // Track chat message sent
+    VercelAnalytics.trackChatMessage(input.trim().length, uploadedFiles.length > 0)
     
     // Auto-hide input area after sending message (Apple-style)
     setIsInputExpanded(false)
@@ -705,6 +712,9 @@ export function ChatInterface() {
       }
 
       setUploadedFile(uploadedFileData)
+      
+      // Track successful file upload
+      VercelAnalytics.trackFileUpload(file.type, file.size, true)
 
       // Add file upload message to chat
       const fileMessage: Message = {
@@ -800,6 +810,11 @@ export function ChatInterface() {
       }
 
       setUploadedFiles(uploadedFilesList)
+      
+      // Track successful multi-file upload
+      uploadedFilesList.forEach(file => {
+        VercelAnalytics.trackFileUpload(file.type, file.size, true)
+      })
 
       // Add file upload message to chat
       const fileMessage: Message = {
@@ -1048,6 +1063,9 @@ export function ChatInterface() {
     } else {
       // Add to bookmarks
       setBookmarkedMessages(prev => [...prev, messageWithSessionInfo])
+      
+      // Track bookmark added
+      VercelAnalytics.trackFeatureUsage('chat_message_bookmarked', { message_length: message.content.length })
       // Update the message in current session
       setMessages(prev => prev.map(msg => 
         msg.id === message.id ? { ...msg, isBookmarked: true } : msg
@@ -1216,6 +1234,9 @@ export function ChatInterface() {
   const exportConversationAsText = () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
+    
+    // Track export action
+    VercelAnalytics.trackConversationExport('text')
 
     let content = `PeakSuite.ai Conversation Export\\n`
     content += `Title: ${currentSession.title}\\n`
@@ -1248,6 +1269,9 @@ export function ChatInterface() {
   const exportConversationAsPDF = async () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
+    
+    // Track export action
+    VercelAnalytics.trackConversationExport('html')
 
     // Create a beautifully styled HTML version matching the app design
     let htmlContent = `
@@ -1720,6 +1744,9 @@ export function ChatInterface() {
   const copyAsRichText = async () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
+    
+    // Track export action
+    VercelAnalytics.trackConversationExport('markdown')
 
     try {
       // Create rich HTML content for clipboard
@@ -1810,6 +1837,9 @@ export function ChatInterface() {
   const exportAsEmailFormat = () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
     if (!currentSession) return
+    
+    // Track export action
+    VercelAnalytics.trackConversationExport('email')
 
     // Create email-optimized content
     const emailContent = `
@@ -2314,7 +2344,7 @@ ${message.content}
                           onKeyDown={handleKeyDown}
                           onFocus={() => setInputHasFocus(true)}
                           onBlur={() => setInputHasFocus(false)}
-                          placeholder="What's on your agenda today?"
+                          placeholder="What's on the agenda?"
                           className={`pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y ${messages.length === 0 && !input ? 'text-center placeholder:text-center' : ''}`}
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />

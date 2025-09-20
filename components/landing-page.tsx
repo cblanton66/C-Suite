@@ -169,8 +169,8 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                   Quick-Start Guide
                 </Button>
               )}
-              <Button onClick={handleTryNowClick} variant="ghost">
-                {isLoggedIn ? 'Chat' : 'Login'}
+              <Button onClick={handleTryNowClick} variant="ghost" className={isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}>
+                {isLoggedIn ? 'Your Assistant is Ready' : 'Login'}
               </Button>
               <ThemeToggle />
             </div>

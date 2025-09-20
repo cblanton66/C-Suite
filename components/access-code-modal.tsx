@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { X, Lock, AlertCircle } from "lucide-react"
+import { VercelAnalytics } from "@/lib/vercel-analytics"
 
 interface AccessCodeModalProps {
   isOpen: boolean
@@ -61,6 +62,10 @@ export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalP
         sessionStorage.setItem(SESSION_KEY, 'true')
         sessionStorage.setItem(USER_CODE_KEY, validCode)
       }
+      
+      // Track successful login via access code
+      VercelAnalytics.trackLogin('code', ['chat'])
+      
       onSuccess()
       onClose()
     } else {

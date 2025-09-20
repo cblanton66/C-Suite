@@ -7,7 +7,7 @@ interface SessionData {
   expiresAt: number
 }
 
-const SESSION_DURATION = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
+const SESSION_DURATION = 60 * 60 * 1000 // 60 minutes in milliseconds
 const SESSION_KEY = 'peaksuite_session'
 
 export class SessionManager {

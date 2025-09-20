@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { SessionManager } from "@/lib/session-manager"
+import { VercelAnalytics } from "@/lib/vercel-analytics"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -53,13 +54,16 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
         const data = await response.json()
 
         if (response.ok) {
-          // Create persistent session with 6-hour timeout
+          // Create persistent session with 60-minute timeout
           if (typeof window !== 'undefined') {
             SessionManager.createSession(
               data.userName || data.userEmail,
               data.userEmail,
               data.permissions || []
             )
+            
+            // Track successful login
+            VercelAnalytics.trackLogin('email', data.permissions || [])
           }
           
           setSuccess(true)

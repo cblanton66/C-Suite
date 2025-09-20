@@ -72,6 +72,16 @@ export function trackPageView(page: string): void {
   });
   
   saveAnalyticsData(data);
+  
+  // Also track with Vercel Analytics for enhanced analytics
+  if (typeof window !== 'undefined') {
+    try {
+      const { VercelAnalytics } = require('@/lib/vercel-analytics')
+      VercelAnalytics.trackPageView(page)
+    } catch (error) {
+      // Vercel analytics not available, continue with localStorage only
+    }
+  }
 }
 
 // Track time spent on page (call this when leaving a page)
