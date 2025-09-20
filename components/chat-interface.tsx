@@ -87,6 +87,7 @@ export function ChatInterface() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [assistantName, setAssistantName] = useState<string>('Piper')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showFileUpload, setShowFileUpload] = useState(false)
@@ -115,6 +116,7 @@ export function ChatInterface() {
   const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isInputExpanded, setIsInputExpanded] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
@@ -164,6 +166,9 @@ export function ChatInterface() {
   }, [])
 
   useEffect(() => {
+    // Reset logout flag when component mounts
+    setIsLoggingOut(false)
+    
     // Load user data and validate session
     if (typeof window !== 'undefined') {
       // Try to migrate old session first
@@ -175,6 +180,7 @@ export function ChatInterface() {
         setUserName(session.userName)
         setUserEmail(session.userEmail)
         setUserPermissions(session.permissions)
+        setAssistantName(session.assistantName || 'Piper')
       } else {
         // Session expired or doesn't exist
         console.log('No valid session found')
@@ -261,12 +267,12 @@ export function ChatInterface() {
     }
   }, [])
 
-  // Save bookmarks to localStorage whenever they change
+  // Save bookmarks to localStorage whenever they change (but not during logout)
   useEffect(() => {
-    if (typeof window !== 'undefined' && bookmarkedMessages.length >= 0) {
+    if (typeof window !== 'undefined' && bookmarkedMessages.length >= 0 && !isLoggingOut) {
       localStorage.setItem('peaksuiteai_bookmarks', JSON.stringify(bookmarkedMessages))
     }
-  }, [bookmarkedMessages])
+  }, [bookmarkedMessages, isLoggingOut])
 
   // Save sessions to localStorage whenever they change
   useEffect(() => {
@@ -419,6 +425,9 @@ export function ChatInterface() {
     // Track logout
     VercelAnalytics.trackLogout()
     
+    // Set logout flag to prevent bookmark saving
+    setIsLoggingOut(true)
+    
     // Clear session using SessionManager
     if (typeof window !== 'undefined') {
       SessionManager.clearSession()
@@ -432,6 +441,7 @@ export function ChatInterface() {
     setUserName(null)
     setUserEmail(null)
     setUserPermissions(['chat'])
+    setAssistantName('Piper')
     setChatSessions([])
     setMessages([])
     setBookmarkedMessages([])
@@ -1238,7 +1248,7 @@ export function ChatInterface() {
     // Track export action
     VercelAnalytics.trackConversationExport('text')
 
-    let content = `PeakSuite.ai Conversation Export\\n`
+    let content = `${assistantName} Conversation Export\\n`
     content += `Title: ${currentSession.title}\\n`
     content += `Date: ${currentSession.createdAt.toLocaleDateString()}\\n`
     content += `Messages: ${currentSession.messages.length}\\n`
@@ -1678,7 +1688,7 @@ export function ChatInterface() {
       </head>
       <body>
         <div class="header">
-          <h1>🧮 PeakSuite.ai Conversation Export</h1>
+          <h1>🧮 ${assistantName} Conversation Export</h1>
           <div class="header-info">
             <div class="header-info-item">
               <strong>Title:</strong> ${currentSession.title}
@@ -1977,13 +1987,18 @@ ${message.content}
                 <h1 className="text-2xl font-semibold text-foreground">PeakSuite.ai</h1>
               </Link>
               {userName && (
-                <div className="flex items-center gap-2">
-                  <FastTooltip content={apiStatus?.hasApiKey ? "AI Connected - Ready to chat" : "AI Disconnected - Check connection"}>
-                    <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
-                  </FastTooltip>
+                <div className="flex flex-col">
                   <p className="text-sm text-muted-foreground">
                     {userName}
                   </p>
+                  <div className="flex items-center gap-2">
+                    <FastTooltip content={apiStatus?.hasApiKey ? "AI Connected - Ready to chat" : "AI Disconnected - Check connection"}>
+                      <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
+                    </FastTooltip>
+                    <p className="text-xs text-muted-foreground">
+                      Assistant: {assistantName} Peak
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -2256,7 +2271,7 @@ ${message.content}
                   </p>
                 )}
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
-                  Let's get to work.
+                  {assistantName} is ready to help you tackle your business challenges.
                 </p>
 
                 {/* Input Area */}
@@ -2344,7 +2359,7 @@ ${message.content}
                           onKeyDown={handleKeyDown}
                           onFocus={() => setInputHasFocus(true)}
                           onBlur={() => setInputHasFocus(false)}
-                          placeholder="What's on the agenda?"
+                          placeholder={`What's on the agenda? ${assistantName} is here to help.`}
                           className={`pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y ${messages.length === 0 && !input ? 'text-center placeholder:text-center' : ''}`}
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />
@@ -2896,7 +2911,7 @@ ${message.content}
                       onKeyDown={handleKeyDown}
                       onFocus={() => setInputHasFocus(true)}
                       onBlur={() => setInputHasFocus(false)}
-                      placeholder="What's on your agenda today?"
+                      placeholder={`What's on your agenda today? ${assistantName} is here to help.`}
                       className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                       disabled={isLoading || !apiStatus?.hasApiKey}
                     />

@@ -2,6 +2,7 @@ interface SessionData {
   userName: string
   userEmail: string
   permissions: string[]
+  assistantName: string
   loginTime: number
   lastActivity: number
   expiresAt: number
@@ -11,12 +12,13 @@ const SESSION_DURATION = 60 * 60 * 1000 // 60 minutes in milliseconds
 const SESSION_KEY = 'peaksuite_session'
 
 export class SessionManager {
-  static createSession(userName: string, userEmail: string, permissions: string[]): void {
+  static createSession(userName: string, userEmail: string, permissions: string[], assistantName: string = 'Piper'): void {
     const now = Date.now()
     const sessionData: SessionData = {
       userName,
       userEmail,
       permissions,
+      assistantName,
       loginTime: now,
       lastActivity: now,
       expiresAt: now + SESSION_DURATION

@@ -36,6 +36,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState("")
+  const [assistantName, setAssistantName] = useState("Piper")
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false)
@@ -44,6 +45,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
     if (session) {
       setIsLoggedIn(true)
       setUserName(session.userName)
+      setAssistantName(session.assistantName || 'Piper')
     }
     onNavigateToChat()
   }
@@ -76,6 +78,8 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         if (session) {
           console.log('LandingPage - valid session found, setting logged in state')
           setIsLoggedIn(true)
+          setUserName(session.userName)
+          setAssistantName(session.assistantName || 'Piper')
           setUserName(session.userName)
         } else {
           console.log('LandingPage - no valid session, setting logged out state')
@@ -170,7 +174,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 </Button>
               )}
               <Button onClick={handleTryNowClick} variant="ghost" className={isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}>
-                {isLoggedIn ? 'Your Assistant is Ready' : 'Login'}
+                {isLoggedIn ? `${assistantName} is Available` : 'Login'}
               </Button>
               <ThemeToggle />
             </div>

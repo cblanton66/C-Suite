@@ -59,7 +59,8 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
             SessionManager.createSession(
               data.userName || data.userEmail,
               data.userEmail,
-              data.permissions || []
+              data.permissions || [],
+              data.assistantName || 'Piper'
             )
             
             // Track successful login

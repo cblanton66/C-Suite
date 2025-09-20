@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Read all data from the sheet to check for matching credentials
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'A:K', // Covers all columns including Status and Permissions
+      range: 'A:L', // Covers all columns including Status, Permissions, and Assistant Name
     })
 
     const rows = response.data.values || []
@@ -39,9 +39,10 @@ export async function POST(request: NextRequest) {
     let userFound = false
     let userName = ''
     let userPermissions: string[] = ['chat'] // Default permission
+    let assistantName = 'Piper' // Default assistant name
     
     for (let i = 1; i < rows.length; i++) {
-      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus, permissions] = rows[i]
+      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus, permissions, assistantNameFromSheet] = rows[i]
       
       // Compare emails case-insensitively
       if (userEmail && userEmail.toLowerCase() === normalizedEmail && userPassword === password && userStatus === 'Active') {
@@ -51,6 +52,11 @@ export async function POST(request: NextRequest) {
         // Parse permissions (comma-separated string to array)
         if (permissions && typeof permissions === 'string') {
           userPermissions = permissions.split(',').map(p => p.trim().toLowerCase())
+        }
+        
+        // Set assistant name from sheet or default to 'Piper'
+        if (assistantNameFromSheet && typeof assistantNameFromSheet === 'string' && assistantNameFromSheet.trim()) {
+          assistantName = assistantNameFromSheet.trim()
         }
         
         break
@@ -94,7 +100,8 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
       userName,
       userEmail: normalizedEmail,
-      permissions: userPermissions
+      permissions: userPermissions,
+      assistantName
     })
 
   } catch (error) {
