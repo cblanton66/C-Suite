@@ -37,22 +37,16 @@ export class SessionManager {
       if (typeof window === 'undefined') return null
       
       const sessionJson = localStorage.getItem(SESSION_KEY)
-      console.log('SessionManager.getSession - sessionJson:', sessionJson)
       
       if (!sessionJson) {
-        console.log('SessionManager.getSession - no session found')
         return null
       }
 
       const session: SessionData = JSON.parse(sessionJson)
       const now = Date.now()
 
-      console.log('SessionManager.getSession - session expires at:', new Date(session.expiresAt))
-      console.log('SessionManager.getSession - current time:', new Date(now))
-
       // Check if session has expired
       if (now > session.expiresAt) {
-        console.log('SessionManager.getSession - session expired, clearing')
         this.clearSession()
         return null
       }
@@ -61,8 +55,6 @@ export class SessionManager {
       session.lastActivity = now
       session.expiresAt = now + SESSION_DURATION
       localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-
-      console.log('SessionManager.getSession - returning valid session for:', session.userEmail)
       return session
     } catch (error) {
       console.error('Error getting session:', error)

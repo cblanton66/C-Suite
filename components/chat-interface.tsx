@@ -176,7 +176,6 @@ export function ChatInterface() {
 
   useEffect(() => {
     // Reset logout flag when component mounts
-    console.log('🚨 ChatInterface component mounted - DEBUG VERSION 2025-09-21')
     setIsLoggingOut(false)
     
     // Load user data and validate session
@@ -187,8 +186,6 @@ export function ChatInterface() {
       // Get current session
       const session = SessionManager.getSession()
       if (session) {
-        console.log('ChatInterface - Loading session for user:', session.userEmail)
-        console.log('ChatInterface - User permissions from session:', session.permissions)
         setUserName(session.userName)
         setUserEmail(session.userEmail)
         setUserPermissions(session.permissions)
@@ -2268,11 +2265,7 @@ ${message.content}
             </div>
             
             {/* Admin Communications Button - Only visible to admin users */}
-            {(() => {
-              console.log('ChatInterface - Checking admin button visibility - userPermissions:', userPermissions)
-              console.log('ChatInterface - includes admin?', userPermissions.includes('admin'))
-              return userPermissions.includes('admin')
-            })() && (
+            {userPermissions.includes('admin') && (
               <div className="relative">
                 <Button
                   variant="outline"
