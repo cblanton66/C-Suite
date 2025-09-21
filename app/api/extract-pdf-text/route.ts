@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DocumentProcessorServiceClient } from '@google-cloud/documentai'
-const pdf = require('pdf-parse')
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +24,7 @@ export async function POST(request: NextRequest) {
     // Try simple PDF parsing first as fallback
     try {
       console.log('Attempting simple PDF text extraction...')
+      const pdf = (await import('pdf-parse')).default
       const data = await pdf(buffer)
       
       if (data.text && data.text.trim().length > 10) {
