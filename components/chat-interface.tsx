@@ -186,6 +186,8 @@ export function ChatInterface() {
       // Get current session
       const session = SessionManager.getSession()
       if (session) {
+        console.log('ChatInterface - Loading session for user:', session.userEmail)
+        console.log('ChatInterface - User permissions from session:', session.permissions)
         setUserName(session.userName)
         setUserEmail(session.userEmail)
         setUserPermissions(session.permissions)
@@ -2265,7 +2267,11 @@ ${message.content}
             </div>
             
             {/* Admin Communications Button - Only visible to admin users */}
-            {userPermissions.includes('admin') && (
+            {(() => {
+              console.log('ChatInterface - Checking admin button visibility - userPermissions:', userPermissions)
+              console.log('ChatInterface - includes admin?', userPermissions.includes('admin'))
+              return userPermissions.includes('admin')
+            })() && (
               <div className="relative">
                 <Button
                   variant="outline"
