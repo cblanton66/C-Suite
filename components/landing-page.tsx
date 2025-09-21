@@ -156,25 +156,56 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary-foreground" />
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4">
+          {/* Mobile: Stack logo and buttons vertically */}
+          <div className="block sm:hidden">
+            {/* Logo row */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">PeakSuite.ai</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Intelligence Built for Small Business</p>
+                <h1 className="text-xl font-bold text-foreground">PeakSuite.ai</h1>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            {/* Buttons row */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
+                {isLoggedIn ? `${assistantName} Available` : 'Login'}
+              </Button>
+              <div className="flex justify-end">
+                <ThemeToggle />
+              </div>
+            </div>
+            {/* Mobile Quick-Start Guide button */}
+            {trainingRoomVisible && (
+              <div className="mt-2 flex justify-center">
+                <Button variant="ghost" size="sm" onClick={() => window.open('/quick-start-guide', '_blank')}>
+                  Quick-Start Guide
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: Keep original horizontal layout */}
+          <div className="hidden sm:flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">PeakSuite.ai</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">AI-Powered Intelligence Built for Small Business</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
               {trainingRoomVisible && (
-                <Button variant="ghost" onClick={() => window.open('/quick-start-guide', '_blank')}>
+                <Button variant="ghost" size="sm" onClick={() => window.open('/quick-start-guide', '_blank')}>
                   Quick-Start Guide
                 </Button>
               )}
-              <Button onClick={handleTryNowClick} variant="ghost" className={isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}>
-                {isLoggedIn ? `${assistantName} is Available` : 'Login'}
+              <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs sm:text-sm whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
+                {isLoggedIn ? `${assistantName} Available` : 'Login'}
               </Button>
               <ThemeToggle />
             </div>
