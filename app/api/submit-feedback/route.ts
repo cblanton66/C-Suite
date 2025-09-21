@@ -3,6 +3,70 @@ import { google } from 'googleapis'
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action')
+
+    if (action !== 'list') {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    }
+
+    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: SCOPES,
+    })
+
+    const authClient = await auth.getClient()
+    const sheets = google.sheets({ version: 'v4', auth: authClient })
+
+    // Get all feedback data
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'Feedback!A:J', // Include all columns including admin response columns
+    })
+
+    const rows = response.data.values || []
+    const feedback: any[] = []
+
+    // Skip header row and process feedback
+    for (let i = 1; i < rows.length; i++) {
+      const [timestamp, email, feedbackType, subject, message, rating, pageFeature, status, adminResponse, responseDate] = rows[i]
+      
+      feedback.push({
+        rowIndex: i,
+        timestamp,
+        email,
+        feedbackType,
+        subject,
+        message,
+        rating,
+        pageFeature,
+        status,
+        adminResponse,
+        responseDate
+      })
+    }
+
+    // Sort by timestamp (newest first)
+    feedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+
+    return NextResponse.json({
+      success: true,
+      feedback
+    })
+
+  } catch (error) {
+    console.error('Error fetching feedback:', error)
+    return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -50,8 +114,8 @@ export async function POST(request: NextRequest) {
       rating || '',                 // F: Rating
       pageFeature || 'Chat Interface', // G: Page/Feature
       'New',                        // H: Status
-      '',                           // I: Priority (empty, for admin to fill)
-      ''                            // J: Notes (empty, for admin to fill)
+      '',                           // I: Admin Response (empty initially)
+      ''                            // J: Response Date (empty initially)
     ]
 
     // Append the data to the "Feedback" sheet

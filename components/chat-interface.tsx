@@ -36,11 +36,14 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
 import { FeedbackModal } from "@/components/feedback-modal"
+import { CommunicationsModal } from "@/components/communications-modal"
+import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
+import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
 import { SessionManager } from "@/lib/session-manager"
@@ -88,6 +91,7 @@ export function ChatInterface() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [assistantName, setAssistantName] = useState<string>('Piper')
+  const [dynamicMessage, setDynamicMessage] = useState<string>('You Have the Advantage Today!')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showFileUpload, setShowFileUpload] = useState(false)
@@ -107,6 +111,11 @@ export function ChatInterface() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [showBookmarks, setShowBookmarks] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showPDFExtractor, setShowPDFExtractor] = useState(false)
+  const [showCommunications, setShowCommunications] = useState(false)
+  const [showAdminCommunications, setShowAdminCommunications] = useState(false)
+  const [communicationsCount, setCommunicationsCount] = useState(0)
+  const [adminFeedbackCount, setAdminFeedbackCount] = useState(0)
   const [bookmarkedMessages, setBookmarkedMessages] = useState<Message[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [searchResults, setSearchResults] = useState<ChatSession[]>([])
@@ -181,6 +190,9 @@ export function ChatInterface() {
         setUserEmail(session.userEmail)
         setUserPermissions(session.permissions)
         setAssistantName(session.assistantName || 'Piper')
+        
+        // Check for unread updates
+        checkForUnreadUpdates(session.userEmail)
       } else {
         // Session expired or doesn't exist
         console.log('No valid session found')
@@ -230,24 +242,88 @@ export function ChatInterface() {
     }
   }, [])
 
-  // Check Training Room visibility on component mount
+  // Function to fetch admin feedback count (moved to component scope for reusability)
+  const fetchAdminFeedbackCount = async () => {
+    if (userEmail && userPermissions.includes('admin')) {
+      try {
+        // Get the last time user read updates
+        const readUpdatesKey = `read_updates_${userEmail}`
+        const lastReadTime = localStorage.getItem(readUpdatesKey) || '2020-01-01T00:00:00.000Z'
+        
+        const response = await fetch(`/api/admin-feedback-count?userEmail=${encodeURIComponent(userEmail)}&lastReadTime=${encodeURIComponent(lastReadTime)}`)
+        const data = await response.json()
+        if (data.success) {
+          setAdminFeedbackCount(data.totalUnreadCount || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching admin feedback count:', error)
+      }
+    }
+  }
+
+  // Check for unread updates and auto-open communications modal
+  const checkForUnreadUpdates = async (userEmail: string) => {
+    try {
+      // Get the last time user read updates (or use a very old date if never read)
+      const readUpdatesKey = `read_updates_${userEmail}`
+      const lastReadTime = localStorage.getItem(readUpdatesKey) || '2020-01-01T00:00:00.000Z'
+      
+      console.log('Checking for unread updates...', { userEmail, lastReadTime })
+      const response = await fetch(`/api/communications?userEmail=${encodeURIComponent(userEmail)}&type=all&lastLoginTime=${encodeURIComponent(lastReadTime)}`)
+      const data = await response.json()
+      
+      console.log('Unread updates response:', data)
+      
+      if (data.success && data.unreadUpdatesCount > 0) {
+        console.log(`Found ${data.unreadUpdatesCount} unread updates - opening modal`)
+        // Small delay to ensure the UI is fully loaded
+        setTimeout(() => {
+          setShowCommunications(true)
+        }, 1000)
+      } else {
+        console.log('No unread updates found')
+      }
+    } catch (error) {
+      console.error('Error checking for unread updates:', error)
+    }
+  }
+
+  // Check Training Room visibility and fetch communications count on component mount
   useEffect(() => {
-    const checkTrainingRoomVisibility = async () => {
+    const checkAdminSettings = async () => {
       try {
         const response = await fetch('/api/admin-settings')
         const data = await response.json()
         if (data.success) {
           setTrainingRoomVisible(data.settings.trainingRoomVisible)
+          setDynamicMessage(data.settings.dynamicMessage || 'You Have the Advantage Today!')
         }
       } catch (error) {
-        console.error('Error checking training room visibility:', error)
-        // Default to false if there's an error
+        console.error('Error checking admin settings:', error)
+        // Default to false for training room and default message if there's an error
         setTrainingRoomVisible(false)
+        setDynamicMessage('You Have the Advantage Today!')
       }
     }
 
-    checkTrainingRoomVisibility()
-  }, [])
+    const fetchCommunicationsCount = async () => {
+      if (userEmail) {
+        try {
+          const response = await fetch(`/api/communications?userEmail=${encodeURIComponent(userEmail)}&type=all`)
+          const data = await response.json()
+          if (data.success) {
+            setCommunicationsCount(data.count || 0)
+          }
+        } catch (error) {
+          console.error('Error fetching communications count:', error)
+        }
+      }
+    }
+
+    checkAdminSettings()
+    fetchCommunicationsCount()
+    fetchAdminFeedbackCount()
+  }, [userEmail, userPermissions])
 
   // Load bookmarks on mount
   useEffect(() => {
@@ -2016,7 +2092,25 @@ ${message.content}
               <MessageCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Share Feedback</span>
             </Button>
-            
+
+            {/* Communications Button */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCommunications(true)}
+                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-800"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="hidden sm:inline">Updates</span>
+                {communicationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {communicationsCount > 9 ? '9+' : communicationsCount}
+                  </span>
+                )}
+              </Button>
+            </div>
+
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
               <Button
@@ -2170,6 +2264,25 @@ ${message.content}
               )}
             </div>
             
+            {/* Admin Communications Button - Only visible to admin users */}
+            {userPermissions.includes('admin') && (
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdminCommunications(true)}
+                  className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 hover:text-purple-800"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin Comms</span>
+                  {adminFeedbackCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {adminFeedbackCount > 9 ? '9+' : adminFeedbackCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            )}
             
             {/* Admin Button - Only visible to admin users */}
             {userPermissions.includes('admin') && (
@@ -2180,11 +2293,14 @@ ${message.content}
                 className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 hover:text-purple-800"
               >
                 <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden sm:inline">Admin Page</span>
               </Button>
             )}
             
             <ThemeToggle />
+            
+            {/* Admin Controls - Only visible to admin users */}
+            <AdminNavToggle userEmail={userEmail} isAdmin={userPermissions.includes('admin')} />
             
             {/* Recording Status Indicator */}
             {isListening && (
@@ -2264,14 +2380,14 @@ ${message.content}
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-4xl font-semibold text-foreground mb-3">You Have the Advantage Today!</h2>
+                <h2 className="text-4xl font-semibold text-foreground mb-3">{dynamicMessage}</h2>
                 {userName && (
                   <p className="text-2xl text-muted-foreground mb-4">
                     {getGreeting()}, {userName.split(' ')[0].charAt(0).toUpperCase() + userName.split(' ')[0].slice(1).toLowerCase()}!
                   </p>
                 )}
                 <p className="text-2xl text-muted-foreground mb-8 text-balance">
-                  {assistantName} is ready to help you tackle your business challenges.
+                  Lets Get to Work!
                 </p>
 
                 {/* Input Area */}
@@ -2448,6 +2564,19 @@ ${message.content}
                               ) : (
                                 <Paperclip className="w-4 h-4" />
                               )}
+                            </Button>
+                          </FastTooltip>
+                          
+                          <FastTooltip content="Extract text from PDF">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={isLoading || !apiStatus?.hasApiKey}
+                              onClick={() => setShowPDFExtractor(true)}
+                              className="text-xs"
+                            >
+                              <FileText className="w-4 h-4" />
                             </Button>
                           </FastTooltip>
                         </div>
@@ -3096,6 +3225,81 @@ ${message.content}
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
         userEmail={userEmail}
+      />
+
+      {/* Communications Modal */}
+      <CommunicationsModal
+        isOpen={showCommunications}
+        onClose={() => {
+          setShowCommunications(false)
+          // Refresh communications count when modal closes
+          setTimeout(() => {
+            if (userEmail) {
+              fetch(`/api/communications?userEmail=${encodeURIComponent(userEmail)}&type=all`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    setCommunicationsCount(data.count || 0)
+                  }
+                })
+                .catch(error => console.error('Error refreshing communications count:', error))
+            }
+          }, 500)
+        }}
+        userEmail={userEmail || ''}
+        onReadUpdate={() => {
+          // Refresh admin badge count when updates are marked as read
+          fetchAdminFeedbackCount()
+        }}
+      />
+
+      {/* Admin Communications Modal */}
+      <AdminCommunicationsModal
+        isOpen={showAdminCommunications}
+        onClose={() => {
+          setShowAdminCommunications(false)
+          // Refresh counts when admin modal closes
+          setTimeout(() => {
+            const fetchCounts = async () => {
+              if (userEmail) {
+                try {
+                  const [commsResponse, adminResponse] = await Promise.all([
+                    fetch(`/api/communications?userEmail=${encodeURIComponent(userEmail)}&type=all`),
+                    userPermissions.includes('admin') ? fetch(`/api/admin-feedback-count?userEmail=${encodeURIComponent(userEmail)}`) : null
+                  ])
+                  
+                  const commsData = await commsResponse.json()
+                  if (commsData.success) {
+                    setCommunicationsCount(commsData.count || 0)
+                  }
+                  
+                  if (adminResponse) {
+                    const adminData = await adminResponse.json()
+                    if (adminData.success) {
+                      setAdminFeedbackCount(adminData.unrespondedCount || 0)
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error refreshing counts:', error)
+                }
+              }
+            }
+            fetchCounts()
+          }, 500)
+        }}
+        userEmail={userEmail || ''}
+      />
+
+      {/* PDF Text Extractor Modal */}
+      <PDFTextExtractorModal
+        isOpen={showPDFExtractor}
+        onClose={() => setShowPDFExtractor(false)}
+        onTextExtracted={(text) => {
+          // Set the extracted text as the input
+          setInput(text)
+          // Close the modal
+          setShowPDFExtractor(false)
+        }}
       />
     </div>
   )
