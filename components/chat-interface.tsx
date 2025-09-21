@@ -176,6 +176,7 @@ export function ChatInterface() {
 
   useEffect(() => {
     // Reset logout flag when component mounts
+    console.log('🚨 ChatInterface component mounted - DEBUG VERSION 2025-09-21')
     setIsLoggingOut(false)
     
     // Load user data and validate session
