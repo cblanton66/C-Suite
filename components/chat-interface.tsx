@@ -2052,7 +2052,7 @@ ${message.content}
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         {/* First line - Logo and User Menu */}
-        <div className="flex items-center justify-between p-4 pb-2">
+        <div className="flex items-center justify-between p-3 sm:p-4 pb-2">
           {/* Left side - Logo */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -2081,7 +2081,7 @@ ${message.content}
           </div>
 
           {/* Right side - Feedback + User Menu + Theme + Status */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Feedback Button - Prominent during beta */}
             <Button
               variant="outline"
