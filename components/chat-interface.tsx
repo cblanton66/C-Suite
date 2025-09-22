@@ -44,6 +44,7 @@ import { FeedbackModal } from "@/components/feedback-modal"
 import { CommunicationsModal } from "@/components/communications-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
+// import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
 import { SessionManager } from "@/lib/session-manager"
@@ -2922,7 +2923,7 @@ ${message.content}
         ) : (
           <div 
             ref={chatContainerRef} 
-            className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-32"
+            className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-80"
           >
             
             {messages.map((message) => (
@@ -3133,119 +3134,12 @@ ${message.content}
           </div>
         )}
 
-        {/* Hover Detection Zone - Invisible area at bottom for Apple-style hover */}
-        {messages.length > 0 && !isInputExpanded && !forceHidden && (
-          <>
-            <div 
-              className="fixed bottom-0 left-0 right-0 h-20 z-40"
-              onMouseEnter={() => {
-                if (forceHidden) return
-                if (hoverTimeoutRef.current) {
-                  clearTimeout(hoverTimeoutRef.current)
-                }
-                setIsHoveringBottom(true)
-              }}
-              onMouseLeave={() => {
-                if (forceHidden) return
-                hoverTimeoutRef.current = setTimeout(() => {
-                  setIsHoveringBottom(false)
-                }, 1000) // 1 second delay
-              }}
-            />
-            {/* Subtle indicator when input is hidden */}
-            <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-30">
-              <div className="bg-primary/20 hover:bg-primary/40 rounded-full px-3 py-1 transition-all duration-200 backdrop-blur-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse" />
-                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse delay-100" />
-                  <div className="w-1 h-1 bg-primary/60 rounded-full animate-pulse delay-200" />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Force Hide Input Button - Shows when input panel is up and might be interfering */}
-        {messages.length > 0 && (isInputExpanded || isInputPinned || isHoveringBottom) && !forceHidden && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={forceHideInputPanel}
-              className="h-8 px-3 text-xs bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 shadow-lg"
-              title="Force hide input panel (if it's blocking buttons)"
-            >
-              <X className="w-3 h-3 mr-1" />
-              Hide Input
-            </Button>
-          </div>
-        )}
-
-        {/* Hover Indicator - Three dots at bottom when input is hidden */}
-        {messages.length > 0 && !isInputExpanded && !isInputPinned && !isHoveringBottom && !forceHidden && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
-            <div className="bg-muted/80 backdrop-blur-sm rounded-full px-4 py-2 border border-border shadow-lg">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
-                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
-                <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Input Area - Only show when there are messages */}
         {messages.length > 0 && (
           <div 
-            className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out ${
-              !forceHidden && (isInputExpanded || isInputPinned || isHoveringBottom)
-                ? 'translate-y-0' 
-                : 'translate-y-full'
-            }`}
-            onMouseEnter={() => {
-              if (forceHidden) return
-              if (hoverTimeoutRef.current) {
-                clearTimeout(hoverTimeoutRef.current)
-              }
-              setIsHoveringBottom(true)
-            }}
-            onMouseLeave={() => {
-              if (forceHidden) return
-              hoverTimeoutRef.current = setTimeout(() => {
-                setIsHoveringBottom(false)
-              }, 1000)
-            }}
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out"
           >
             <div className="max-w-6xl mx-auto p-6">
-              {/* Pin Checkbox - Only show when not expanded */}
-              {!isInputExpanded && (
-                <div className="flex justify-end mb-4">
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={isInputPinned}
-                      onChange={handlePinToggle}
-                      className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-                    />
-                    <span>Pin input</span>
-                  </label>
-                </div>
-              )}
-              
-              {/* Pin Checkbox - Also show when expanded */}
-              {isInputExpanded && (
-                <div className="flex justify-end mb-4">
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={isInputPinned}
-                      onChange={handlePinToggle}
-                      className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-                    />
-                    <span>Pin input</span>
-                  </label>
-                </div>
-              )}
               {/* Upload Error */}
               {uploadError && (
                 <div className="flex items-center gap-2 mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-800">
@@ -3329,7 +3223,7 @@ ${message.content}
                       onKeyDown={handleKeyDown}
                       onFocus={() => setInputHasFocus(true)}
                       onBlur={() => setInputHasFocus(false)}
-                      placeholder={`What's on your agenda today? ${assistantName} is here to help.`}
+                      placeholder={`What's on your agenda today? Piper is here to help.`}
                       className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
                       disabled={isLoading || !apiStatus?.hasApiKey}
                     />
@@ -3483,6 +3377,16 @@ ${message.content}
             </div>
           </div>
         )}
+
+        {/* Hidden file input */}
+        <input
+          ref={multiFileInputRef}
+          type="file"
+          onChange={handleMultipleFileUpload}
+          className="hidden"
+          multiple
+          accept=".xlsx,.xls,.csv,.docx,.doc,.txt"
+        />
       </div>
 
       {/* File Upload Modal */}
@@ -3597,6 +3501,7 @@ ${message.content}
           setShowPDFExtractor(false)
         }}
       />
+
     </div>
   )
 }
