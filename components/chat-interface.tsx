@@ -128,6 +128,7 @@ export function ChatInterface() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
+  const [forceHidden, setForceHidden] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
@@ -469,6 +470,9 @@ export function ChatInterface() {
   useEffect(() => {
     return () => {
       clearSilenceTimeout()
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -597,6 +601,19 @@ export function ChatInterface() {
         startNewChat()
       }
     }
+  }
+
+  // Force hide input panel function
+  const forceHideInputPanel = () => {
+    setForceHidden(true)
+    setIsInputExpanded(false)
+    setIsHoveringBottom(false)
+    setIsInputPinned(false)
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    // Reset force hidden after a short delay to allow future interactions
+    setTimeout(() => setForceHidden(false), 1000)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -3117,17 +3134,19 @@ ${message.content}
         )}
 
         {/* Hover Detection Zone - Invisible area at bottom for Apple-style hover */}
-        {messages.length > 0 && !isInputExpanded && (
+        {messages.length > 0 && !isInputExpanded && !forceHidden && (
           <>
             <div 
               className="fixed bottom-0 left-0 right-0 h-20 z-40"
               onMouseEnter={() => {
+                if (forceHidden) return
                 if (hoverTimeoutRef.current) {
                   clearTimeout(hoverTimeoutRef.current)
                 }
                 setIsHoveringBottom(true)
               }}
               onMouseLeave={() => {
+                if (forceHidden) return
                 hoverTimeoutRef.current = setTimeout(() => {
                   setIsHoveringBottom(false)
                 }, 1000) // 1 second delay
@@ -3146,8 +3165,24 @@ ${message.content}
           </>
         )}
 
+        {/* Force Hide Input Button - Shows when input panel is up and might be interfering */}
+        {messages.length > 0 && (isInputExpanded || isInputPinned || isHoveringBottom) && !forceHidden && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={forceHideInputPanel}
+              className="h-8 px-3 text-xs bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 shadow-lg"
+              title="Force hide input panel (if it's blocking buttons)"
+            >
+              <X className="w-3 h-3 mr-1" />
+              Hide Input
+            </Button>
+          </div>
+        )}
+
         {/* Hover Indicator - Three dots at bottom when input is hidden */}
-        {messages.length > 0 && !isInputExpanded && !isInputPinned && !isHoveringBottom && (
+        {messages.length > 0 && !isInputExpanded && !isInputPinned && !isHoveringBottom && !forceHidden && (
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
             <div className="bg-muted/80 backdrop-blur-sm rounded-full px-4 py-2 border border-border shadow-lg">
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -3163,17 +3198,19 @@ ${message.content}
         {messages.length > 0 && (
           <div 
             className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out ${
-              isInputExpanded || isInputPinned || isHoveringBottom 
+              !forceHidden && (isInputExpanded || isInputPinned || isHoveringBottom)
                 ? 'translate-y-0' 
                 : 'translate-y-full'
             }`}
             onMouseEnter={() => {
+              if (forceHidden) return
               if (hoverTimeoutRef.current) {
                 clearTimeout(hoverTimeoutRef.current)
               }
               setIsHoveringBottom(true)
             }}
             onMouseLeave={() => {
+              if (forceHidden) return
               hoverTimeoutRef.current = setTimeout(() => {
                 setIsHoveringBottom(false)
               }, 1000)
