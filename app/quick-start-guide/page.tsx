@@ -12,7 +12,8 @@ import {
   ExternalLink,
   ArrowLeft,
   BookOpen,
-  Loader2
+  Loader2,
+  ArrowDownCircle
 } from "lucide-react"
 import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
 
@@ -133,6 +134,16 @@ export default function QuickStartGuide() {
     setExpandedCategory(expandedCategory === categoryName ? null : categoryName)
   }
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -178,38 +189,56 @@ export default function QuickStartGuide() {
               Master PeakSuite.ai in 3 simple steps:
             </p>
             <div className="grid md:grid-cols-3 gap-6 text-left">
-              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                    1
+              <div 
+                className="bg-background/50 rounded-xl p-6 border border-primary/20 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                onClick={() => scrollToSection('common-questions')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                      1
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Read Common Questions</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Read Common Questions</h3>
+                  <ArrowDownCircle className="w-5 h-5 text-primary group-hover:text-primary/80 transition-all duration-200 group-hover:translate-y-0.5" />
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground group-hover:text-foreground transition-colors">
                   Start with the most frequently asked questions below to understand how to ask effective questions.
                 </p>
               </div>
               
-              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                    2
+              <div 
+                className="bg-background/50 rounded-xl p-6 border border-primary/20 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                onClick={() => scrollToSection('real-conversations')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                      2
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Review Real Conversations</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Review Real Conversations</h3>
+                  <ArrowDownCircle className="w-5 h-5 text-primary group-hover:text-primary/80 transition-all duration-200 group-hover:translate-y-0.5" />
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground group-hover:text-foreground transition-colors">
                   Explore actual user conversations to see the question-and-answer flow in action.
                 </p>
               </div>
               
-              <div className="bg-background/50 rounded-xl p-6 border border-primary/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                    3
+              <div 
+                className="bg-background/50 rounded-xl p-6 border border-primary/20 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                onClick={() => scrollToSection('join-platform')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                      3
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Join the Platform & Explore</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Join the Platform & Explore</h3>
+                  <ArrowDownCircle className="w-5 h-5 text-primary group-hover:text-primary/80 transition-all duration-200 group-hover:translate-y-0.5" />
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground group-hover:text-foreground transition-colors">
                   Start your platform journey and explore - your business potential is limitless!
                 </p>
               </div>
@@ -219,7 +248,7 @@ export default function QuickStartGuide() {
       </section>
 
       {/* Q&A Section */}
-      <section className="py-16 px-4 bg-card/30">
+      <section id="common-questions" className="py-16 px-4 bg-card/30">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             
@@ -260,7 +289,7 @@ export default function QuickStartGuide() {
       </section>
 
       {/* Real Conversations Section */}
-      <section className="py-16 px-4 bg-gradient-to-b from-background to-primary/5">
+      <section id="real-conversations" className="py-16 px-4 bg-gradient-to-b from-background to-primary/5">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
           
@@ -364,7 +393,7 @@ export default function QuickStartGuide() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-border bg-card/20">
+      <footer id="join-platform" className="py-12 px-4 border-t border-border bg-card/20">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-lg text-muted-foreground mb-4">
             Join the Platform - Built for Business Leaders!   
