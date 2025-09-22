@@ -17,33 +17,16 @@ export async function POST(request: NextRequest) {
     if (file.size > 10 * 1024 * 1024) { // 10MB limit
       return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
     }
+    
+    // Note: Google Cloud Document AI has a 30-page limit
+    // We can't easily check page count before processing, so we'll handle it in the error response
 
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Try simple PDF parsing first as fallback
-    try {
-      console.log('Attempting simple PDF text extraction...')
-      const pdf = (await import('pdf-parse')).default
-      const data = await pdf(buffer)
-      
-      if (data.text && data.text.trim().length > 10) {
-        const cleanedText = data.text
-          .replace(/\s+/g, ' ')
-          .replace(/\n\s*\n/g, '\n\n')
-          .trim()
-        
-        return NextResponse.json({ 
-          success: true, 
-          text: cleanedText,
-          fileName: file.name,
-          pageCount: data.numpages || 1,
-          method: 'simple-parser'
-        })
-      }
-    } catch (simpleError) {
-      console.log('Simple PDF parsing failed, trying Google Cloud Document AI...', simpleError.message)
-    }
+    // Simple PDF parser temporarily disabled due to library debug mode bug
+    // TODO: Re-enable when pdf-parse library issue is resolved
+    console.log('Skipping simple PDF parser, using Google Cloud Document AI...')
 
     // Check for required environment variables
     if (!process.env.GOOGLE_CREDENTIALS) {
@@ -60,8 +43,8 @@ export async function POST(request: NextRequest) {
     // Document AI processor configuration
     const projectId = credentials.project_id
     const location = 'us'
-    // Replace this with your new processor ID from Step 2
-    const processorId = '95ce97589fd703d0' // TODO: Update with your actual processor ID
+    // Document OCR processor for general PDF text extraction
+    const processorId = 'bf02bcc94035f695'
     
     // Correct processor name format (without :process)
     const name = `projects/${projectId}/locations/${location}/processors/${processorId}`
@@ -70,8 +53,7 @@ export async function POST(request: NextRequest) {
     console.log('Processor name:', name)
     console.log('File size:', buffer.length)
 
-    // Prepare the request according to the API specification
-    // Try with base64 encoding again but ensure it's properly formatted
+    // Prepare the request for Document OCR processor
     const documentRequest = {
       name: name,
       rawDocument: {
@@ -119,16 +101,25 @@ export async function POST(request: NextRequest) {
     console.error('Error details:', {
       name: error.name,
       message: error.message,
-      stack: error.stack,
       code: error.code,
       details: error.details,
       statusDetails: error.statusDetails
     })
     
+    // Log field violations if available
+    if (error.statusDetails && error.statusDetails.length > 0) {
+      console.error('Field violations:', JSON.stringify(error.statusDetails, null, 2))
+    }
+    
     // More specific error messages
     let errorMessage = 'PDF extraction failed'
     if (error.code === 3) {
-      errorMessage = 'Invalid request format or processor configuration'
+      // Check if it's a page limit error
+      if (error.message && error.message.includes('pages exceed the limit')) {
+        errorMessage = 'PDF has too many pages. Google Cloud Document AI supports up to 30 pages per document. Please split your PDF into smaller files or try a shorter document.'
+      } else {
+        errorMessage = 'Invalid request format or processor configuration'
+      }
     } else if (error.code === 7) {
       errorMessage = 'Permission denied - check Google Cloud credentials'
     } else if (error.code === 5) {
