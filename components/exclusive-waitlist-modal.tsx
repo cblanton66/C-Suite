@@ -176,12 +176,10 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-foreground mb-3">
-                Join Our Beta Testing Program
+                Request Platform Access
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                You are signing up for beta testing of PeakSuite.ai. As a beta tester, you agree to 
-                use the system for testing purposes, provide feedback on functionality, and understand 
-                that features may change during development.
+                Join the exclusive community of business leaders using PeakSuite.ai. As a platform member, you'll gain access to enterprise-grade AI intelligence tools designed for strategic decision-making and business growth.
               </p>
             </div>
 
@@ -323,27 +321,27 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
                     onClick={() => setShowTermsModal(true)}
                     className="text-primary underline hover:text-primary/80 transition-colors"
                   >
-                    Beta Testing Terms
+                    Platform Access Terms
                   </button>
-                  {" "}and understand this is a testing environment.
+                  {" "}and acknowledge this is a premium business platform.
                 </label>
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !agreedToTerms}>
-                {isSubmitting ? "Adding to Waitlist..." : "Request Beta Access"}
+                {isSubmitting ? "Submitting Request..." : "Request Platform Access"}
               </Button>
             </form>
 
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Beta testing positions are limited • We'll contact you within 48 hours if selected
+                Platform access is selective • We'll contact you within 48 hours regarding your application
               </p>
             </div>
           </div>
         )}
       </Card>
       
-      {/* Beta Testing Terms Modal */}
+      {/* Platform Access Terms Modal */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           {/* Backdrop */}
@@ -365,16 +363,16 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
             </Button>
 
             <div className="p-6 space-y-4">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Beta Testing Agreement for PeakSuite.ai</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Platform Access Agreement for PeakSuite.ai</h2>
               
               <div className="space-y-4 text-sm text-foreground leading-relaxed">
                 <p>
-                  By proceeding with registration, you acknowledge and agree to participate as a beta tester for PeakSuite.ai under the following terms:
+                  By proceeding with registration, you acknowledge and agree to access PeakSuite.ai as a premium platform member under the following terms:
                 </p>
 
                 <div>
-                  <h4 className="font-semibold mb-2">Testing Participation:</h4>
-                  <p>You agree to use the PeakSuite.ai system solely for beta testing and evaluation purposes during the designated testing period.</p>
+                  <h4 className="font-semibold mb-2">Platform Access:</h4>
+                  <p>You agree to use the PeakSuite.ai system for legitimate business intelligence and strategic decision-making purposes in accordance with our terms of service.</p>
                 </div>
 
                 <div>
@@ -386,7 +384,7 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
                   <h4 className="font-semibold mb-2">Development Acknowledgment:</h4>
                   <p>You understand and acknowledge that:</p>
                   <ul className="list-disc pl-6 mt-2 space-y-1">
-                    <li>The software is in beta/pre-release form and may contain bugs, errors, or incomplete features</li>
+                    <li>The platform is continuously evolving with new features and enhancements</li>
                     <li>Features, functionality, and system specifications are subject to modification or removal without prior notice</li>
                     <li>The system may experience downtime, data loss, or performance issues during the testing phase</li>
                   </ul>
@@ -394,16 +392,16 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
 
                 <div>
                   <h4 className="font-semibold mb-2">Use Limitations:</h4>
-                  <p>The beta software is provided for evaluation purposes only and is not intended for production or commercial use.</p>
+                  <p>The platform is designed for professional business use and strategic decision-making by qualified business leaders.</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold mb-2">No Warranty:</h4>
-                  <p>The beta software is provided "as is" without warranties of any kind, either express or implied.</p>
+                  <p>The platform is provided with enterprise-grade reliability, though no software system can be guaranteed to be error-free.</p>
                 </div>
 
                 <p className="pt-4 border-t border-border">
-                  <strong>By continuing with registration, you confirm that you have read, understood, and agree to be bound by these beta testing terms.</strong>
+                  <strong>By continuing with registration, you confirm that you have read, understood, and agree to be bound by these platform access terms.</strong>
                 </p>
               </div>
 

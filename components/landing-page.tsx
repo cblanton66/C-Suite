@@ -188,7 +188,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
           </div>
 
           {/* Desktop: Keep original horizontal layout */}
-          <div className="hidden sm:flex items-center justify-between">
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
@@ -410,13 +410,13 @@ Your Complete Business Intelligence Platform            </h3>
           Join growing companies that are making smarter decisions faster with AI-powered business insights built by someone who understands your challenges.          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => setShowWaitlistModal(true)}>
-              Beta Signup
+              Join the Platform
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section - Hidden for Beta */}
+      {/* Pricing Section - Hidden during selective access period */}
       <section className="py-20 px-4 bg-muted/30 hidden">
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-3xl font-bold text-foreground mb-4">

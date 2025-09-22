@@ -127,7 +127,7 @@ export function PDFTextExtractorModal({ isOpen, onClose, onTextExtracted }: PDFT
       {/* Modal */}
       <Card className="relative w-full max-w-4xl mx-4 max-h-[90vh] shadow-2xl border-2 border-primary/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-blue-700" />

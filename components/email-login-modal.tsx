@@ -138,10 +138,10 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-foreground mb-3">
-                Beta Access Login
+                Platform Access Login
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                Enter your email and the password provided during your beta onboarding call.
+                Enter your email and the password provided during your platform onboarding session.
               </p>
             </div>
 

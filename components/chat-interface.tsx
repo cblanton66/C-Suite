@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -1085,11 +1085,11 @@ export function ChatInterface() {
 
   const copyToClipboard = async (text: string, messageId: string) => {
     try {
-      // Create rich HTML content for the message
+      // Create rich HTML content optimized for business documents (always light theme)
       const richContent = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 800px;">
-          <div style="background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px;">
-            <div style="white-space: pre-wrap; word-wrap: break-word;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 800px; margin: 0;">
+          <div style="background: #ffffff; color: #1f2937; border: 1px solid #d1d5db; padding: 16px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+            <div style="white-space: pre-wrap; word-wrap: break-word; font-size: 14px;">
               ${text.replace(/\n/g, '<br>')}
             </div>
           </div>
@@ -1129,6 +1129,244 @@ export function ChatInterface() {
         }
         document.body.removeChild(textArea)
       }
+    }
+  }
+
+  const printMessage = (text: string, messageId: string) => {
+    // Find the actual rendered message element on screen
+    const messageElement = document.querySelector(`[data-message-id='${messageId}']`)
+    
+    let renderedContent = ''
+    
+    if (messageElement) {
+      // Look specifically for the prose div that contains rendered markdown
+      const proseElement = messageElement.querySelector('.prose')
+      
+      if (proseElement) {
+        // Get the beautifully rendered HTML content with all styling
+        renderedContent = proseElement.innerHTML
+      } else {
+        // Fallback: look for the card content or any content container
+        const cardContent = messageElement.querySelector('.prose, [class*="markdown"], .group > div')
+        if (cardContent) {
+          renderedContent = cardContent.innerHTML
+        } else {
+          // Last fallback: get all content from the message element
+          renderedContent = messageElement.innerHTML
+        }
+      }
+    }
+    
+    // If we couldn't find rendered content, fall back to processing the raw text
+    if (!renderedContent || renderedContent.trim() === '') {
+      // Convert markdown tables to HTML as fallback
+      renderedContent = text
+        .replace(/\n/g, '<br>')
+        // Convert markdown tables to HTML tables
+        .replace(/\|(.+)\|\n\|[-\s\|]+\|\n((?:\|.+\|\n?)*)/g, (match, header, rows) => {
+          const headerCells = header.split('|').map(cell => `<th style="padding: 12px; border: 1px solid #d1d5db; background: #f9fafb; font-weight: bold; text-align: left;">${cell.trim()}</th>`).filter(cell => cell !== '<th style="padding: 12px; border: 1px solid #d1d5db; background: #f9fafb; font-weight: bold; text-align: left;"></th>').join('')
+          const rowCells = rows.trim().split('\n').map(row => {
+            const cells = row.split('|').map(cell => `<td style="padding: 12px; border: 1px solid #d1d5db; text-align: left;">${cell.trim()}</td>`).filter(cell => cell !== '<td style="padding: 12px; border: 1px solid #d1d5db; text-align: left;"></td>').join('')
+            return `<tr>${cells}</tr>`
+          }).join('')
+          return `<table style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 1px solid #d1d5db;"><thead><tr>${headerCells}</tr></thead><tbody>${rowCells}</tbody></table>`
+        })
+    }
+
+    // Create enhanced print content with perfect styling
+    const printContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PeakSuite.ai - Professional Report</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #ffffff;
+          }
+          .message-container {
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            padding: 24px 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+          }
+          .message-content {
+            font-size: 14px;
+            line-height: 1.6;
+          }
+          
+          /* Perfect table styling to match screen MarkdownRenderer */
+          .overflow-x-auto {
+            overflow-x: auto;
+            margin-bottom: 8px;
+          }
+          table {
+            min-width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid var(--border, #e2e8f0) !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            margin: 8px 0 !important;
+          }
+          thead {
+            background: var(--muted, #f1f5f9) !important;
+          }
+          th {
+            padding: 8px 12px !important;
+            text-align: left !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: var(--foreground, #0f172a) !important;
+            border-bottom: 1px solid var(--border, #e2e8f0) !important;
+          }
+          td {
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            color: var(--foreground, #0f172a) !important;
+            border-bottom: 1px solid var(--border, #e2e8f0) !important;
+          }
+          tr:nth-child(even) {
+            background-color: #f9fafb !important;
+          }
+          
+          /* Prose styling to match MarkdownRenderer */
+          .message-content {
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+          }
+          .message-content h1 {
+            font-size: 18px !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            margin-bottom: 12px !important;
+            margin-top: 16px !important;
+          }
+          .message-content h2 {
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            margin-bottom: 8px !important;
+            margin-top: 12px !important;
+          }
+          .message-content h3 {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            margin-bottom: 8px !important;
+            margin-top: 8px !important;
+          }
+          .message-content p {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            color: #0f172a !important;
+            margin-bottom: 8px !important;
+          }
+          .message-content ul, .message-content ol {
+            margin-left: 24px !important;
+            font-size: 14px !important;
+            color: #0f172a !important;
+            margin-bottom: 8px !important;
+          }
+          .message-content li {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            padding-left: 4px !important;
+            margin-bottom: 4px !important;
+          }
+          .message-content code {
+            background: #f1f5f9 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            font-size: 12px !important;
+            font-family: 'Monaco', 'Courier New', monospace !important;
+          }
+          .message-content pre {
+            background: #f1f5f9 !important;
+            padding: 12px !important;
+            border-radius: 8px !important;
+            overflow-x: auto !important;
+            font-size: 12px !important;
+            font-family: 'Monaco', 'Courier New', monospace !important;
+            margin: 8px 0 !important;
+          }
+          .message-content blockquote {
+            border-left: 4px solid #3b82f6 !important;
+            padding-left: 16px !important;
+            margin: 8px 0 !important;
+            background: #f8fafc !important;
+            padding: 8px 16px !important;
+            border-radius: 0 8px 8px 0 !important;
+          }
+          .message-content strong {
+            font-weight: 600 !important;
+            color: #0f172a !important;
+          }
+          .message-content em {
+            font-style: italic !important;
+            color: #0f172a !important;
+          }
+          .message-content a {
+            color: #3b82f6 !important;
+            text-decoration: underline !important;
+          }
+          
+          /* Headers and text formatting */
+          h1, h2, h3, h4, h5, h6 {
+            color: #1f2937 !important;
+            margin: 20px 0 10px 0 !important;
+          }
+          p {
+            margin: 10px 0 !important;
+          }
+          strong, b {
+            font-weight: bold !important;
+            color: #1f2937 !important;
+          }
+          
+          @media print {
+            body { margin: 0; padding: 15px; }
+            .message-container { box-shadow: none; border: 1px solid #d1d5db; }
+            table { page-break-inside: avoid; }
+            tr { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="message-container">
+          <div class="message-content">${renderedContent}</div>
+        </div>
+      </body>
+      </html>
+    `
+
+    // Open new window with the perfectly formatted content
+    const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
+    
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      
+      // Auto-focus and trigger print dialog
+      printWindow.focus()
+      
+      // Wait for content to load, then trigger print
+      setTimeout(() => {
+        printWindow.print()
+        // Close window after printing (optional)
+        // printWindow.close()
+      }, 500)
+    } else {
+      alert('Pop-up blocked! Please allow pop-ups for printing functionality.')
     }
   }
 
@@ -1835,9 +2073,9 @@ export function ChatInterface() {
     VercelAnalytics.trackConversationExport('markdown')
 
     try {
-      // Create rich HTML content for clipboard
+      // Create rich HTML content optimized for business documents (always light theme)
       const richContent = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 800px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 800px; margin: 0;">
           <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
               🧮 ${currentSession.title}
@@ -2052,7 +2290,7 @@ ${message.content}
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         {/* First line - Logo and User Menu */}
-        <div className="flex items-center justify-between p-3 sm:p-4 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 pb-2">
           {/* Left side - Logo */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -2081,8 +2319,8 @@ ${message.content}
           </div>
 
           {/* Right side - Feedback + User Menu + Theme + Status */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Feedback Button - Prominent during beta */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Feedback Button - Important for platform improvement */}
             <Button
               variant="outline"
               size="sm"
@@ -2375,7 +2613,7 @@ ${message.content}
 
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-auto flex flex-col">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-6xl w-full mx-auto">
@@ -2484,155 +2722,149 @@ ${message.content}
                     
                   </form>
                   
-                  {/* Control Panel - Single Row Layout */}
-                  <div className="flex justify-center mt-4">
-                    <div className="flex items-center justify-center w-full max-w-4xl gap-4">
-                      {/* Left Side - Quick Action Buttons */}
-                      <div className="flex gap-2">
-                        <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
+                  {/* Control Panel - Simplified Single Row Layout */}
+                  <div className="flex justify-center mt-4 px-2">
+                    <div className="flex flex-wrap justify-center gap-2 max-w-full">
+                      <FastTooltip content="Request Detailed Report - Ask for more comprehensive analysis with references">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput('Please give me a more detailed report with references.')}
+                          className="text-xs hover:bg-primary/10"
+                        >
+                          😀
+                        </Button>
+                      </FastTooltip>
+                      
+                      <FastTooltip content="Create Table - Format your data into a structured table">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                          className="text-xs hover:bg-primary/10"
+                        >
+                          📋
+                        </Button>
+                      </FastTooltip>
+                      
+                      <FastTooltip content="Summarize Data - Extract key insights and highlights">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                          className="text-xs hover:bg-primary/10"
+                        >
+                          📝
+                        </Button>
+                      </FastTooltip>
+                      
+                      <FastTooltip content="Bullet Points - Convert content to organized bullet points">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                          className="text-xs hover:bg-primary/10"
+                        >
+                          •
+                        </Button>
+                      </FastTooltip>
+                      
+                      {/* File Upload Button */}
+                      <div className="relative">
+                        <input
+                          type="file"
+                          ref={multiFileInputRef}
+                          className="hidden"
+                          onChange={handleMultipleFileUpload}
+                          accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
+                          multiple
+                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        />
+                        <FastTooltip content="Upload multiple files (up to 5)">
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                            className="text-xs hover:bg-primary/10"
-                          >
-                            😀
-                          </Button>
-                        </FastTooltip>
-                        
-                        <FastTooltip content="Create Table - Format your data into a structured table">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                            className="text-xs hover:bg-primary/10"
-                          >
-                            📋
-                          </Button>
-                        </FastTooltip>
-                        
-                        <FastTooltip content="Summarize Data - Extract key insights and highlights">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                            className="text-xs hover:bg-primary/10"
-                          >
-                            📝
-                          </Button>
-                        </FastTooltip>
-                        
-                        <FastTooltip content="Bullet Points - Convert content to organized bullet points">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                            className="text-xs hover:bg-primary/10"
-                          >
-                            •
-                          </Button>
-                        </FastTooltip>
-                        
-                        {/* File Upload Button */}
-                        <div className="relative">
-                          <input
-                            type="file"
-                            ref={multiFileInputRef}
-                            className="hidden"
-                            onChange={handleMultipleFileUpload}
-                            accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
-                            multiple
                             disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          />
-                          <FastTooltip content="Upload multiple files (up to 5)">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                              onClick={() => {
-                                multiFileInputRef.current?.click()
-                              }}
-                              className="text-xs"
-                            >
-                              {isUploading ? (
-                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <Paperclip className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </FastTooltip>
-                          
-                          <FastTooltip content="Extract text from PDF">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={isLoading || !apiStatus?.hasApiKey}
-                              onClick={() => setShowPDFExtractor(true)}
-                              className="text-xs"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
-                          </FastTooltip>
-                        </div>
-                      </div>
-
-                      {/* Right Side - Primary Action Buttons (Same Size) */}
-                      <div className="flex gap-2">
-                        {/* Speech-to-Text Button */}
-                        <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={isLoading || !apiStatus?.hasApiKey}
-                            onClick={toggleSpeechRecognition}
-                            className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                            onClick={() => {
+                              multiFileInputRef.current?.click()
+                            }}
+                            className="text-xs"
                           >
-                            {isListening ? (
-                              <MicOff className="w-4 h-4 animate-pulse" />
+                            {isUploading ? (
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : (
-                              <Mic className="w-4 h-4" />
+                              <Paperclip className="w-4 h-4" />
                             )}
                           </Button>
                         </FastTooltip>
-                        
-                        {/* Submit Button */}
-                        <FastTooltip content="Send Message - Send your message to the AI">
-                          <Button
-                            type="submit"
-                            variant="default"
-                            size="sm"
-                            disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                            onClick={handleSubmit}
-                            className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
-                              (inputHasFocus && input.trim()) || isListening
-                                ? 'bg-green-400 hover:bg-green-500'
-                                : 'bg-primary hover:bg-primary/90'
-                            }`}
-                          >
-                           Send ▲
-                          </Button>
-                        </FastTooltip>
-                        
-                        {/* New Chat Button */}
-                        <FastTooltip content="Start a new conversation">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={startNewChat}
-                            className="w-20 h-9 text-xs flex items-center justify-center gap-1"
-                          >
-                            <Plus className="w-3 h-3" />
-                            New
-                          </Button>
-                        </FastTooltip>
                       </div>
+                      
+                      <FastTooltip content="Extract text from PDF">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                          onClick={() => setShowPDFExtractor(true)}
+                          className="text-xs"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                      </FastTooltip>
+                      
+                      {/* Speech-to-Text Button */}
+                      <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading || !apiStatus?.hasApiKey}
+                          onClick={toggleSpeechRecognition}
+                          className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                        >
+                          {isListening ? (
+                            <MicOff className="w-4 h-4 animate-pulse" />
+                          ) : (
+                            <Mic className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </FastTooltip>
+                      
+                      {/* Submit Button */}
+                      <FastTooltip content="Send Message - Send your message to the AI">
+                        <Button
+                          type="submit"
+                          variant="default"
+                          size="sm"
+                          disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                          onClick={handleSubmit}
+                          className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
+                            (inputHasFocus && input.trim()) || isListening
+                              ? 'bg-green-400 hover:bg-green-500'
+                              : 'bg-primary hover:bg-primary/90'
+                          }`}
+                        >
+                         Send ▲
+                        </Button>
+                      </FastTooltip>
+                      
+                      {/* New Chat Button */}
+                      <FastTooltip content="Start a new conversation">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={startNewChat}
+                          className="w-20 h-9 text-xs flex items-center justify-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          New
+                        </Button>
+                      </FastTooltip>
                     </div>
                   </div>
                   
@@ -2673,11 +2905,11 @@ ${message.content}
         ) : (
           <div 
             ref={chatContainerRef} 
-            className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-96"
+            className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-32"
           >
             
             {messages.map((message) => (
-              <div key={message.id} id={`message-${message.id}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={message.id} id={`message-${message.id}`} data-message-id={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
                   className={`max-w-[80%] p-4 ${
                     message.role === "user" ? "bg-blue-500 dark:bg-blue-600 text-white" : "bg-card"
@@ -2790,6 +3022,16 @@ ${message.content}
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => printMessage(message.content, message.id)}
+                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+                            title="Print message"
+                          >
+                            <Printer className="w-3 h-3 mr-1" />
+                            Print
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => startEditingMessage(message.id, message.content)}
                             className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
                             title="Edit message"
@@ -2832,6 +3074,16 @@ ${message.content}
                             <Copy className="w-3 h-3 mr-1" />
                           )}
                           {copiedMessageId === message.id ? "Copied" : "Copy"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => printMessage(message.content, message.id)}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                          title="Print message"
+                        >
+                          <Printer className="w-3 h-3 mr-1" />
+                          Print
                         </Button>
                       </div>
                     </div>
@@ -3049,133 +3301,140 @@ ${message.content}
                 
               </form>
               
-              {/* Control Panel - Single Row Layout */}
-              <div className="flex justify-center mt-4">
-                <div className="flex items-center justify-center w-full max-w-4xl gap-4">
-                  {/* Left Side - Quick Action Buttons */}
-                  <div className="flex gap-2">
-                    <FastTooltip content="Use Happy Tone - Make the response upbeat and positive">
+              {/* Control Panel - Simplified Single Row Layout */}
+              <div className="flex justify-center mt-4 px-2">
+                <div className="flex flex-wrap justify-center gap-2 max-w-full">
+                  <FastTooltip content="Request Detailed Report - Ask for more comprehensive analysis with references">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput('Please give me a more detailed report with references.')}
+                      className="text-xs hover:bg-primary/10"
+                    >
+                      😀
+                    </Button>
+                  </FastTooltip>
+                  
+                  <FastTooltip content="Create Table - Format your data into a structured table">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
+                      className="text-xs hover:bg-primary/10"
+                    >
+                      📋
+                    </Button>
+                  </FastTooltip>
+                  
+                  <FastTooltip content="Summarize Data - Extract key insights and highlights">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
+                      className="text-xs hover:bg-primary/10"
+                    >
+                      📝
+                    </Button>
+                  </FastTooltip>
+                  
+                  <FastTooltip content="Bullet Points - Convert content to organized bullet points">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
+                      className="text-xs hover:bg-primary/10"
+                    >
+                      •
+                    </Button>
+                  </FastTooltip>
+                  
+                  {/* File Upload Button */}
+                  <div className="relative">
+                    <FastTooltip content="Upload multiple files (up to 5)">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setInput(input ? 'Use a happy tone in the response:\n' + input : 'Use an upbeat and happy tone in the response')}
-                        className="text-xs hover:bg-primary/10"
+                        disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
+                        onClick={() => {
+                          multiFileInputRef.current?.click()
+                        }}
+                        className="text-xs"
                       >
-                        😀
-                      </Button>
-                    </FastTooltip>
-                    
-                    <FastTooltip content="Create Table - Format your data into a structured table">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                        className="text-xs hover:bg-primary/10"
-                      >
-                        📋
-                      </Button>
-                    </FastTooltip>
-                    
-                    <FastTooltip content="Summarize Data - Extract key insights and highlights">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                        className="text-xs hover:bg-primary/10"
-                      >
-                        📝
-                      </Button>
-                    </FastTooltip>
-                    
-                    <FastTooltip content="Bullet Points - Convert content to organized bullet points">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                        className="text-xs hover:bg-primary/10"
-                      >
-                        •
-                      </Button>
-                    </FastTooltip>
-                    
-                    {/* File Upload Button */}
-                    <div className="relative">
-                      <FastTooltip content="Upload multiple files (up to 5)">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                          onClick={() => {
-                            multiFileInputRef.current?.click()
-                          }}
-                          className="text-xs"
-                        >
-                          {isUploading ? (
-                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Paperclip className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </FastTooltip>
-                    </div>
-                  </div>
-
-                  {/* Right Side - Primary Action Buttons (Same Size) */}
-                  <div className="flex gap-2">
-                    {/* Speech-to-Text Button */}
-                    <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isLoading || !apiStatus?.hasApiKey}
-                        onClick={toggleSpeechRecognition}
-                        className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
-                      >
-                        {isListening ? (
-                          <MicOff className="w-4 h-4 animate-pulse" />
+                        {isUploading ? (
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <Mic className="w-4 h-4" />
+                          <Paperclip className="w-4 h-4" />
                         )}
                       </Button>
                     </FastTooltip>
-                    
-                    {/* Submit Button */}
-                    <FastTooltip content="Send Message - Send your message to the AI">
-                      <Button
-                        type="submit"
-                        variant="default"
-                        size="sm"
-                        disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
-                        onClick={handleSubmit}
-                        className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
-                          (inputHasFocus && input.trim()) || isListening
-                            ? 'bg-green-400 hover:bg-green-500'
-                            : 'bg-primary hover:bg-primary/90'
-                        }`}
-                      >
-                       Send ▲
-                      </Button>
-                    </FastTooltip>
-                    
-                    {/* New Chat Button */}
-                    <FastTooltip content="Start a new conversation">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={startNewChat}
-                        className="w-20 h-9 text-xs flex items-center justify-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        New
-                      </Button>
-                    </FastTooltip>
                   </div>
+                  
+                  <FastTooltip content="Extract text from PDF">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoading || !apiStatus?.hasApiKey}
+                      onClick={() => setShowPDFExtractor(true)}
+                      className="text-xs"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </Button>
+                  </FastTooltip>
+                  
+                  {/* Speech-to-Text Button */}
+                  <FastTooltip content={isListening ? 'Stop voice recording' : 'Start voice recording'}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoading || !apiStatus?.hasApiKey}
+                      onClick={toggleSpeechRecognition}
+                      className={`w-20 h-9 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50' : ''}`}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-4 h-4 animate-pulse" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </FastTooltip>
+                  
+                  {/* Submit Button */}
+                  <FastTooltip content="Send Message - Send your message to the AI">
+                    <Button
+                      type="submit"
+                      variant="default"
+                      size="sm"
+                      disabled={(!input.trim() && !isListening) || isLoading || !apiStatus?.hasApiKey}
+                      onClick={handleSubmit}
+                      className={`w-20 h-9 text-xs text-primary-foreground transition-colors ${
+                        (inputHasFocus && input.trim()) || isListening
+                          ? 'bg-green-400 hover:bg-green-500'
+                          : 'bg-primary hover:bg-primary/90'
+                      }`}
+                    >
+                     Send ▲
+                    </Button>
+                  </FastTooltip>
+                  
+                  {/* New Chat Button */}
+                  <FastTooltip content="Start a new conversation">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={startNewChat}
+                      className="w-20 h-9 text-xs flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      New
+                    </Button>
+                  </FastTooltip>
                 </div>
               </div>
               

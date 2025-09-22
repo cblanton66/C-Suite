@@ -101,7 +101,7 @@ export function CommunicationsModal({ isOpen, onClose, userEmail, onReadUpdate }
           // Detailed view
           <div className="flex flex-col h-full max-h-[85vh]">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -174,7 +174,7 @@ export function CommunicationsModal({ isOpen, onClose, userEmail, onReadUpdate }
           // List view
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                   <Bell className="w-6 h-6 text-primary-foreground" />

@@ -51,7 +51,7 @@ export function BookmarksModal({
       {/* Modal */}
       <Card className="relative w-full max-w-4xl mx-4 max-h-[85vh] shadow-2xl border-2 border-primary/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Bookmark className="w-6 h-6 text-primary-foreground" />

@@ -162,10 +162,10 @@ export function AccessCodeModal({ isOpen, onClose, onSuccess }: AccessCodeModalP
           </div>
         </form>
 
-        {/* Beta Note */}
+        {/* Platform Note */}
         <div className="mt-6 pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground text-center">
-            This is a beta version of PeakSuite.ai. Access codes are provided to early testers.
+            PeakSuite.ai is an exclusive business intelligence platform. Access codes are provided to qualified business professionals.
           </p>
         </div>
       </Card>

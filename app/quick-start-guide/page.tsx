@@ -207,10 +207,10 @@ export default function QuickStartGuide() {
                   <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
                     3
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Get Beta Access & Explore</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Join the Platform & Explore</h3>
                 </div>
                 <p className="text-muted-foreground">
-                  Start your beta journey and explore - your imagination is the limit!
+                  Start your platform journey and explore - your business potential is limitless!
                 </p>
               </div>
             </div>
@@ -367,7 +367,7 @@ export default function QuickStartGuide() {
       <footer className="py-12 px-4 border-t border-border bg-card/20">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-lg text-muted-foreground mb-4">
-            Become a Beta Tester - No Experience Required!   
+            Join the Platform - Built for Business Leaders!   
           </p>
          
           <Button 

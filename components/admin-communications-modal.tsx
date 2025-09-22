@@ -157,7 +157,7 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
           // Feedback Response View
           <div className="flex flex-col h-full max-h-[90vh]">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -259,7 +259,7 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
           // Main View
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                   <Megaphone className="w-6 h-6 text-purple-700" />
@@ -348,7 +348,7 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
                       className="w-full p-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="All Users">All Users</option>
-                      <option value="Beta Users">Beta Users</option>
+                      <option value="Beta Users">Platform Members</option>
                     </select>
                   </div>
 
