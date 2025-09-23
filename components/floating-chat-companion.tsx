@@ -281,7 +281,7 @@ export function FloatingChatCompanion({
               <div className="space-y-4">
                 <textarea
                   ref={textareaRef}
-                  placeholder="Ask a follow-up question..."
+                  placeholder="Want to dive deeper or explore something else?"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}

@@ -1580,7 +1580,7 @@ export function ChatInterface() {
     // Track export action
     VercelAnalytics.trackConversationExport('text')
 
-    let content = `${assistantName} Conversation Export\\n`
+    let content = `PeakSuite.ai Conversation Export\\n`
     content += `Title: ${currentSession.title}\\n`
     content += `Date: ${currentSession.createdAt.toLocaleDateString()}\\n`
     content += `Messages: ${currentSession.messages.length}\\n`
@@ -2020,7 +2020,7 @@ export function ChatInterface() {
       </head>
       <body>
         <div class="header">
-          <h1>🧮 ${assistantName} Conversation Export</h1>
+          <h1>🧮 PeakSuite.ai Conversation Export</h1>
           <div class="header-info">
             <div class="header-info-item">
               <strong>Title:</strong> ${currentSession.title}
@@ -2328,7 +2328,7 @@ ${message.content}
                       <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
                     </FastTooltip>
                     <p className="text-xs text-muted-foreground">
-                      Assistant: {assistantName} Peak
+                      Assistant: {assistantName}
                     </p>
                   </div>
                 </div>
@@ -2731,7 +2731,7 @@ ${message.content}
                           onKeyDown={handleKeyDown}
                           onFocus={() => setInputHasFocus(true)}
                           onBlur={() => setInputHasFocus(false)}
-                          placeholder={`What's on the agenda? ${assistantName} is here to help.`}
+                          placeholder="What's on the Agenda today?"
                           className={`pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y ${messages.length === 0 && !input ? 'text-center placeholder:text-center' : ''}`}
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />
@@ -3223,8 +3223,8 @@ ${message.content}
                       onKeyDown={handleKeyDown}
                       onFocus={() => setInputHasFocus(true)}
                       onBlur={() => setInputHasFocus(false)}
-                      placeholder={`What's on your agenda today? Piper is here to help.`}
-                      className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
+                      placeholder="Want to dive deeper or explore something else?"
+                      className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow,text-align] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y text-center placeholder:text-center"
                       disabled={isLoading || !apiStatus?.hasApiKey}
                     />
                   </div>
