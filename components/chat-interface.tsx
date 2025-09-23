@@ -2328,7 +2328,7 @@ ${message.content}
                       <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
                     </FastTooltip>
                     <p className="text-xs text-muted-foreground">
-                      Assistant: {assistantName}
+                      {assistantName} Peak - VA
                     </p>
                   </div>
                 </div>
