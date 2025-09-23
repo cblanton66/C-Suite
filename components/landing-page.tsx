@@ -171,7 +171,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             {/* Buttons row */}
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
-                {isLoggedIn ? `${assistantName} Available` : 'Login'}
+                {isLoggedIn ? `${assistantName} is Available` : 'Login'}
               </Button>
               <div className="flex justify-end">
                 <ThemeToggle />
@@ -205,7 +205,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 </Button>
               )}
               <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs sm:text-sm whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
-                {isLoggedIn ? `${assistantName} Available` : 'Login'}
+                {isLoggedIn ? `${assistantName} is Available` : 'Login'}
               </Button>
               <ThemeToggle />
             </div>

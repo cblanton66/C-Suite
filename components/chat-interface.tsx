@@ -221,26 +221,8 @@ export function ChatInterface() {
         }
       }
       
-      if (savedCurrentSession && savedSessions) {
-        const sessions: ChatSession[] = JSON.parse(savedSessions).map((session: any) => ({
-          ...session,
-          createdAt: new Date(session.createdAt),
-          lastUpdated: new Date(session.lastUpdated),
-          messages: session.messages.map((msg: any) => ({
-            ...msg,
-            createdAt: new Date(msg.createdAt)
-          }))
-        }))
-        const currentSession = sessions.find(s => s.id === savedCurrentSession)
-        if (currentSession) {
-          setCurrentSessionId(savedCurrentSession)
-          setMessages(currentSession.messages)
-        } else {
-          startNewChat()
-        }
-      } else if (!savedSessions) {
-        startNewChat()
-      }
+      // Always start with a new conversation on login
+      startNewChat()
     }
   }, [])
 
@@ -2324,7 +2306,7 @@ ${message.content}
                     {userName}
                   </p>
                   <div className="flex items-center gap-2">
-                    <FastTooltip content={apiStatus?.hasApiKey ? "AI Connected - Ready to chat" : "AI Disconnected - Check connection"}>
+                    <FastTooltip content={apiStatus?.hasApiKey ? "Piper is Available" : "AI Disconnected - Check connection"}>
                       <div className={`w-2 h-2 rounded-full ${apiStatus?.hasApiKey ? "bg-green-500" : "bg-orange-500"}`}></div>
                     </FastTooltip>
                     <p className="text-xs text-muted-foreground">
