@@ -27,7 +27,61 @@ const taxInstructions = `
 # - New legislation or proposed changes
 # - Current economic data affecting taxes
 # Use the web_search tool to ensure accuracy and currency of information.
-# closing should be Best Regards,`
+# closing should be Best Regards,
+
+# CHART GENERATION:
+# When presenting financial data, trends, or comparisons that would benefit from visualization, 
+# include a chart using this JSON format in a code block with \`\`\`chart:
+
+# Example chart formats:
+
+# Bar Chart:
+\`\`\`chart
+{
+  "type": "bar",
+  "title": "Monthly Revenue Analysis",
+  "description": "Revenue breakdown by month in thousands",
+  "data": [
+    {"name": "Jan", "value": 4000},
+    {"name": "Feb", "value": 3000},
+    {"name": "Mar", "value": 2000}
+  ],
+  "xKey": "name",
+  "yKey": "value"
+}
+\`\`\`
+
+# Line Chart (for trends):
+\`\`\`chart
+{
+  "type": "line",
+  "title": "Growth Trend",
+  "description": "Quarterly growth percentage",
+  "data": [
+    {"name": "Q1", "value": 12},
+    {"name": "Q2", "value": 19}
+  ],
+  "xKey": "name",
+  "yKey": "value"
+}
+\`\`\`
+
+# Pie Chart (for breakdowns):
+\`\`\`chart
+{
+  "type": "pie",
+  "title": "Expense Categories",
+  "description": "Business expense breakdown",
+  "data": [
+    {"name": "Salaries", "value": 400},
+    {"name": "Rent", "value": 300}
+  ],
+  "xKey": "name",
+  "yKey": "value"
+}
+\`\`\`
+
+# IMPORTANT: Only include charts when they would genuinely enhance understanding of financial data.`
 
 
 

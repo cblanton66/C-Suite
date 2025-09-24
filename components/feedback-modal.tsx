@@ -66,11 +66,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
         setRating(0)
         setFeedbackType("General Feedback")
         
-        // Auto-close after success
-        setTimeout(() => {
-          setSubmitSuccess(false)
-          onClose()
-        }, 2000)
+        // Success - user will close manually
       } else {
         setSubmitError(data.error || 'Failed to submit feedback')
       }
@@ -126,9 +122,19 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
           <div className="text-center py-8">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-foreground mb-2">Thank You!</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-6">
               Your feedback has been submitted successfully. We appreciate your input!
             </p>
+            <Button
+              onClick={() => {
+                setSubmitSuccess(false)
+                onClose()
+              }}
+              className="w-full"
+              size="lg"
+            >
+              Close
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">

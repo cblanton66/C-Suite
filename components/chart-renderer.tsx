@@ -1,119 +1,142 @@
 "use client"
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-interface ChartData {
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+
+export interface ChartData {
   type: 'line' | 'bar' | 'pie'
   title: string
   data: any[]
-  xAxis?: string
-  yAxis?: string
-  colors?: string[]
+  xKey?: string
+  yKey?: string
+  description?: string
 }
 
 interface ChartRendererProps {
   chartData: ChartData
 }
 
-const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6b7280']
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1']
 
 export function ChartRenderer({ chartData }: ChartRendererProps) {
-  const { type, title, data, xAxis, yAxis, colors = COLORS } = chartData
+  const { type, title, data, xKey = 'name', yKey = 'value', description } = chartData
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <h3 className="font-semibold mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground">No data available</p>
+      </div>
+    )
+  }
 
   const renderChart = () => {
     switch (type) {
-      case 'line':
-        return (
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={xAxis || 'name'} />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey={yAxis || 'value'} stroke={colors[0]} strokeWidth={2} />
-          </LineChart>
-        )
-      
       case 'bar':
         return (
-          <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={xAxis || 'name'} />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey={yAxis || 'value'} fill={colors[0]} />
-          </BarChart>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey={xKey} stroke="hsl(var(--foreground))" fontSize={12} />
+              <YAxis stroke="hsl(var(--foreground))" fontSize={12} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+              />
+              <Legend />
+              <Bar dataKey={yKey} fill="hsl(var(--primary))" />
+            </BarChart>
+          </ResponsiveContainer>
+        )
+      
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey={xKey} stroke="hsl(var(--foreground))" fontSize={12} />
+              <YAxis stroke="hsl(var(--foreground))" fontSize={12} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+              />
+              <Legend />
+              <Line type="monotone" dataKey={yKey} stroke="hsl(var(--primary))" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
         )
       
       case 'pie':
         return (
-          <PieChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey={yKey}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         )
       
       default:
-        return <div>Unsupported chart type</div>
+        return <div className="text-sm text-muted-foreground">Unsupported chart type: {type}</div>
     }
   }
 
   return (
-    <div className="w-full bg-card border rounded-lg p-4 mb-4">
-      <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        {renderChart()}
-      </ResponsiveContainer>
+    <div className="my-6 p-4 border rounded-lg bg-card">
+      <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
+      {description && (
+        <p className="text-sm text-muted-foreground mb-4">{description}</p>
+      )}
+      {renderChart()}
     </div>
   )
 }
 
-// Helper function to parse simple chart data from text
-export function parseChartFromText(text: string): ChartData | null {
-  // Look for patterns like:
-  // CHART:BAR:Revenue by Month
-  // January: 100000
-  // February: 120000
-  // March: 110000
+export function parseChartFromText(content: string): ChartData | null {
+  const chartMatch = content.match(/```chart\s*\n([\s\S]*?)\n```/)
   
-  const chartMatch = text.match(/CHART:(LINE|BAR|PIE):(.+?)\n([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i)
   if (!chartMatch) return null
-
-  const [, type, title, dataText] = chartMatch
-  const lines = dataText.trim().split('\n')
-  const data = []
-
-  for (const line of lines) {
-    const match = line.match(/^(.+?):\s*([0-9,.]+)/)
-    if (match) {
-      const [, name, value] = match
-      data.push({
-        name: name.trim(),
-        value: parseFloat(value.replace(/,/g, ''))
-      })
+  
+  try {
+    const chartData = JSON.parse(chartMatch[1])
+    
+    // Validate required fields
+    if (!chartData.type || !chartData.title || !chartData.data) {
+      return null
     }
-  }
-
-  if (data.length === 0) return null
-
-  return {
-    type: type.toLowerCase() as 'line' | 'bar' | 'pie',
-    title: title.trim(),
-    data,
-    xAxis: 'name',
-    yAxis: 'value'
+    
+    // Validate chart type
+    if (!['line', 'bar', 'pie'].includes(chartData.type)) {
+      return null
+    }
+    
+    return chartData as ChartData
+  } catch (error) {
+    console.error('Error parsing chart data:', error)
+    return null
   }
 }

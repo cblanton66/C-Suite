@@ -8,7 +8,7 @@ export default function Home() {
   usePageAnalytics('home')
 
   const handleNavigateToChat = () => {
-    router.push("/chat")
+    router.push("/assistant")
   }
 
   return (

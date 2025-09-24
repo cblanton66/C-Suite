@@ -123,7 +123,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
             <Building2 className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground">PeakSuite.ai</h2>
+          <h2 className="text-2xl font-bold text-foreground">PeakSuite</h2>
         </div>
 
         {success ? (
@@ -131,17 +131,17 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-foreground mb-2">Welcome!</h3>
             <p className="text-muted-foreground">
-              Login successful. Redirecting to chat...
+              Login successful. Redirecting to assistant...
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-foreground mb-3">
-                Platform Access Login
+                PeakSuite Login
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                Enter your email and the password provided during your platform onboarding session.
+                Enter your email and the password provided by the PeakSuite team.
               </p>
             </div>
 
@@ -194,7 +194,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
               </div>
 
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? "Logging in..." : "Access Chat"}
+                {isSubmitting ? "Logging in..." : "Sign In"}
               </Button>
               
               <Button 
@@ -206,7 +206,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
                   onOpenWaitlist?.()
                 }}
               >
-                Join Waiting List
+                Request Access
               </Button>
             </form>
           </div>

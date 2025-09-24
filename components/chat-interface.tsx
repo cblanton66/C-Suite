@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -96,6 +96,7 @@ export function ChatInterface() {
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showFileUpload, setShowFileUpload] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
 
   // Get time-appropriate greeting
@@ -939,48 +940,142 @@ export function ChatInterface() {
     setUploadedFiles(prev => prev.filter((_, index) => index !== fileIndex))
   }
 
-  const quickActions = [
-    {
-      icon: <DollarSign className="w-4 h-4" />,
-      title: "Amortization Schedule",
-      description: "Amortization schedule for a loan",
-      prompt: "Help me create an amortization schedule for a loan. What information do you need from me to get started?"
-    },
-    {
-      icon: <BarChart3 className="w-4 h-4" />,
-      title: "KPI Analysis", 
-      description: "Key performance indicators",
-      prompt: "I'd like to analyze my business KPIs. Can you help me identify the most important metrics for my industry and set up a tracking system?"
-    },
-    {
-      icon: <FileText className="w-4 h-4" />,
-      title: "Tax Planning",
-      description: "Strategic tax optimization",
-      prompt: "I need help with tax planning strategies for my business. What are the key considerations and deadlines I should be aware of?"
-    },
-    {
-      icon: <PieChart className="w-4 h-4" />,
-      title: "Financial Health Check",
-      description: "Complete business assessment",
-      prompt: "Can you perform a comprehensive financial health check of my business? What financial statements and data should I provide?"
-    },
-    {
-      icon: <Target className="w-4 h-4" />,
-      title: "Budget Planning",
-      description: "Annual budget creation",
-      prompt: "I need to create an annual budget for my business. Can you guide me through the process and help identify key budget categories?"
-    },
-    {
-      icon: <TrendingUp className="w-4 h-4" />,
-      title: "Growth Modeling",
-      description: "Scenario planning & projections",
-      prompt: "Help me model different growth scenarios for my business. What variables should I consider and how do I build realistic projections?"
-    }
-  ]
+  const roleBasedActions = {
+    'Business Owner': [
+      {
+        icon: <TrendingUp className="w-4 h-4" />,
+        title: "Review Financials",
+        description: "Check cash flow & profit margins",
+        prompt: "Help me review my business financials. I need to check cash flow, profit margins, and expenses to ensure my business stays on track."
+      },
+      {
+        icon: <User className="w-4 h-4" />,
+        title: "Client Interaction",
+        description: "Manage customer relationships",
+        prompt: "I need help managing client relationships and communications. What are best practices for maintaining key client relationships?"
+      },
+      {
+        icon: <UserCheck className="w-4 h-4" />,
+        title: "Team Management",
+        description: "Employee oversight & delegation",
+        prompt: "Help me with team management strategies. I need guidance on employee oversight, addressing staffing issues, and effective delegation."
+      },
+      {
+        icon: <Megaphone className="w-4 h-4" />,
+        title: "Marketing Oversight",
+        description: "Campaign & brand visibility",
+        prompt: "I want to review my marketing efforts. Help me analyze campaign performance, social media engagement, and strategies to boost brand visibility."
+      },
+      {
+        icon: <Target className="w-4 h-4" />,
+        title: "Strategic Planning",
+        description: "Growth & expansion opportunities",
+        prompt: "Help me with strategic planning for business growth. I want to brainstorm new opportunities like product lines or market expansion."
+      },
+      {
+        icon: <AlertTriangle className="w-4 h-4" />,
+        title: "Problem-Solving",
+        description: "Handle unexpected issues",
+        prompt: "I need help with business problem-solving strategies. How do I effectively tackle unexpected issues like equipment problems or customer complaints?"
+      }
+    ],
+    'CPA': [
+      {
+        icon: <FileText className="w-4 h-4" />,
+        title: "Prepare Tax Returns",
+        description: "Federal, state & local filings",
+        prompt: "I need help preparing tax returns. What documents and information do I need for federal, state, and local tax filings?"
+      },
+      {
+        icon: <Calculator className="w-4 h-4" />,
+        title: "Calculate Tax Liabilities",
+        description: "Income, self-employment & sales tax",
+        prompt: "Help me calculate tax liabilities including income tax, self-employment tax, and sales tax. What deductions should I consider?"
+      },
+      {
+        icon: <Lightbulb className="w-4 h-4" />,
+        title: "Tax Strategies",
+        description: "Optimize deductions & credits",
+        prompt: "I need advice on tax strategies to optimize my tax outcome. What deductions, credits, or retirement contributions should I consider?"
+      },
+      {
+        icon: <BookOpen className="w-4 h-4" />,
+        title: "Tax Law Updates",
+        description: "Stay current on regulations",
+        prompt: "Help me stay updated on current tax law changes. What recent tax regulation changes should I be aware of for compliance?"
+      },
+      {
+        icon: <AlertCircle className="w-4 h-4" />,
+        title: "Tax Notices",
+        description: "IRS & state authority inquiries",
+        prompt: "I received a tax notice from the IRS/state. Help me understand how to respond to tax authority inquiries and what steps to take."
+      },
+      {
+        icon: <FolderOpen className="w-4 h-4" />,
+        title: "Review Tax Documents",
+        description: "Analyze W-2s, 1099s & receipts",
+        prompt: "I need help reviewing tax documents for accuracy and compliance. What should I look for in W-2s, 1099s, and business receipts?"
+      }
+    ],
+    'Bookkeeper': [
+      {
+        icon: <Edit className="w-4 h-4" />,
+        title: "Record Transactions",
+        description: "Daily sales, expenses & payments",
+        prompt: "Help me with recording daily transactions in my accounting software. What's the best way to enter sales, expenses, and payments accurately?"
+      },
+      {
+        icon: <CreditCard className="w-4 h-4" />,
+        title: "Reconcile Accounts",
+        description: "Match bank statements",
+        prompt: "I need help reconciling my accounts. How do I match bank statements with my ledgers and catch any discrepancies?"
+      },
+      {
+        icon: <DollarSign className="w-4 h-4" />,
+        title: "Process Payroll",
+        description: "Calculate wages & taxes",
+        prompt: "Help me with payroll processing. How do I calculate employee wages, taxes, and benefits while ensuring timely payments?"
+      },
+      {
+        icon: <Receipt className="w-4 h-4" />,
+        title: "Manage Invoices",
+        description: "Send & track receivables",
+        prompt: "I need help managing invoices and accounts receivable. What's the best way to send invoices and track overdue payments?"
+      },
+      {
+        icon: <TrendingUp className="w-4 h-4" />,
+        title: "Monitor Cash Flow",
+        description: "Track incoming & outgoing funds",
+        prompt: "Help me monitor my business cash flow effectively. How do I track incoming and outgoing funds to avoid cash crunches?"
+      },
+      {
+        icon: <BarChart3 className="w-4 h-4" />,
+        title: "Prepare Financial Reports",
+        description: "Balance sheets & income statements",
+        prompt: "I need help preparing financial reports. How do I generate accurate balance sheets and income statements for my business?"
+      }
+    ]
+  }
+
+  const quickActions = roleBasedActions[selectedRole]
 
   const handleQuickAction = (prompt: string) => {
     setInput(prompt)
   }
+
+  const handleRoleChange = (role: 'Business Owner' | 'CPA' | 'Bookkeeper') => {
+    setSelectedRole(role)
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedRole', role)
+  }
+
+  // Load saved role on component mount
+  useEffect(() => {
+    const savedRole = localStorage.getItem('selectedRole') as 'Business Owner' | 'CPA' | 'Bookkeeper' | null
+    if (savedRole && ['Business Owner', 'CPA', 'Bookkeeper'].includes(savedRole)) {
+      setSelectedRole(savedRole)
+    }
+  }, [])
 
   const startEditingMessage = (messageId: string, content: string) => {
     setEditingMessageId(messageId)
@@ -2322,10 +2417,10 @@ ${message.content}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Feedback Button - Important for platform improvement */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setShowFeedback(true)}
-              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-200 text-green-400 hover:text-green-800"
+              className="flex items-center gap-2"
             >
               <MessageCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Share Feedback</span>
@@ -2334,10 +2429,10 @@ ${message.content}
             {/* Communications Button */}
             <div className="relative">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowCommunications(true)}
-                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600 hover:text-blue-800"
+                className="flex items-center gap-2"
               >
                 <Bell className="w-4 h-4" />
                 <span className="hidden sm:inline">Updates</span>
@@ -2873,13 +2968,43 @@ ${message.content}
                   </div>
                 </div>
 
-                <div className="border-t border-gray-300 pt-6 mt-4"></div>
-                <p className="text-base text-muted-foreground mb-8">
-                  Use the Quick Actions to get started
+                <div className="border-t border-blue-800 pt-6 mt-4"></div>
+                <p className="text-2xl text-muted-foreground mb-4">
+                  What role are we playing today?
                 </p>
 
+                {/* Role Selection */}
+                <div className="flex justify-center gap-6 mb-8">
+                  {(['Business Owner', 'CPA', 'Bookkeeper'] as const).map((role) => (
+                    <label key={role} className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value={role}
+                        checked={selectedRole === role}
+                        onChange={() => handleRoleChange(role)}
+                        className="sr-only"
+                      />
+                      <div className={`w-4 h-4 border-2 rounded mr-2 flex items-center justify-center transition-all ${
+                        selectedRole === role 
+                          ? 'bg-primary border-primary' 
+                          : 'border-muted-foreground hover:border-primary'
+                      }`}>
+                        {selectedRole === role && (
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium transition-colors ${
+                        selectedRole === role ? 'text-primary' : 'text-muted-foreground'
+                      }`}>
+                        {role}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto transition-all duration-300">
                   {quickActions.map((action, index) => (
                     <Button
                       key={index}

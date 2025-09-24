@@ -410,7 +410,7 @@ Your Complete Business Intelligence Platform            </h3>
           Join growing companies that are making smarter decisions faster with AI-powered business insights built by someone who understands your challenges.          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => setShowWaitlistModal(true)}>
-              Join the Platform
+              Request Access
             </Button>
           </div>
         </div>

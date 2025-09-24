@@ -20,8 +20,8 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
   const chartData = parseChartFromText(content)
   
   // Remove chart syntax from content for normal markdown rendering
-  const cleanContent = content.replace(/CHART:(LINE|BAR|PIE):(.+?)\n([\s\S]*?)(?=\n\n|\n[A-Z]|$)/gi, '')
-  
+  const cleanContent = content.replace(/```chart[\s\S]*?```/g, '')
+    
   const copyCodeToClipboard = async (code: string, id: string) => {
     try {
       await navigator.clipboard.writeText(code)
