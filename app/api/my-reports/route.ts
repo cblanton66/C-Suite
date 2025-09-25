@@ -75,3 +75,144 @@ export async function GET(request: NextRequest) {
     }, { status: 500 })
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { reportId, title, description, userEmail } = await request.json()
+
+    if (!reportId || !userEmail) {
+      return NextResponse.json({ error: 'Report ID and user email are required' }, { status: 400 })
+    }
+
+    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
+      return NextResponse.json({ error: 'Google Sheets configuration missing' }, { status: 500 })
+    }
+
+    // Decode the base64 credentials
+    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
+    
+    // Initialize Google Sheets API
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    })
+
+    const sheets = google.sheets({ version: 'v4', auth })
+
+    // Get all data from ReportLinks sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'ReportLinks!A:O',
+    })
+
+    const rows = response.data.values
+    if (!rows || rows.length <= 1) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+    }
+
+    // Find the report row
+    const reportRowIndex = rows.findIndex(row => 
+      row[0] === reportId && row[5] === userEmail // reportId and createdBy
+    )
+
+    if (reportRowIndex === -1 || reportRowIndex === 0) {
+      return NextResponse.json({ error: 'Report not found or access denied' }, { status: 404 })
+    }
+
+    // Update the row (1-indexed for Google Sheets API)
+    const rowNumber = reportRowIndex + 1
+    const updatedRow = [...rows[reportRowIndex]]
+    if (title !== undefined) updatedRow[1] = title // title column
+    if (description !== undefined) updatedRow[12] = description // description column
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: `ReportLinks!A${rowNumber}:O${rowNumber}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [updatedRow]
+      }
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Report updated successfully'
+    })
+
+  } catch (error) {
+    console.error('Update Report API error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to update report' 
+    }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { reportId, userEmail } = await request.json()
+
+    if (!reportId || !userEmail) {
+      return NextResponse.json({ error: 'Report ID and user email are required' }, { status: 400 })
+    }
+
+    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
+      return NextResponse.json({ error: 'Google Sheets configuration missing' }, { status: 500 })
+    }
+
+    // Decode the base64 credentials
+    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
+    
+    // Initialize Google Sheets API
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    })
+
+    const sheets = google.sheets({ version: 'v4', auth })
+
+    // Get all data from ReportLinks sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'ReportLinks!A:O',
+    })
+
+    const rows = response.data.values
+    if (!rows || rows.length <= 1) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+    }
+
+    // Find the report row
+    const reportRowIndex = rows.findIndex(row => 
+      row[0] === reportId && row[5] === userEmail // reportId and createdBy
+    )
+
+    if (reportRowIndex === -1 || reportRowIndex === 0) {
+      return NextResponse.json({ error: 'Report not found or access denied' }, { status: 404 })
+    }
+
+    // Mark as inactive instead of actually deleting the row
+    const rowNumber = reportRowIndex + 1
+    const updatedRow = [...rows[reportRowIndex]]
+    updatedRow[9] = 'FALSE' // isActive column
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: `ReportLinks!A${rowNumber}:O${rowNumber}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [updatedRow]
+      }
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Report deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Delete Report API error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to delete report' 
+    }, { status: 500 })
+  }
+}

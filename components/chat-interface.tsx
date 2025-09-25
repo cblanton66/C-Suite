@@ -1528,6 +1528,39 @@ export function ChatInterface() {
     }
   }
 
+  const handleEditReportContent = (reportContent: string, reportTitle: string) => {
+    // Create a new message with the report content as an assistant response
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: reportContent,
+      createdAt: new Date()
+    }
+
+    // Add a context message showing this is being edited
+    const contextMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'user', 
+      content: `Edit this report: "${reportTitle}"`,
+      createdAt: new Date()
+    }
+
+    // Add both messages to the current session
+    setMessages(prev => [...prev, contextMessage, newMessage])
+    
+    // Set input to suggest editing
+    setInput(`Please improve or modify the above report. You can ask me to:\n- Add more details to specific sections\n- Change the tone or style\n- Include additional analysis\n- Restructure the content\n- Or any other modifications you'd like`)
+    
+    // Focus on the input
+    setTimeout(() => {
+      const inputElement = document.querySelector('textarea')
+      if (inputElement) {
+        inputElement.focus()
+        inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length)
+      }
+    }, 100)
+  }
+
   const toggleBookmark = (message: Message) => {
     const messageWithSessionInfo = {
       ...message,
@@ -3711,6 +3744,7 @@ ${message.content}
         isOpen={showMyReportsModal}
         onClose={() => setShowMyReportsModal(false)}
         userEmail={userEmail}
+        onEditContent={handleEditReportContent}
       />
 
       {/* Report Details Modal */}
@@ -3722,6 +3756,7 @@ ${message.content}
         }}
         onShare={handleShareWithDetails}
         isSharing={shareReportLoading === currentMessageToShare?.id}
+        reportContent={currentMessageToShare?.content}
       />
 
     </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2 } from "lucide-react"
+import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2 } from "lucide-react"
 
 interface Report {
   reportId: string
@@ -21,15 +21,19 @@ interface MyReportsModalProps {
   isOpen: boolean
   onClose: () => void
   userEmail?: string
+  onEditContent?: (reportContent: string, reportTitle: string) => void
 }
 
-export function MyReportsModal({ isOpen, onClose, userEmail }: MyReportsModalProps) {
+export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: MyReportsModalProps) {
   const [reports, setReports] = useState<Report[]>([])
   const [filteredReports, setFilteredReports] = useState<Report[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [error, setError] = useState("")
+  const [editingReport, setEditingReport] = useState<Report | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
   // Fetch user's reports
   const fetchReports = async () => {
@@ -91,10 +95,102 @@ export function MyReportsModal({ isOpen, onClose, userEmail }: MyReportsModalPro
     window.open(url, '_blank')
   }
 
+  const deleteReport = async (reportId: string) => {
+    setIsDeleting(reportId)
+    try {
+      const response = await fetch(`/api/my-reports`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reportId, userEmail }),
+      })
+
+      if (response.ok) {
+        // Remove from local state
+        setReports(prev => prev.filter(r => r.reportId !== reportId))
+        setFilteredReports(prev => prev.filter(r => r.reportId !== reportId))
+        setDeleteConfirm(null)
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to delete report')
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error)
+      setError('Failed to delete report')
+    } finally {
+      setIsDeleting(null)
+    }
+  }
+
+  const updateReport = async () => {
+    if (!editingReport) return
+    
+    try {
+      const response = await fetch(`/api/my-reports`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportId: editingReport.reportId,
+          title: editingReport.title,
+          description: editingReport.description,
+          userEmail
+        }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setReports(prev => prev.map(r => 
+          r.reportId === editingReport.reportId 
+            ? { ...r, title: editingReport.title, description: editingReport.description }
+            : r
+        ))
+        setFilteredReports(prev => prev.map(r => 
+          r.reportId === editingReport.reportId 
+            ? { ...r, title: editingReport.title, description: editingReport.description }
+            : r
+        ))
+        setEditingReport(null)
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to update report')
+      }
+    } catch (error) {
+      console.error('Error updating report:', error)
+      setError('Failed to update report')
+    }
+  }
+
+  const editReportContent = async (report: Report) => {
+    if (!onEditContent) return
+    
+    try {
+      // Extract the report ID from the shareable URL to fetch content
+      const reportId = report.shareableUrl.split('/').pop()
+      const response = await fetch(`/api/reports?reportId=${reportId}`)
+      const data = await response.json()
+      
+      if (response.ok && data.report?.content) {
+        // Close this modal and trigger content edit
+        onClose()
+        onEditContent(data.report.content, report.title)
+      } else {
+        setError('Unable to load report content for editing')
+      }
+    } catch (error) {
+      console.error('Error loading report content:', error)
+      setError('Failed to load report content')
+    }
+  }
+
   const handleClose = () => {
     setSearchQuery("")
     setError("")
     setCopiedUrl(null)
+    setEditingReport(null)
+    setDeleteConfirm(null)
     onClose()
   }
 
@@ -240,6 +336,48 @@ export function MyReportsModal({ isOpen, onClose, userEmail }: MyReportsModalPro
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Open
                       </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingReport(report)}
+                        className="h-8"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit Info
+                      </Button>
+
+                      {onEditContent && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => editReportContent(report)}
+                          className="h-8 text-blue-600 hover:text-blue-700"
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          Edit Content
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDeleteConfirm(report.reportId)}
+                        disabled={isDeleting === report.reportId}
+                        className="h-8 text-red-600 hover:text-red-700"
+                      >
+                        {isDeleting === report.reportId ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            Deleting
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -257,6 +395,84 @@ export function MyReportsModal({ isOpen, onClose, userEmail }: MyReportsModalPro
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">Delete Report</h3>
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to delete this report? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteReport(deleteConfirm)}
+                disabled={isDeleting === deleteConfirm}
+                className="flex-1"
+              >
+                {isDeleting === deleteConfirm ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Report'
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Report Modal */}
+      {editingReport && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">Edit Report</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Title</label>
+                <Input
+                  value={editingReport.title}
+                  onChange={(e) => setEditingReport(prev => prev ? {...prev, title: e.target.value} : null)}
+                  placeholder="Report title"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Input
+                  value={editingReport.description || ''}
+                  onChange={(e) => setEditingReport(prev => prev ? {...prev, description: e.target.value} : null)}
+                  placeholder="Report description"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setEditingReport(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={updateReport}
+                className="flex-1"
+              >
+                Save Changes
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
