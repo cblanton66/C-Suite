@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { Loader2, AlertCircle, Eye } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, Building2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 interface ReportData {
@@ -104,20 +104,36 @@ export default function SharedReportPage() {
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-3">
+              {/* Logo */}
               <a 
                 href="https://peaksuite.ai" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-block"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                <h1 className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
-                  {report.title}
-                </h1>
+                <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <span className="text-lg font-bold text-foreground">PeakSuite.ai</span>
               </a>
-              {report.description && (
-                <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
-              )}
+              
+              {/* Title */}
+              <div>
+                <a 
+                  href="https://peaksuite.ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <h1 className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
+                    {report.title}
+                  </h1>
+                </a>
+                {report.description && (
+                  <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               {report.clientName && (

@@ -3289,9 +3289,9 @@ ${message.content}
               <div className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
                 <Card className="p-4 bg-card shadow-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse delay-100"></div>
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse delay-200"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-100"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-200"></div>
                     <span className="text-sm text-muted-foreground ml-2">Working on it...</span>
                   </div>
                 </Card>
