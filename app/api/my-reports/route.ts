@@ -6,8 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userEmail = searchParams.get('userEmail')
+    const userEmail = request.nextUrl.searchParams.get('userEmail')
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
