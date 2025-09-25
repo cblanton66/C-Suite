@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Storage } from '@google-cloud/storage'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const fileName = searchParams.get('file')
+    const fileName = request.nextUrl.searchParams.get('file')
 
     if (!fileName) {
       return NextResponse.json({ error: 'File name is required' }, { status: 400 })
