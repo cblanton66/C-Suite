@@ -1486,7 +1486,7 @@ export function ChatInterface() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: `Peak Suite AI Report - ${new Date().toLocaleDateString()}`,
+          title: `PeakSuite Reporting - ${new Date().toLocaleDateString()}`,
           content: message.content,
           chartData: null, // Can be enhanced later to extract chart data from content
           description: 'AI-generated business intelligence report',
@@ -1499,7 +1499,7 @@ export function ChatInterface() {
 
       if (response.ok) {
         setSharedReportUrl(data.shareableUrl)
-        setCurrentSharedReportTitle(`Peak Suite AI Report - ${new Date().toLocaleDateString()}`)
+        setCurrentSharedReportTitle(`PeakSuite Reporting - ${new Date().toLocaleDateString()}`)
         setShowShareReportModal(true)
       } else {
         throw new Error(data.error || 'Failed to share report')

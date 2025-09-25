@@ -105,7 +105,16 @@ export default function SharedReportPage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-foreground">{report.title}</h1>
+              <a 
+                href="https://peaksuite.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                <h1 className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
+                  {report.title}
+                </h1>
+              </a>
               {report.description && (
                 <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
               )}
