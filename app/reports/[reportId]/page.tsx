@@ -142,7 +142,14 @@ export default function SharedReportPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span>Prepared by:</span>
-                <span className="font-medium text-foreground">Peak Suite AI</span>
+                <a 
+                  href="https://peaksuite.ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Peak Suite AI
+                </a>
               </div>
             </div>
           </div>
@@ -152,7 +159,14 @@ export default function SharedReportPage() {
         <div className="text-center mt-8 pt-6 border-t">
           <p className="text-sm text-muted-foreground">
             Powered by{' '}
-            <span className="font-medium text-primary">Peak Suite AI</span>
+            <a 
+              href="https://peaksuite.ai" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
+            >
+              Peak Suite AI
+            </a>
             {' '}• Professional Business Intelligence
           </p>
         </div>
