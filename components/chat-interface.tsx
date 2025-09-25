@@ -1490,7 +1490,8 @@ export function ChatInterface() {
           content: message.content,
           chartData: null, // Can be enhanced later to extract chart data from content
           description: 'AI-generated business intelligence report',
-          projectType: 'AI Analysis'
+          projectType: 'AI Analysis',
+          userEmail: userEmail || 'anonymous' // Include logged-in user email
         })
       })
 

@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
       clientEmail, 
       description, 
       projectType,
-      expiresAt 
+      expiresAt,
+      userEmail 
     } = await request.json()
 
     if (!title || !content) {
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
     const reportId = `rpt_${nanoid(10)}`
     
     // Create organized folder structure: Reports-view/user/client/reportId.md
-    const userEmail = 'chuck@blantoncpa.net' // TODO: Make this dynamic from auth
-    const userFolder = userEmail.replace('@', '_').replace(/\./g, '_')
+    const reportUserEmail = userEmail || 'anonymous'
+    const userFolder = reportUserEmail.replace('@', '_').replace(/\./g, '_')
     const clientFolder = clientName?.toLowerCase().replace(/\s+/g, '-') || 'general'
     const contentPath = `Reports-view/${userFolder}/${clientFolder}/${reportId}.md`
 
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       contentPath, // Store file path instead of content
       chartDataString,
       timestamp, // createdDate
-      'chuck@blantoncpa.net', // createdBy (you can make this dynamic later)
+      reportUserEmail, // createdBy - now dynamic based on logged-in user
       clientName || '',
       clientEmail || '',
       expiresAt || '', // expiresAt (optional)
