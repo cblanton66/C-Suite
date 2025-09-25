@@ -33,8 +33,11 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
 
   // Function to fetch AI suggestions
   const fetchAISuggestions = async (content: string) => {
+    console.log('🎯 [CLIENT] Starting AI suggestions fetch for content length:', content.length)
     setIsGeneratingSuggestions(true)
+    
     try {
+      console.log('📤 [CLIENT] Making fetch request to /api/suggest-report-details')
       const response = await fetch('/api/suggest-report-details', {
         method: 'POST',
         headers: {
@@ -43,15 +46,33 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
         body: JSON.stringify({ content }),
       })
 
+      console.log('📥 [CLIENT] Response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+
       const data = await response.json()
+      console.log('📊 [CLIENT] Response data:', data)
+
       if (data.success && data.suggestions) {
+        console.log('✅ [CLIENT] Successfully applying AI suggestions:', data.suggestions)
         setTitle(data.suggestions.title)
         setDescription(data.suggestions.description)
+      } else {
+        console.log('❌ [CLIENT] Invalid response format or no success flag:', data)
       }
     } catch (error) {
-      console.error('Error fetching AI suggestions:', error)
+      console.error('💥 [CLIENT] Error fetching AI suggestions:', error)
+      console.error('💥 [CLIENT] Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      })
       // Keep default values if AI fails
     } finally {
+      console.log('🏁 [CLIENT] AI suggestions fetch complete')
       setIsGeneratingSuggestions(false)
     }
   }

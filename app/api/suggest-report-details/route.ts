@@ -5,25 +5,35 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 [SUGGEST-REPORT-DETAILS] API called at:', new Date().toISOString())
+  
   try {
     const { content } = await request.json()
+    console.log('📥 [SUGGEST-REPORT-DETAILS] Request payload received, content length:', content?.length || 0)
 
     if (!content || typeof content !== 'string') {
+      console.log('❌ [SUGGEST-REPORT-DETAILS] Invalid content:', { content: typeof content, length: content?.length })
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
+      console.log('❌ [SUGGEST-REPORT-DETAILS] OpenAI API key not configured')
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
+
+    console.log('✅ [SUGGEST-REPORT-DETAILS] OpenAI API key found, length:', process.env.OPENAI_API_KEY.length)
 
     // Initialize OpenAI client at runtime
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
+    console.log('✅ [SUGGEST-REPORT-DETAILS] OpenAI client initialized successfully')
 
     // Truncate content if it's too long to avoid token limits
     const truncatedContent = content.length > 3000 ? content.substring(0, 3000) + '...' : content
+    console.log('📝 [SUGGEST-REPORT-DETAILS] Content prepared, final length:', truncatedContent.length, 'characters')
 
+    console.log('🤖 [SUGGEST-REPORT-DETAILS] Calling OpenAI API...')
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -49,10 +59,16 @@ Return your response in JSON format with "title" and "description" fields only.`
       temperature: 0.7
     })
 
+    console.log('✅ [SUGGEST-REPORT-DETAILS] OpenAI API response received')
+    console.log('📊 [SUGGEST-REPORT-DETAILS] Usage:', completion.usage)
+
     const response = completion.choices[0]?.message?.content
     if (!response) {
+      console.log('❌ [SUGGEST-REPORT-DETAILS] No response content from OpenAI')
       throw new Error('No response from OpenAI')
     }
+
+    console.log('📄 [SUGGEST-REPORT-DETAILS] Raw OpenAI response:', response)
 
     // Parse the JSON response, handling markdown code blocks
     let suggestions
@@ -65,14 +81,18 @@ Return your response in JSON format with "title" and "description" fields only.`
         cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
       }
       
+      console.log('🧹 [SUGGEST-REPORT-DETAILS] Cleaned response for JSON parsing:', cleanResponse)
       suggestions = JSON.parse(cleanResponse)
+      console.log('✅ [SUGGEST-REPORT-DETAILS] Successfully parsed JSON:', suggestions)
     } catch (parseError) {
       // If JSON parsing fails, create fallback suggestions
-      console.error('Failed to parse OpenAI response:', parseError)
+      console.error('❌ [SUGGEST-REPORT-DETAILS] Failed to parse OpenAI response:', parseError)
+      console.error('❌ [SUGGEST-REPORT-DETAILS] Raw response that failed to parse:', response)
       suggestions = {
         title: "Business Intelligence Report",
         description: "AI-generated insights and analysis"
       }
+      console.log('🔄 [SUGGEST-REPORT-DETAILS] Using fallback suggestions due to parse error')
     }
 
     // Validate and sanitize the suggestions
@@ -84,24 +104,42 @@ Return your response in JSON format with "title" and "description" fields only.`
       ? suggestions.description.substring(0, 150).trim() 
       : "AI-generated insights and analysis"
 
-    return NextResponse.json({
+    const finalResponse = {
       success: true,
       suggestions: {
         title,
         description
       }
-    })
+    }
+
+    console.log('🎉 [SUGGEST-REPORT-DETAILS] Final response:', finalResponse)
+    return NextResponse.json(finalResponse)
 
   } catch (error) {
-    console.error('Suggest report details API error:', error)
+    console.error('💥 [SUGGEST-REPORT-DETAILS] API error details:')
+    console.error('💥 [SUGGEST-REPORT-DETAILS] Error name:', error?.name)
+    console.error('💥 [SUGGEST-REPORT-DETAILS] Error message:', error?.message)
+    console.error('💥 [SUGGEST-REPORT-DETAILS] Error stack:', error?.stack)
+    console.error('💥 [SUGGEST-REPORT-DETAILS] Full error object:', error)
+    
+    // Check if it's an OpenAI specific error
+    if (error?.code) {
+      console.error('💥 [SUGGEST-REPORT-DETAILS] OpenAI error code:', error.code)
+    }
+    if (error?.status) {
+      console.error('💥 [SUGGEST-REPORT-DETAILS] HTTP status from OpenAI:', error.status)
+    }
     
     // Return fallback suggestions on error
-    return NextResponse.json({
+    const fallbackResponse = {
       success: true,
       suggestions: {
         title: "Business Intelligence Report",
         description: "AI-generated insights and analysis"
       }
-    })
+    }
+    
+    console.log('🔄 [SUGGEST-REPORT-DETAILS] Returning fallback response due to error:', fallbackResponse)
+    return NextResponse.json(fallbackResponse)
   }
 }
