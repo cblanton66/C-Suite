@@ -46,6 +46,7 @@ import { AdminCommunicationsModal } from "@/components/admin-communications-moda
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
 import { MyReportsModal } from "@/components/my-reports-modal"
+import { ReportDetailsModal } from "@/components/report-details-modal"
 // import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
@@ -134,6 +135,8 @@ export function ChatInterface() {
   const [showShareReportModal, setShowShareReportModal] = useState(false)
   const [currentSharedReportTitle, setCurrentSharedReportTitle] = useState<string>('')
   const [showMyReportsModal, setShowMyReportsModal] = useState(false)
+  const [showReportDetailsModal, setShowReportDetailsModal] = useState(false)
+  const [currentMessageToShare, setCurrentMessageToShare] = useState<Message | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
@@ -1472,13 +1475,20 @@ export function ChatInterface() {
     }
   }
 
-  const shareReport = async (message: Message) => {
+  const shareReport = (message: Message) => {
     if (!message.content.trim()) {
       alert('Cannot share empty message')
       return
     }
 
-    setShareReportLoading(message.id)
+    setCurrentMessageToShare(message)
+    setShowReportDetailsModal(true)
+  }
+
+  const handleShareWithDetails = async (details: any) => {
+    if (!currentMessageToShare) return
+
+    setShareReportLoading(currentMessageToShare.id)
     setSharedReportUrl(null)
 
     try {
@@ -1488,11 +1498,14 @@ export function ChatInterface() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: `PeakSuite Reporting - ${new Date().toLocaleDateString()}`,
-          content: message.content,
+          title: details.title,
+          content: currentMessageToShare.content,
           chartData: null, // Can be enhanced later to extract chart data from content
-          description: 'AI-generated business intelligence report',
+          description: details.description,
           projectType: 'AI Analysis',
+          clientName: details.clientName,
+          clientEmail: details.clientEmail,
+          expiresAt: details.expiresAt,
           userEmail: userEmail || 'anonymous' // Include logged-in user email
         })
       })
@@ -1501,7 +1514,8 @@ export function ChatInterface() {
 
       if (response.ok) {
         setSharedReportUrl(data.shareableUrl)
-        setCurrentSharedReportTitle(`PeakSuite Reporting - ${new Date().toLocaleDateString()}`)
+        setCurrentSharedReportTitle(details.title)
+        setShowReportDetailsModal(false)
         setShowShareReportModal(true)
       } else {
         throw new Error(data.error || 'Failed to share report')
@@ -3697,6 +3711,17 @@ ${message.content}
         isOpen={showMyReportsModal}
         onClose={() => setShowMyReportsModal(false)}
         userEmail={userEmail}
+      />
+
+      {/* Report Details Modal */}
+      <ReportDetailsModal
+        isOpen={showReportDetailsModal}
+        onClose={() => {
+          setShowReportDetailsModal(false)
+          setCurrentMessageToShare(null)
+        }}
+        onShare={handleShareWithDetails}
+        isSharing={shareReportLoading === currentMessageToShare?.id}
       />
 
     </div>
