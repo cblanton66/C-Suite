@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { getAnalyticsData, clearAnalyticsData } from '@/lib/analytics'
-import { BarChart3, Clock, Users, Eye, Trash2, Lock, Settings, EyeOff } from 'lucide-react'
+import { BarChart3, Clock, Users, Eye, Trash2, Lock, Settings, EyeOff, FileText, ExternalLink, Save } from 'lucide-react'
 import { usePageAnalytics } from "@/hooks/use-analytics"
 import { SessionManager } from "@/lib/session-manager"
 import { useRouter } from 'next/navigation'
@@ -35,6 +36,17 @@ export default function AdminPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [trainingRoomSettings, setTrainingRoomSettings] = useState<{trainingRoomVisible: boolean} | null>(null)
   const [updatingSettings, setUpdatingSettings] = useState(false)
+  const [sampleReports, setSampleReports] = useState({
+    q3Financial: '',
+    q3FinancialTitle: '',
+    cashFlow: '',
+    cashFlowTitle: '',
+    taxStrategy: '',
+    taxStrategyTitle: '',
+    kpiDashboard: '',
+    kpiDashboardTitle: ''
+  })
+  const [savingReports, setSavingReports] = useState(false)
 
   // Check authorization
   useEffect(() => {
@@ -115,6 +127,62 @@ export default function AdminPage() {
     }
   }
 
+  // Save sample report URLs
+  const saveSampleReports = async () => {
+    if (!userEmail) return
+
+    try {
+      setSavingReports(true)
+
+      const response = await fetch('/api/sample-reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...sampleReports,
+          userEmail
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert('Sample reports updated successfully!')
+      } else {
+        alert('Error updating sample reports: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      console.error('Error saving sample reports:', err)
+      alert('Error saving sample reports')
+    } finally {
+      setSavingReports(false)
+    }
+  }
+
+  // Fetch sample report URLs
+  const fetchSampleReports = async () => {
+    try {
+      const response = await fetch('/api/sample-reports')
+      const data = await response.json()
+      
+      if (data.success && data.reports) {
+        setSampleReports({
+          q3Financial: data.reports.q3Financial || '',
+          q3FinancialTitle: data.reports.q3FinancialTitle || 'Q3 Financial Analysis',
+          cashFlow: data.reports.cashFlow || '',
+          cashFlowTitle: data.reports.cashFlowTitle || 'Cash Flow Forecast',
+          taxStrategy: data.reports.taxStrategy || '',
+          taxStrategyTitle: data.reports.taxStrategyTitle || 'Tax Strategy Report',
+          kpiDashboard: data.reports.kpiDashboard || '',
+          kpiDashboardTitle: data.reports.kpiDashboardTitle || 'KPI Dashboard Review'
+        })
+      }
+    } catch (err) {
+      console.error('Error fetching sample reports:', err)
+    }
+  }
+
   // Toggle training room visibility
   const toggleTrainingRoom = async () => {
     if (!trainingRoomSettings || !userEmail) return
@@ -149,6 +217,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthorized) {
       fetchTrainingRoomSettings()
+      fetchSampleReports()
     }
   }, [isAuthorized])
 
@@ -309,6 +378,165 @@ export default function AdminPage() {
                 <span>
                   {trainingRoomSettings?.trainingRoomVisible ? 'Visible' : 'Hidden'}
                 </span>
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Sample Reports Management */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-foreground mb-4">Sample Reports Management</h2>
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">Manage Sample Report Links</h3>
+                <p className="text-muted-foreground">
+                  Update the URLs for sample reports displayed on the Features and Help pages
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-8">
+              {/* Q3 Financial Analysis */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground border-b border-muted pb-2">Report 1</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Title</label>
+                    <Input
+                      type="text"
+                      placeholder="Q3 Financial Analysis"
+                      value={sampleReports.q3FinancialTitle}
+                      onChange={(e) => setSampleReports(prev => ({ ...prev, q3FinancialTitle: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">URL</label>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/q3-financial-report"
+                        value={sampleReports.q3Financial}
+                        onChange={(e) => setSampleReports(prev => ({ ...prev, q3Financial: e.target.value }))}
+                        className="pr-10"
+                      />
+                      {sampleReports.q3Financial && (
+                        <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Cash Flow Forecast */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground border-b border-muted pb-2">Report 2</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Title</label>
+                    <Input
+                      type="text"
+                      placeholder="Cash Flow Forecast"
+                      value={sampleReports.cashFlowTitle}
+                      onChange={(e) => setSampleReports(prev => ({ ...prev, cashFlowTitle: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">URL</label>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/cash-flow-forecast"
+                        value={sampleReports.cashFlow}
+                        onChange={(e) => setSampleReports(prev => ({ ...prev, cashFlow: e.target.value }))}
+                        className="pr-10"
+                      />
+                      {sampleReports.cashFlow && (
+                        <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tax Strategy Report */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground border-b border-muted pb-2">Report 3</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Title</label>
+                    <Input
+                      type="text"
+                      placeholder="Tax Strategy Report"
+                      value={sampleReports.taxStrategyTitle}
+                      onChange={(e) => setSampleReports(prev => ({ ...prev, taxStrategyTitle: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">URL</label>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/tax-strategy-report"
+                        value={sampleReports.taxStrategy}
+                        onChange={(e) => setSampleReports(prev => ({ ...prev, taxStrategy: e.target.value }))}
+                        className="pr-10"
+                      />
+                      {sampleReports.taxStrategy && (
+                        <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* KPI Dashboard Review */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground border-b border-muted pb-2">Report 4</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Title</label>
+                    <Input
+                      type="text"
+                      placeholder="KPI Dashboard Review"
+                      value={sampleReports.kpiDashboardTitle}
+                      onChange={(e) => setSampleReports(prev => ({ ...prev, kpiDashboardTitle: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">URL</label>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/kpi-dashboard-report"
+                        value={sampleReports.kpiDashboard}
+                        onChange={(e) => setSampleReports(prev => ({ ...prev, kpiDashboard: e.target.value }))}
+                        className="pr-10"
+                      />
+                      {sampleReports.kpiDashboard && (
+                        <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={saveSampleReports}
+                disabled={savingReports}
+                className="flex items-center gap-2"
+              >
+                {savingReports ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {savingReports ? 'Saving...' : 'Save Sample Reports'}
               </Button>
             </div>
           </Card>

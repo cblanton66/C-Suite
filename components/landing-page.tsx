@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { SessionManager } from "@/lib/session-manager"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,7 +24,8 @@ import {
   PieChart,
   Shield,
   Handshake,
-  Quote
+  Quote,
+  Eye
 } from "lucide-react"
 
 interface LandingPageProps {
@@ -177,14 +179,15 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <ThemeToggle />
               </div>
             </div>
-            {/* Mobile Quick-Start Guide button */}
-            {trainingRoomVisible && (
-              <div className="mt-2 flex justify-center">
-                <Button variant="ghost" size="sm" onClick={() => window.open('/quick-start-guide', '_blank')}>
-                  Quick-Start Guide
+            {/* Mobile Features button */}
+            <div className="mt-2 flex justify-center">
+              <Link href="/features">
+                <Button variant="ghost" size="sm">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Features
                 </Button>
-              </div>
-            )}
+              </Link>
+            </div>
           </div>
 
           {/* Desktop: Keep original horizontal layout */}
@@ -199,11 +202,12 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
-              {trainingRoomVisible && (
-                <Button variant="ghost" size="sm" onClick={() => window.open('/quick-start-guide', '_blank')}>
-                  Quick-Start Guide
+              <Link href="/features">
+                <Button variant="ghost" size="sm">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Features
                 </Button>
-              )}
+              </Link>
               <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs sm:text-sm whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
                 {isLoggedIn ? `${assistantName} is Available` : 'Login'}
               </Button>
@@ -369,6 +373,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         </div>
       </section>
 
+
       {/* Benefits Section */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
@@ -412,6 +417,12 @@ Your Complete Business Intelligence Platform            </h3>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => setShowWaitlistModal(true)}>
               Request Access
             </Button>
+            <Link href="/features">
+              <Button size="lg" variant="ghost" className="text-lg px-8 py-6 text-primary-foreground hover:bg-primary-foreground/10">
+                <Eye className="w-5 h-5 mr-2" />
+                View Features
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
