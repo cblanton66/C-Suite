@@ -45,6 +45,7 @@ import { CommunicationsModal } from "@/components/communications-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
+import { MyReportsModal } from "@/components/my-reports-modal"
 // import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
@@ -132,6 +133,7 @@ export function ChatInterface() {
   const [sharedReportUrl, setSharedReportUrl] = useState<string | null>(null)
   const [showShareReportModal, setShowShareReportModal] = useState(false)
   const [currentSharedReportTitle, setCurrentSharedReportTitle] = useState<string>('')
+  const [showMyReportsModal, setShowMyReportsModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
@@ -2538,6 +2540,17 @@ ${message.content}
                         </span>
                       )}
                     </button>
+
+                    <button
+                      onClick={() => {
+                        setShowMyReportsModal(true)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      My Reports
+                    </button>
                     
                     {/* Quick-Start Guide - only show if visible */}
                     {trainingRoomVisible && (
@@ -3677,6 +3690,13 @@ ${message.content}
         onClose={() => setShowShareReportModal(false)}
         shareableUrl={sharedReportUrl}
         reportTitle={currentSharedReportTitle}
+      />
+
+      {/* My Reports Modal */}
+      <MyReportsModal
+        isOpen={showMyReportsModal}
+        onClose={() => setShowMyReportsModal(false)}
+        userEmail={userEmail}
       />
 
     </div>
