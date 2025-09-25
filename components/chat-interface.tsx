@@ -44,6 +44,7 @@ import { FeedbackModal } from "@/components/feedback-modal"
 import { CommunicationsModal } from "@/components/communications-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
+import { ShareReportModal } from "@/components/share-report-modal"
 // import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
@@ -127,6 +128,10 @@ export function ChatInterface() {
   const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isInputExpanded, setIsInputExpanded] = useState(true)
+  const [shareReportLoading, setShareReportLoading] = useState<string | null>(null)
+  const [sharedReportUrl, setSharedReportUrl] = useState<string | null>(null)
+  const [showShareReportModal, setShowShareReportModal] = useState(false)
+  const [currentSharedReportTitle, setCurrentSharedReportTitle] = useState<string>('')
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
@@ -1462,6 +1467,47 @@ export function ChatInterface() {
       }, 500)
     } else {
       alert('Pop-up blocked! Please allow pop-ups for printing functionality.')
+    }
+  }
+
+  const shareReport = async (message: Message) => {
+    if (!message.content.trim()) {
+      alert('Cannot share empty message')
+      return
+    }
+
+    setShareReportLoading(message.id)
+    setSharedReportUrl(null)
+
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: `Peak Suite AI Report - ${new Date().toLocaleDateString()}`,
+          content: message.content,
+          chartData: null, // Can be enhanced later to extract chart data from content
+          description: 'AI-generated business intelligence report',
+          projectType: 'AI Analysis'
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSharedReportUrl(data.shareableUrl)
+        setCurrentSharedReportTitle(`Peak Suite AI Report - ${new Date().toLocaleDateString()}`)
+        setShowShareReportModal(true)
+      } else {
+        throw new Error(data.error || 'Failed to share report')
+      }
+    } catch (error) {
+      console.error('Share report error:', error)
+      alert('Failed to share report. Please try again.')
+    } finally {
+      setShareReportLoading(null)
     }
   }
 
@@ -3210,6 +3256,21 @@ ${message.content}
                           <Printer className="w-3 h-3 mr-1" />
                           Print
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => shareReport(message)}
+                          disabled={shareReportLoading === message.id}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                          title="Share as report link"
+                        >
+                          {shareReportLoading === message.id ? (
+                            <div className="animate-spin w-3 h-3 mr-1 border-2 border-current border-t-transparent rounded-full" />
+                          ) : (
+                            <Share2 className="w-3 h-3 mr-1" />
+                          )}
+                          {shareReportLoading === message.id ? "Sharing..." : "Share"}
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -3607,6 +3668,14 @@ ${message.content}
           // Close the modal
           setShowPDFExtractor(false)
         }}
+      />
+
+      {/* Share Report Modal */}
+      <ShareReportModal
+        isOpen={showShareReportModal}
+        onClose={() => setShowShareReportModal(false)}
+        shareableUrl={sharedReportUrl}
+        reportTitle={currentSharedReportTitle}
       />
 
     </div>
