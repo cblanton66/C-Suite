@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { Loader2, AlertCircle, Eye, Building2 } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, Building2, Printer } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface ReportData {
   reportId: string
@@ -32,6 +33,228 @@ export default function SharedReportPage() {
       fetchReport(reportId)
     }
   }, [reportId])
+
+  const printReport = () => {
+    // Find the report content element
+    const reportElement = document.querySelector('[data-report-content]')
+    
+    let renderedContent = ''
+    
+    if (reportElement) {
+      // Get the beautifully rendered HTML content with all styling
+      renderedContent = reportElement.innerHTML
+    } else {
+      // Fallback: get content from the prose element
+      const proseElement = document.querySelector('.prose')
+      if (proseElement) {
+        renderedContent = proseElement.innerHTML
+      }
+    }
+    
+    // If we couldn't find rendered content, fall back to processing the raw text
+    if (!renderedContent || renderedContent.trim() === '' || !report) {
+      alert('Unable to prepare report for printing')
+      return
+    }
+
+    // Create enhanced print content with perfect styling
+    const printContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Print: ${report.title}</title>
+        <style>
+          @page {
+            margin: 0.75in;
+            size: letter;
+          }
+          
+          body {
+            font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+            line-height: 1.6;
+            color: #1f2937;
+            max-width: 100%;
+            margin: 0;
+            padding: 20px 0;
+            background: white;
+          }
+          
+          .print-header {
+            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          
+          .print-header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0 0 8px 0;
+          }
+          
+          .print-header .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+          }
+          
+          .print-content {
+            font-size: 11pt;
+            line-height: 1.7;
+          }
+          
+          /* Enhanced typography */
+          .print-content h1, .print-content h2, .print-content h3, .print-content h4, .print-content h5, .print-content h6 {
+            color: #111827;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+            page-break-after: avoid;
+          }
+          
+          .print-content h1 { font-size: 20pt; }
+          .print-content h2 { font-size: 16pt; }
+          .print-content h3 { font-size: 14pt; }
+          .print-content h4 { font-size: 12pt; }
+          
+          .print-content p {
+            margin: 12px 0;
+            text-align: justify;
+            orphans: 2;
+            widows: 2;
+          }
+          
+          .print-content ul, .print-content ol {
+            margin: 16px 0;
+            padding-left: 24px;
+          }
+          
+          .print-content li {
+            margin: 6px 0;
+          }
+          
+          .print-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+            page-break-inside: avoid;
+          }
+          
+          .print-content table th,
+          .print-content table td {
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            text-align: left;
+            vertical-align: top;
+          }
+          
+          .print-content table th {
+            background-color: #f9fafb;
+            font-weight: bold;
+            color: #374151;
+          }
+          
+          .print-content blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #4b5563;
+          }
+          
+          .print-content pre {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', monospace;
+            font-size: 9pt;
+            line-height: 1.5;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+          }
+          
+          .print-content code {
+            background: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', monospace;
+            font-size: 9pt;
+          }
+          
+          .print-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 10pt;
+            color: #6b7280;
+            text-align: center;
+          }
+          
+          /* Print-specific styles */
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+            .print-content { font-size: 10pt; }
+            .print-content table { font-size: 9pt; }
+            
+            /* Avoid breaking elements across pages */
+            .print-content h1,
+            .print-content h2,
+            .print-content h3,
+            .print-content h4,
+            .print-content h5,
+            .print-content h6 {
+              page-break-after: avoid;
+            }
+            
+            .print-content table,
+            .print-content blockquote,
+            .print-content pre {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>${report.title}</h1>
+          <p class="subtitle">Generated on ${new Date().toLocaleDateString()} • Powered by PeakSuite.ai</p>
+        </div>
+        
+        <div class="print-content">
+          ${renderedContent}
+        </div>
+        
+        <div class="print-footer">
+          <p>This report was generated by PeakSuite.ai Professional Business Intelligence</p>
+          ${report.clientName ? `<p>Prepared for: ${report.clientName}</p>` : ''}
+          <p>Visit peaksuite.ai for more information</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      
+      // Wait for content to load then print
+      printWindow.onload = function() {
+        printWindow.focus()
+        printWindow.print()
+        // Close the print window after printing or if user cancels
+        setTimeout(() => {
+          printWindow.close()
+        }, 100)
+      }
+    } else {
+      alert('Unable to open print window. Please check if pop-ups are blocked.')
+    }
+  }
 
   const fetchReport = async (id: string) => {
     try {
@@ -151,7 +374,7 @@ export default function SharedReportPage() {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-card rounded-lg border shadow-sm">
-          <div className="p-8">
+          <div className="p-8" data-report-content>
             <MarkdownRenderer 
               content={report.content} 
               className="prose-lg max-w-none"
@@ -173,7 +396,7 @@ export default function SharedReportPage() {
                   rel="noopener noreferrer"
                   className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  Peak Suite AI
+                  PeakSuite.ai
                 </a>
               </div>
             </div>
@@ -182,6 +405,17 @@ export default function SharedReportPage() {
 
         {/* Branding */}
         <div className="text-center mt-8 pt-6 border-t">
+          <div className="flex items-center justify-center mb-3">
+            <Button
+              onClick={printReport}
+              variant="outline"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Report
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
             Powered by{' '}
             <a 
@@ -190,7 +424,7 @@ export default function SharedReportPage() {
               rel="noopener noreferrer"
               className="font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
             >
-              Peak Suite AI
+              PeakSuite.ai
             </a>
             {' '}• Professional Business Intelligence
           </p>
