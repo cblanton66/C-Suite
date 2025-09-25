@@ -74,8 +74,11 @@ export async function POST(request: NextRequest) {
 
     const sheets = google.sheets({ version: 'v4', auth })
 
-    // Generate the shareable URL
-    const shareableUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reports/${reportId}`
+    // Generate the shareable URL using request headers for proper domain detection
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
+    const host = request.headers.get('host')
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
+    const shareableUrl = `${baseUrl}/reports/${reportId}`
 
     // Prepare the data to append (store content path instead of full content)
     const timestamp = new Date().toISOString()
