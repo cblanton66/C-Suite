@@ -88,7 +88,7 @@ const taxInstructions = `
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext } = await req.json()
+    const { messages, fileContext, model = 'grok-4-fast' } = await req.json()
 
     if (!process.env.XAI_API_KEY) {
       return NextResponse.json({ error: "XAI API key not configured" }, { status: 500 })
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await streamText({
-      model: xai("grok-4-fast", {
+      model: xai(model, {
         apiKey: process.env.XAI_API_KEY,
       }),
       system: systemInstructions,

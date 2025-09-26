@@ -34,6 +34,7 @@ interface SpeechRecognitionErrorEvent extends Event {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle } from "lucide-react"
@@ -101,6 +102,7 @@ export function ChatInterface() {
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
+  const [selectedModel, setSelectedModel] = useState<'grok-4' | 'grok-4-fast'>('grok-4-fast')
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -647,6 +649,7 @@ export function ChatInterface() {
           role: msg.role,
           content: msg.content,
         })),
+        model: selectedModel,
         ...(uploadedFiles.length > 0 && {
           fileContext: uploadedFiles.map(file => ({
             filename: file.name,
@@ -1076,11 +1079,22 @@ export function ChatInterface() {
     localStorage.setItem('selectedRole', role)
   }
 
-  // Load saved role on component mount
+  const handleModelChange = (model: 'grok-4' | 'grok-4-fast') => {
+    setSelectedModel(model)
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedModel', model)
+  }
+
+  // Load saved role and model on component mount
   useEffect(() => {
     const savedRole = localStorage.getItem('selectedRole') as 'Business Owner' | 'CPA' | 'Bookkeeper' | null
     if (savedRole && ['Business Owner', 'CPA', 'Bookkeeper'].includes(savedRole)) {
       setSelectedRole(savedRole)
+    }
+    
+    const savedModel = localStorage.getItem('selectedModel') as 'grok-4' | 'grok-4-fast' | null
+    if (savedModel && ['grok-4', 'grok-4-fast'].includes(savedModel)) {
+      setSelectedModel(savedModel)
     }
   }, [])
 
@@ -1122,6 +1136,7 @@ export function ChatInterface() {
             role: msg.role,
             content: msg.content,
           })),
+          model: selectedModel,
           ...(uploadedFile && {
             fileContext: {
               filename: uploadedFile.name,
@@ -3071,6 +3086,27 @@ ${message.content}
                 </div>
 
                 <div className="border-t border-blue-800 pt-6 mt-4"></div>
+                
+                {/* Model Selection - Admin Only */}
+                {userPermissions.includes('admin') && (
+                  <div className="mb-6">
+                    <p className="text-sm text-muted-foreground mb-2 text-center">
+                      AI Model Selection (Admin)
+                    </p>
+                    <div className="flex justify-center">
+                      <Select value={selectedModel} onValueChange={handleModelChange}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="grok-4-fast">⚡ Grok 4 Fast</SelectItem>
+                          <SelectItem value="grok-4">🧠 Grok 4 Reasoning</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-2xl text-muted-foreground mb-4">
                   What role are we playing today?
                 </p>

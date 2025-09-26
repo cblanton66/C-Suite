@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       description, 
       projectType,
       expiresAt,
-      userEmail 
+      userEmail,
+      allowResponses 
     } = await request.json()
 
     if (!title || !content) {
@@ -99,13 +100,17 @@ export async function POST(request: NextRequest) {
       '', // lastViewed
       description || '',
       projectType || '',
-      shareableUrl // shareableUrl - new column
+      shareableUrl, // shareableUrl - new column
+      allowResponses ? 'TRUE' : 'FALSE', // allow_responses
+      '', // recipient_response (empty initially)
+      '', // response_date (empty initially)
+      '' // response_email (empty initially)
     ]]
 
     // Append to the ReportLinks sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:O', // All columns in ReportLinks sheet (A to O for 15 columns)
+      range: 'ReportLinks!A:S', // All columns in ReportLinks sheet (A to S for 19 columns)
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -159,7 +164,7 @@ export async function GET(request: NextRequest) {
     // Get all data from ReportLinks sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:O',
+      range: 'ReportLinks!A:S',
     })
 
     const rows = response.data.values
@@ -236,7 +241,11 @@ export async function GET(request: NextRequest) {
       clientEmail: reportRow[7],
       description: reportRow[12],
       projectType: reportRow[13],
-      viewCount: newViewCount
+      viewCount: newViewCount,
+      allowResponses: reportRow[15] === 'TRUE', // allow_responses column
+      recipientResponse: reportRow[16] || '', // recipient_response column
+      responseDate: reportRow[17] || '', // response_date column
+      responseEmail: reportRow[18] || '' // response_email column
     }
 
     return NextResponse.json({ 

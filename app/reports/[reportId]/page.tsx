@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { Loader2, AlertCircle, Eye, Building2, Printer } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, Building2, Printer, MessageCircle, Send } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface ReportData {
   reportId: string
@@ -19,6 +20,10 @@ interface ReportData {
   description?: string
   projectType?: string
   viewCount: number
+  allowResponses: boolean
+  recipientResponse: string
+  responseDate: string
+  responseEmail: string
 }
 
 export default function SharedReportPage() {
@@ -27,6 +32,10 @@ export default function SharedReportPage() {
   const [report, setReport] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showResponseForm, setShowResponseForm] = useState(false)
+  const [responseText, setResponseText] = useState('')
+  const [responseEmail, setResponseEmail] = useState('')
+  const [submittingResponse, setSubmittingResponse] = useState(false)
 
   useEffect(() => {
     if (reportId) {
@@ -273,6 +282,64 @@ export default function SharedReportPage() {
     }
   }
 
+  const submitResponse = async () => {
+    if (!responseText.trim() || !responseEmail.trim()) {
+      alert('Please fill in both your email and response message.')
+      return
+    }
+
+    if (!isValidEmail(responseEmail)) {
+      alert('Please enter a valid email address.')
+      return
+    }
+
+    setSubmittingResponse(true)
+    try {
+      const response = await fetch('/api/report-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportId,
+          responseText: responseText.trim(),
+          responseEmail: responseEmail.trim(),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit response')
+      }
+
+      // Update the local report data to show the response
+      if (report) {
+        setReport({
+          ...report,
+          recipientResponse: responseText.trim(),
+          responseEmail: responseEmail.trim(),
+          responseDate: new Date().toISOString()
+        })
+      }
+
+      setShowResponseForm(false)
+      setResponseText('')
+      setResponseEmail('')
+      alert('Thank you! Your response has been submitted successfully.')
+    } catch (err) {
+      console.error('Error submitting response:', err)
+      alert(err instanceof Error ? err.message : 'Failed to submit response')
+    } finally {
+      setSubmittingResponse(false)
+    }
+  }
+
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -387,6 +454,117 @@ export default function SharedReportPage() {
             </div>
           </div>
         </div>
+
+        {/* Response Section - only show if responses are allowed */}
+        {report.allowResponses && (
+          <div className="mt-8 pt-6 border-t">
+            {report.recipientResponse ? (
+              // Show existing response
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800 p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">
+                    Response Submitted
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">From:</p>
+                    <p className="text-green-800 dark:text-green-300">{report.responseEmail}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">Response:</p>
+                    <p className="text-green-800 dark:text-green-300 whitespace-pre-wrap">{report.recipientResponse}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Submitted: {new Date(report.responseDate).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : showResponseForm ? (
+              // Show response form
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageCircle className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300">
+                    Respond to this Report
+                  </h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
+                      Your Email
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={responseEmail}
+                      onChange={(e) => setResponseEmail(e.target.value)}
+                      disabled={submittingResponse}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
+                      Your Response
+                    </label>
+                    <textarea
+                      placeholder="Share your thoughts, questions, or feedback about this report..."
+                      value={responseText}
+                      onChange={(e) => setResponseText(e.target.value)}
+                      disabled={submittingResponse}
+                      className="w-full min-h-[120px] px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResponseForm(false)}
+                      disabled={submittingResponse}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={submitResponse}
+                      disabled={submittingResponse || !responseText.trim() || !responseEmail.trim()}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {submittingResponse ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Submit Response
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Show response button
+              <div className="text-center">
+                <Button
+                  onClick={() => setShowResponseForm(true)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Respond to Report
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Share your thoughts or feedback with the report author
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Branding */}
         <div className="text-center mt-8 pt-6 border-t">

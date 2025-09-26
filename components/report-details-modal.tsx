@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, Share2, Calendar, User, Mail, FileText, Loader2 } from "lucide-react"
+import { X, Share2, Calendar, User, Mail, FileText, Loader2, MessageCircle } from "lucide-react"
 
 interface ReportDetailsModalProps {
   isOpen: boolean
@@ -20,6 +20,7 @@ interface ReportDetails {
   clientEmail: string
   description: string
   expiresAt: string
+  allowResponses: boolean
 }
 
 export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, reportContent }: ReportDetailsModalProps) {
@@ -28,6 +29,7 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
   const [clientEmail, setClientEmail] = useState("")
   const [description, setDescription] = useState("")
   const [expiresAt, setExpiresAt] = useState("")
+  const [allowResponses, setAllowResponses] = useState(false)
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false)
 
@@ -145,7 +147,8 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
       clientName: clientName.trim(),
       clientEmail: clientEmail.trim(),
       description: description.trim(),
-      expiresAt: expiresAt || ""
+      expiresAt: expiresAt || "",
+      allowResponses: allowResponses
     }
 
     onShare(details)
@@ -159,6 +162,7 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
     setClientEmail("")
     setDescription("")
     setExpiresAt("")
+    setAllowResponses(false)
     setErrors({})
     onClose()
   }
@@ -301,6 +305,27 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
             {errors.clientEmail && (
               <p className="text-sm text-red-500 mt-1">{errors.clientEmail}</p>
             )}
+          </div>
+
+          {/* Allow Responses */}
+          <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <input
+              type="checkbox"
+              id="allowResponses"
+              checked={allowResponses}
+              onChange={(e) => setAllowResponses(e.target.checked)}
+              disabled={isSharing}
+              className="mt-0.5 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <div className="flex-1">
+              <label htmlFor="allowResponses" className="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-300 cursor-pointer">
+                <MessageCircle className="w-4 h-4" />
+                Allow recipient to respond to this report
+              </label>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                Recipients can leave feedback and comments directly on the shared report
+              </p>
+            </div>
           </div>
 
           {/* Footer */}
