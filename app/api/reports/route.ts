@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
       projectType,
       expiresAt,
       userEmail,
-      allowResponses 
+      allowResponses,
+      reportAttachments = [] // New field for report attachments
     } = await request.json()
 
     if (!title || !content) {
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
     // Prepare the data to append (store content path instead of full content)
     const timestamp = new Date().toISOString()
     const chartDataString = chartData ? JSON.stringify(chartData) : ''
+    const reportAttachmentsString = reportAttachments.length > 0 ? JSON.stringify(reportAttachments) : ''
     const values = [[
       reportId,
       title,
@@ -105,13 +107,14 @@ export async function POST(request: NextRequest) {
       '', // recipient_response (empty initially)
       '', // response_date (empty initially)
       '', // response_email (empty initially)
-      '' // response_attachments (empty initially)
+      '', // response_attachments (empty initially)
+      reportAttachmentsString // report_attachments (new column U)
     ]]
 
     // Append to the ReportLinks sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:T', // All columns in ReportLinks sheet (A to T for 20 columns)
+      range: 'ReportLinks!A:U', // Extended to include report_attachments column (A to U for 21 columns)
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -165,7 +168,7 @@ export async function GET(request: NextRequest) {
     // Get all data from ReportLinks sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:T',
+      range: 'ReportLinks!A:U', // Extended to include report_attachments column
     })
 
     const rows = response.data.values
@@ -247,7 +250,8 @@ export async function GET(request: NextRequest) {
       recipientResponse: reportRow[16] || '', // recipient_response column
       responseDate: reportRow[17] || '', // response_date column
       responseEmail: reportRow[18] || '', // response_email column
-      responseAttachments: reportRow[19] ? JSON.parse(reportRow[19]) : [] // response_attachments column
+      responseAttachments: reportRow[19] ? JSON.parse(reportRow[19]) : [], // response_attachments column
+      reportAttachments: reportRow[20] ? JSON.parse(reportRow[20]) : [] // report_attachments column (new)
     }
 
     return NextResponse.json({ 

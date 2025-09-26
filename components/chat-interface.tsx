@@ -1519,7 +1519,8 @@ export function ChatInterface() {
           clientEmail: details.clientEmail,
           expiresAt: details.expiresAt,
           userEmail: userEmail || 'anonymous', // Include logged-in user email
-          allowResponses: details.allowResponses
+          allowResponses: details.allowResponses,
+          reportAttachments: details.reportAttachments || []
         })
       })
 

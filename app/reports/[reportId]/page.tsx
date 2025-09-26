@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { Loader2, AlertCircle, Eye, Building2, Printer, MessageCircle, Send, Upload, X, FileText, Download } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, Building2, Printer, MessageCircle, Send, Upload, X, FileText, Download, CheckCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,14 @@ interface ReportData {
     type: string
     uploadedAt: string
   }>
+  reportAttachments: Array<{
+    fileId: string
+    name: string
+    originalName: string
+    size: number
+    type: string
+    uploadedAt: string
+  }>
 }
 
 export default function SharedReportPage() {
@@ -53,6 +61,9 @@ export default function SharedReportPage() {
     uploadedAt: string
   }>>([])
   const [uploading, setUploading] = useState(false)
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false)
+  const [showErrorNotification, setShowErrorNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState('')
 
   useEffect(() => {
     if (reportId) {
@@ -345,10 +356,26 @@ export default function SharedReportPage() {
       setResponseText('')
       setResponseEmail('')
       setUploadedFiles([])
-      alert('Thank you! Your response has been submitted successfully.')
+      
+      // Show modern success notification
+      setNotificationMessage('Thank you! Your response has been submitted successfully.')
+      setShowSuccessNotification(true)
+      
+      // Auto-hide notification after 4 seconds
+      setTimeout(() => {
+        setShowSuccessNotification(false)
+      }, 4000)
     } catch (err) {
       console.error('Error submitting response:', err)
-      alert(err instanceof Error ? err.message : 'Failed to submit response')
+      
+      // Show modern error notification
+      setNotificationMessage(err instanceof Error ? err.message : 'Failed to submit response')
+      setShowErrorNotification(true)
+      
+      // Auto-hide notification after 4 seconds
+      setTimeout(() => {
+        setShowErrorNotification(false)
+      }, 4000)
     } finally {
       setSubmittingResponse(false)
     }
@@ -397,10 +424,26 @@ export default function SharedReportPage() {
       }
 
       setUploadedFiles(prev => [...prev, ...uploadedFilesList])
-      alert(`Successfully uploaded ${uploadedFilesList.length} file${uploadedFilesList.length > 1 ? 's' : ''}`)
+      
+      // Show modern success notification
+      setNotificationMessage(`Successfully uploaded ${uploadedFilesList.length} file${uploadedFilesList.length > 1 ? 's' : ''}!`)
+      setShowSuccessNotification(true)
+      
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => {
+        setShowSuccessNotification(false)
+      }, 3000)
     } catch (err) {
       console.error('Error uploading files:', err)
-      alert(err instanceof Error ? err.message : 'Failed to upload files')
+      
+      // Show modern error notification
+      setNotificationMessage(err instanceof Error ? err.message : 'Failed to upload files')
+      setShowErrorNotification(true)
+      
+      // Auto-hide notification after 4 seconds
+      setTimeout(() => {
+        setShowErrorNotification(false)
+      }, 4000)
     } finally {
       setUploading(false)
       // Reset file input
@@ -534,6 +577,61 @@ export default function SharedReportPage() {
             </div>
           </div>
         </div>
+
+        {/* Report Attachments Section */}
+        {report.reportAttachments && report.reportAttachments.length > 0 && (
+          <div className="mt-8 bg-card rounded-lg border shadow-sm">
+            <div className="p-6 border-b">
+              <div className="flex items-center gap-2 mb-4">
+                <Download className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  Downloadable Files
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                The following files have been included with this report for your review and signature:
+              </p>
+              
+              <div className="space-y-3">
+                {report.reportAttachments.map((file) => (
+                  <div
+                    key={file.fileId}
+                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-primary shrink-0" />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {file.originalName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatFileSize(file.size)} • Uploaded {new Date(file.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        const downloadUrl = `/api/report-files/${file.fileId}?reportId=${reportId}`
+                        window.open(downloadUrl, '_blank')
+                      }}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  💡 <strong>Tip:</strong> Please download, review, and sign any required documents. 
+                  You can upload the signed files back using the response section below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Response Section - only show if responses are allowed */}
         {report.allowResponses && (
@@ -790,6 +888,64 @@ export default function SharedReportPage() {
           </p>
         </div>
       </div>
+
+      {/* Modern Success Notification */}
+      {showSuccessNotification && (
+        <div className="fixed top-4 right-4 z-[60] animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-green-50 dark:bg-green-950/90 border border-green-200 dark:border-green-800 rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Success!
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  {notificationMessage}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSuccessNotification(false)}
+                className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modern Error Notification */}
+      {showErrorNotification && (
+        <div className="fixed top-4 right-4 z-[60] animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-red-50 dark:bg-red-950/90 border border-red-200 dark:border-red-800 rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Error
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {notificationMessage}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowErrorNotification(false)}
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
