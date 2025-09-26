@@ -34,7 +34,7 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
   const [userPermissions, setUserPermissions] = useState<string[]>([])
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [trainingRoomSettings, setTrainingRoomSettings] = useState<{trainingRoomVisible: boolean} | null>(null)
+  const [trainingRoomSettings, setTrainingRoomSettings] = useState<{trainingRoomVisible: boolean, videoDemoVisible: boolean} | null>(null)
   const [updatingSettings, setUpdatingSettings] = useState(false)
   const [sampleReports, setSampleReports] = useState({
     q3Financial: '',
@@ -197,6 +197,7 @@ export default function AdminPage() {
         },
         body: JSON.stringify({
           trainingRoomVisible: !trainingRoomSettings.trainingRoomVisible,
+          videoDemoVisible: trainingRoomSettings.videoDemoVisible,
           userEmail
         })
       })
@@ -208,6 +209,37 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error('Error updating training room settings:', err)
+    } finally {
+      setUpdatingSettings(false)
+    }
+  }
+
+  // Toggle video demo visibility
+  const toggleVideoDemo = async () => {
+    if (!trainingRoomSettings || !userEmail) return
+
+    try {
+      setUpdatingSettings(true)
+
+      const response = await fetch('/api/admin-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trainingRoomVisible: trainingRoomSettings.trainingRoomVisible,
+          videoDemoVisible: !trainingRoomSettings.videoDemoVisible,
+          userEmail
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTrainingRoomSettings(data.settings)
+      }
+    } catch (err) {
+      console.error('Error updating video demo settings:', err)
     } finally {
       setUpdatingSettings(false)
     }
@@ -350,37 +382,71 @@ export default function AdminPage() {
         {/* Admin Controls Section */}
         <div className="mb-8">
           <h2 className="text-xl font-bold text-foreground mb-4">Admin Controls</h2>
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">Quick-Start Guide Visibility</h3>
-                <p className="text-muted-foreground">
-                  Control whether the Quick-Start Guide button appears in the navigation for all users
-                </p>
+          <div className="space-y-4">
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Quick-Start Guide Visibility</h3>
+                  <p className="text-muted-foreground">
+                    Control whether the Quick-Start Guide button appears in the navigation for all users
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={toggleTrainingRoom}
+                  disabled={updatingSettings || !trainingRoomSettings}
+                  className={`flex items-center gap-2 min-w-24 ${
+                    trainingRoomSettings?.trainingRoomVisible 
+                      ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700' 
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {updatingSettings ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : trainingRoomSettings?.trainingRoomVisible ? (
+                    <Eye className="w-4 h-4" />
+                  ) : (
+                    <EyeOff className="w-4 h-4" />
+                  )}
+                  <span>
+                    {trainingRoomSettings?.trainingRoomVisible ? 'Visible' : 'Hidden'}
+                  </span>
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={toggleTrainingRoom}
-                disabled={updatingSettings || !trainingRoomSettings}
-                className={`flex items-center gap-2 min-w-24 ${
-                  trainingRoomSettings?.trainingRoomVisible 
-                    ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700' 
-                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
-                }`}
-              >
-                {updatingSettings ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : trainingRoomSettings?.trainingRoomVisible ? (
-                  <Eye className="w-4 h-4" />
-                ) : (
-                  <EyeOff className="w-4 h-4" />
-                )}
-                <span>
-                  {trainingRoomSettings?.trainingRoomVisible ? 'Visible' : 'Hidden'}
-                </span>
-              </Button>
-            </div>
-          </Card>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Video Demo Section Visibility</h3>
+                  <p className="text-muted-foreground">
+                    Control whether the video demo section appears on the Features page for all users
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={toggleVideoDemo}
+                  disabled={updatingSettings || !trainingRoomSettings}
+                  className={`flex items-center gap-2 min-w-24 ${
+                    trainingRoomSettings?.videoDemoVisible 
+                      ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700' 
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {updatingSettings ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : trainingRoomSettings?.videoDemoVisible ? (
+                    <Eye className="w-4 h-4" />
+                  ) : (
+                    <EyeOff className="w-4 h-4" />
+                  )}
+                  <span>
+                    {trainingRoomSettings?.videoDemoVisible ? 'Visible' : 'Hidden'}
+                  </span>
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
 
         {/* Sample Reports Management */}

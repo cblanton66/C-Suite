@@ -6,6 +6,7 @@ const SETTINGS_FILE_NAME = 'admin-settings.json'
 
 interface AdminSettings {
   trainingRoomVisible: boolean
+  videoDemoVisible: boolean
   dynamicMessage: string
   lastUpdated: string
   updatedBy: string
@@ -13,6 +14,7 @@ interface AdminSettings {
 
 const defaultSettings: AdminSettings = {
   trainingRoomVisible: false,
+  videoDemoVisible: false,
   dynamicMessage: 'You Have the Advantage Today!',
   lastUpdated: new Date().toISOString(),
   updatedBy: 'system'
@@ -83,7 +85,7 @@ export async function GET(request: NextRequest) {
 // POST - Update settings (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { trainingRoomVisible, dynamicMessage, userEmail } = await request.json()
+    const { trainingRoomVisible, videoDemoVisible, dynamicMessage, userEmail } = await request.json()
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
     const updatedSettings: AdminSettings = {
       ...currentSettings,
       trainingRoomVisible: trainingRoomVisible ?? currentSettings.trainingRoomVisible,
+      videoDemoVisible: videoDemoVisible ?? currentSettings.videoDemoVisible,
       dynamicMessage: dynamicMessage ?? currentSettings.dynamicMessage,
       lastUpdated: new Date().toISOString(),
       updatedBy: userEmail
