@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { Loader2, AlertCircle, Eye, Building2, Printer, MessageCircle, Send } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, Building2, Printer, MessageCircle, Send, Upload, X, FileText, Download } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,14 @@ interface ReportData {
   recipientResponse: string
   responseDate: string
   responseEmail: string
+  responseAttachments: Array<{
+    fileId: string
+    name: string
+    originalName: string
+    size: number
+    type: string
+    uploadedAt: string
+  }>
 }
 
 export default function SharedReportPage() {
@@ -36,6 +44,15 @@ export default function SharedReportPage() {
   const [responseText, setResponseText] = useState('')
   const [responseEmail, setResponseEmail] = useState('')
   const [submittingResponse, setSubmittingResponse] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{
+    fileId: string
+    name: string
+    originalName: string
+    size: number
+    type: string
+    uploadedAt: string
+  }>>([])
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (reportId) {
@@ -304,6 +321,7 @@ export default function SharedReportPage() {
           reportId,
           responseText: responseText.trim(),
           responseEmail: responseEmail.trim(),
+          attachments: uploadedFiles,
         }),
       })
 
@@ -326,6 +344,7 @@ export default function SharedReportPage() {
       setShowResponseForm(false)
       setResponseText('')
       setResponseEmail('')
+      setUploadedFiles([])
       alert('Thank you! Your response has been submitted successfully.')
     } catch (err) {
       console.error('Error submitting response:', err)
@@ -338,6 +357,67 @@ export default function SharedReportPage() {
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    // Validate file sizes (10MB max each)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    const invalidFiles = Array.from(files).filter(file => file.size > maxSize)
+    
+    if (invalidFiles.length > 0) {
+      alert(`The following files exceed the 10MB limit: ${invalidFiles.map(f => f.name).join(', ')}`)
+      return
+    }
+
+    setUploading(true)
+    const uploadedFilesList: typeof uploadedFiles = []
+    
+    try {
+      // Upload files sequentially to avoid overwhelming the server
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('reportId', reportId)
+
+        const response = await fetch('/api/upload-response-file', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to upload ${file.name}`)
+        }
+
+        uploadedFilesList.push(data.file)
+      }
+
+      setUploadedFiles(prev => [...prev, ...uploadedFilesList])
+      alert(`Successfully uploaded ${uploadedFilesList.length} file${uploadedFilesList.length > 1 ? 's' : ''}`)
+    } catch (err) {
+      console.error('Error uploading files:', err)
+      alert(err instanceof Error ? err.message : 'Failed to upload files')
+    } finally {
+      setUploading(false)
+      // Reset file input
+      event.target.value = ''
+    }
+  }
+
+  const removeFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(file => file.fileId !== fileId))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   if (loading) {
@@ -476,6 +556,47 @@ export default function SharedReportPage() {
                     <p className="text-sm font-medium text-green-700 dark:text-green-400">Response:</p>
                     <p className="text-green-800 dark:text-green-300 whitespace-pre-wrap">{report.recipientResponse}</p>
                   </div>
+                  
+                  {/* Show attached files if any */}
+                  {report.responseAttachments && report.responseAttachments.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
+                        Attached Files:
+                      </p>
+                      <div className="space-y-2">
+                        {report.responseAttachments.map((file) => (
+                          <div
+                            key={file.fileId}
+                            className="flex items-center justify-between p-3 bg-green-100 dark:bg-green-950/50 rounded-lg border border-green-300 dark:border-green-700"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-4 h-4 text-green-600" />
+                              <div>
+                                <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                                  {file.originalName}
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-400">
+                                  {formatFileSize(file.size)}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const downloadUrl = `/api/response-files/${file.fileId}?reportId=${reportId}`
+                                window.open(downloadUrl, '_blank')
+                              }}
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-200"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
                     <p className="text-xs text-green-600 dark:text-green-400">
                       Submitted: {new Date(report.responseDate).toLocaleString()}
@@ -518,6 +639,83 @@ export default function SharedReportPage() {
                       className="w-full min-h-[120px] px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                     />
                   </div>
+
+                  {/* File Upload Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
+                      Attach Files (Optional)
+                    </label>
+                    
+                    {/* File Upload Input */}
+                    <div className="mb-3">
+                      <input
+                        type="file"
+                        id="file-upload"
+                        multiple
+                        onChange={handleFileUpload}
+                        disabled={submittingResponse || uploading}
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.docx,.doc,.txt,.csv"
+                      />
+                      <label
+                        htmlFor="file-upload"
+                        className={`flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                          submittingResponse || uploading
+                            ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
+                            : 'border-blue-300 hover:border-blue-400 hover:bg-blue-50 dark:border-blue-700 dark:hover:border-blue-600 dark:hover:bg-blue-950/30'
+                        }`}
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                            <span className="text-blue-700 dark:text-blue-400">Uploading files...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 text-blue-600" />
+                            <span className="text-blue-700 dark:text-blue-400">
+                              Click to upload files (PDF, images, Office docs - max 10MB each)
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+
+                    {/* Uploaded Files List */}
+                    {uploadedFiles.length > 0 && (
+                      <div className="space-y-2">
+                        {uploadedFiles.map((file) => (
+                          <div
+                            key={file.fileId}
+                            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                              <div>
+                                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                  {file.originalName}
+                                </p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400">
+                                  {formatFileSize(file.size)}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(file.fileId)}
+                              disabled={submittingResponse}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="flex gap-3">
                     <Button
                       variant="outline"

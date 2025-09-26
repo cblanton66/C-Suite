@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
 
     const sheets = google.sheets({ version: 'v4', auth })
 
-    // Get all data from ReportLinks sheet
+    // Get all data from ReportLinks sheet - extended to include response columns
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:O',
+      range: 'ReportLinks!A:T',
     })
 
     const rows = response.data.values
@@ -42,27 +42,41 @@ export async function GET(request: NextRequest) {
     const userReports = rows
       .slice(1) // Skip header row
       .filter(row => {
-        const createdBy = row[5] // createdBy column
-        const isActive = row[9] // isActive column
+        const createdBy = row[5] // createdBy column (F)
+        const isActive = row[9] // isActive column (J)
         return createdBy === userEmail && isActive === 'TRUE'
       })
-      .map(row => ({
-        reportId: row[0] || '',
-        title: row[1] || '',
-        contentPath: row[2] || '',
-        chartData: row[3] || '',
-        createdDate: row[4] || '',
-        createdBy: row[5] || '',
-        clientName: row[6] || '',
-        clientEmail: row[7] || '',
-        expiresAt: row[8] || '',
-        isActive: row[9] || '',
-        viewCount: parseInt(row[10] || '0'),
-        lastViewed: row[11] || '',
-        description: row[12] || '',
-        projectType: row[13] || '',
-        shareableUrl: row[14] || ''
-      }))
+      .map(row => {
+        const hasResponse = row[16] ? true : false // recipient_response column (Q)
+        const responseDate = row[17] || null // response_date column (R)
+        const responseEmail = row[18] || null // response_email column (S)
+        const responseAttachments = row[19] ? JSON.parse(row[19]) : [] // response_attachments column (T)
+        
+        return {
+          reportId: row[0] || '',
+          title: row[1] || '',
+          contentPath: row[2] || '',
+          chartData: row[3] || '',
+          createdDate: row[4] || '',
+          createdBy: row[5] || '',
+          clientName: row[6] || '',
+          clientEmail: row[7] || '',
+          expiresAt: row[8] || '',
+          isActive: row[9] || '',
+          viewCount: parseInt(row[10] || '0'),
+          lastViewed: row[11] || '',
+          description: row[12] || '',
+          projectType: row[13] || '',
+          shareableUrl: row[14] || '',
+          allowResponses: row[15] === 'TRUE', // allow_responses column (P)
+          // Response notification fields
+          hasResponse,
+          responseDate,
+          responseEmail,
+          hasAttachments: responseAttachments.length > 0,
+          attachmentCount: responseAttachments.length,
+        }
+      })
       .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()) // Sort by newest first
 
     return NextResponse.json({ 
@@ -104,7 +118,7 @@ export async function PUT(request: NextRequest) {
     // Get all data from ReportLinks sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:O',
+      range: 'ReportLinks!A:T',
     })
 
     const rows = response.data.values
@@ -129,7 +143,7 @@ export async function PUT(request: NextRequest) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: `ReportLinks!A${rowNumber}:O${rowNumber}`,
+      range: `ReportLinks!A${rowNumber}:T${rowNumber}`,
       valueInputOption: 'RAW',
       requestBody: {
         values: [updatedRow]
@@ -175,7 +189,7 @@ export async function DELETE(request: NextRequest) {
     // Get all data from ReportLinks sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:O',
+      range: 'ReportLinks!A:T',
     })
 
     const rows = response.data.values
@@ -199,7 +213,7 @@ export async function DELETE(request: NextRequest) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: `ReportLinks!A${rowNumber}:O${rowNumber}`,
+      range: `ReportLinks!A${rowNumber}:T${rowNumber}`,
       valueInputOption: 'RAW',
       requestBody: {
         values: [updatedRow]

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2 } from "lucide-react"
+import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2, Bell, MessageCircle, Paperclip } from "lucide-react"
 
 interface Report {
   reportId: string
@@ -15,6 +15,13 @@ interface Report {
   clientName?: string
   projectType?: string
   description?: string
+  // Response notification fields
+  hasResponse?: boolean
+  responseDate?: string | null
+  responseEmail?: string | null
+  hasAttachments?: boolean
+  attachmentCount?: number
+  allowResponses?: boolean
 }
 
 interface MyReportsModalProps {
@@ -276,9 +283,26 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                 <Card key={report.reportId} className="p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {report.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {report.title}
+                        </h3>
+                        {/* Notification badges */}
+                        {report.hasResponse && (
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                              <MessageCircle className="w-3 h-3" />
+                              Response
+                            </div>
+                            {report.hasAttachments && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                <Paperclip className="w-3 h-3" />
+                                {report.attachmentCount} file{report.attachmentCount !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -298,11 +322,24 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                         {report.projectType && (
                           <span>Type: {report.projectType}</span>
                         )}
+                        
+                        {report.hasResponse && report.responseDate && (
+                          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <MessageCircle className="w-4 h-4" />
+                            Response: {new Date(report.responseDate).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
                       
                       {report.description && (
                         <p className="text-sm text-muted-foreground mt-1 truncate">
                           {report.description}
+                        </p>
+                      )}
+                      
+                      {report.hasResponse && report.responseEmail && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Response from: {report.responseEmail}
                         </p>
                       )}
                     </div>

@@ -104,13 +104,14 @@ export async function POST(request: NextRequest) {
       allowResponses ? 'TRUE' : 'FALSE', // allow_responses
       '', // recipient_response (empty initially)
       '', // response_date (empty initially)
-      '' // response_email (empty initially)
+      '', // response_email (empty initially)
+      '' // response_attachments (empty initially)
     ]]
 
     // Append to the ReportLinks sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:S', // All columns in ReportLinks sheet (A to S for 19 columns)
+      range: 'ReportLinks!A:T', // All columns in ReportLinks sheet (A to T for 20 columns)
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
     // Get all data from ReportLinks sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:S',
+      range: 'ReportLinks!A:T',
     })
 
     const rows = response.data.values
@@ -245,7 +246,8 @@ export async function GET(request: NextRequest) {
       allowResponses: reportRow[15] === 'TRUE', // allow_responses column
       recipientResponse: reportRow[16] || '', // recipient_response column
       responseDate: reportRow[17] || '', // response_date column
-      responseEmail: reportRow[18] || '' // response_email column
+      responseEmail: reportRow[18] || '', // response_email column
+      responseAttachments: reportRow[19] ? JSON.parse(reportRow[19]) : [] // response_attachments column
     }
 
     return NextResponse.json({ 

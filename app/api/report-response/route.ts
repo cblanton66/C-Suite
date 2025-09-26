@@ -3,7 +3,7 @@ import { google } from 'googleapis'
 
 export async function POST(request: NextRequest) {
   try {
-    const { reportId, responseText, responseEmail } = await request.json()
+    const { reportId, responseText, responseEmail, attachments = [] } = await request.json()
 
     if (!reportId || !responseText || !responseEmail) {
       return NextResponse.json({ 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Get all data from ReportLinks sheet to find the report
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:S',
+      range: 'ReportLinks!A:T',
     })
 
     const rows = response.data.values
@@ -72,17 +72,18 @@ export async function POST(request: NextRequest) {
     // Calculate the actual row number in the sheet (add 2: 1 for header, 1 for 0-based index)
     const sheetRowNumber = reportRowIndex + 2
 
-    // Update the response columns (Q, R, S = columns 17, 18, 19)
-    // Q = recipient_response, R = response_date, S = response_email
+    // Update the response columns (Q, R, S, T = columns 17, 18, 19, 20)
+    // Q = recipient_response, R = response_date, S = response_email, T = response_attachments
     const responseDate = new Date().toISOString()
-    const updateRange = `ReportLinks!Q${sheetRowNumber}:S${sheetRowNumber}`
+    const attachmentsJson = attachments.length > 0 ? JSON.stringify(attachments) : ''
+    const updateRange = `ReportLinks!Q${sheetRowNumber}:T${sheetRowNumber}`
     
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: updateRange,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[responseText, responseDate, responseEmail]],
+        values: [[responseText, responseDate, responseEmail, attachmentsJson]],
       },
     })
 
