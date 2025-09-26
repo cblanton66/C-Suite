@@ -35,7 +35,7 @@ interface LandingPageProps {
 export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showWaitlistModal, setShowWaitlistModal] = useState(false)
-  const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
+  const [videoDemoVisible, setVideoDemoVisible] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState("")
   const [assistantName, setAssistantName] = useState("Piper")
@@ -95,22 +95,22 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
       }
     }
 
-    const checkTrainingRoomVisibility = async () => {
+    const checkVideoDemoVisibility = async () => {
       try {
         const response = await fetch('/api/admin-settings')
         const data = await response.json()
         if (data.success) {
-          setTrainingRoomVisible(data.settings.trainingRoomVisible)
+          setVideoDemoVisible(data.settings.videoDemoVisible)
         }
       } catch (error) {
-        console.error('Error checking training room visibility:', error)
+        console.error('Error checking video demo visibility:', error)
         // Default to false if there's an error
-        setTrainingRoomVisible(false)
+        setVideoDemoVisible(false)
       }
     }
 
     checkSession()
-    checkTrainingRoomVisibility()
+    checkVideoDemoVisibility()
   }, [])
   const benefits = [
     {

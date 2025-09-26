@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 
 interface AdminSettings {
-  trainingRoomVisible: boolean
   videoDemoVisible: boolean
   dynamicMessage: string
   lastUpdated: string

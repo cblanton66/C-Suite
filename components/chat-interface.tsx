@@ -127,7 +127,6 @@ export function ChatInterface() {
   const [currentMessageSearch, setCurrentMessageSearch] = useState<string>('')
   const [showSearchBox, setShowSearchBox] = useState(false)
   const [showConversationSearch, setShowConversationSearch] = useState(false)
-  const [trainingRoomVisible, setTrainingRoomVisible] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isInputExpanded, setIsInputExpanded] = useState(true)
   const [shareReportLoading, setShareReportLoading] = useState<string | null>(null)
@@ -290,13 +289,11 @@ export function ChatInterface() {
         const response = await fetch('/api/admin-settings')
         const data = await response.json()
         if (data.success) {
-          setTrainingRoomVisible(data.settings.trainingRoomVisible)
           setDynamicMessage(data.settings.dynamicMessage || 'You Have the Advantage Today!')
         }
       } catch (error) {
         console.error('Error checking admin settings:', error)
-        // Default to false for training room and default message if there's an error
-        setTrainingRoomVisible(false)
+        // Default to default message if there's an error
         setDynamicMessage('You Have the Advantage Today!')
       }
     }
@@ -2598,20 +2595,6 @@ ${message.content}
                       <FileText className="w-4 h-4" />
                       My Reports
                     </button>
-                    
-                    {/* Quick-Start Guide - only show if visible */}
-                    {trainingRoomVisible && (
-                      <button
-                        onClick={() => {
-                          window.open('/quick-start-guide', '_blank')
-                          setShowUserMenu(false)
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        Quick-Start Guide
-                      </button>
-                    )}
                     
                     {/* Help Guide */}
                     <button

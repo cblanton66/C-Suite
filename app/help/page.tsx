@@ -36,11 +36,28 @@ export default function HelpPage() {
   const { sampleReports } = useSampleReports()
 
   const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => 
-      prev.includes(sectionId) 
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
-    )
+    setExpandedSections(prev => {
+      const isCurrentlyExpanded = prev.includes(sectionId)
+      
+      if (isCurrentlyExpanded) {
+        // Close the section
+        return prev.filter(id => id !== sectionId)
+      } else {
+        // Close all other sections and open this one
+        setTimeout(() => {
+          const element = document.getElementById(sectionId)
+          if (element) {
+            element.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            })
+          }
+        }, 100) // Small delay to allow UI to update first
+        
+        return [sectionId]
+      }
+    })
   }
 
   const sections: Section[] = [

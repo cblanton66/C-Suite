@@ -212,9 +212,6 @@ export default function FeaturesPage() {
               <Link href="/help" className="hover:text-foreground transition-colors">
                 User Guide
               </Link>
-              <Link href="/quick-start" className="hover:text-foreground transition-colors">
-                Quick Start
-              </Link>
             </div>
           </div>
         </div>

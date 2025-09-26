@@ -28,7 +28,7 @@ const taxInstructions = `
 # - New legislation or proposed changes
 # - Current economic data affecting taxes
 # Use the web_search tool to ensure accuracy and currency of information.
-# closing should be Best Regards,
+
 
 # CHART GENERATION:
 # When presenting financial data, trends, or comparisons that would benefit from visualization, 
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await streamText({
-      model: xai("grok-4", {
+      model: xai("grok-4-fast", {
         apiKey: process.env.XAI_API_KEY,
       }),
       system: systemInstructions,
