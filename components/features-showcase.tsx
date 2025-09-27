@@ -34,7 +34,7 @@ interface Feature {
 }
 
 export function FeaturesShowcase() {
-  const [expandedFeature, setExpandedFeature] = useState<string>("ai-chat")
+  const [expandedFeature, setExpandedFeature] = useState<string>("all")
 
   const features: Feature[] = [
     {
@@ -171,7 +171,7 @@ export function FeaturesShowcase() {
               key={feature.id} 
               className={`transition-all duration-200 cursor-pointer hover:shadow-lg ${
                 feature.highlight ? 'border-primary/50 bg-primary/5' : ''
-              } ${expandedFeature === feature.id ? 'ring-2 ring-primary/20' : ''}`}
+              } ${(expandedFeature === feature.id || expandedFeature === "all") ? 'ring-2 ring-primary/20' : ''}`}
               onClick={() => toggleFeature(feature.id)}
             >
               <div className="p-6">
@@ -193,7 +193,7 @@ export function FeaturesShowcase() {
                       </h3>
                     </div>
                   </div>
-                  {expandedFeature === feature.id ? (
+                  {(expandedFeature === feature.id || expandedFeature === "all") ? (
                     <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   ) : (
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -202,7 +202,7 @@ export function FeaturesShowcase() {
                 
                 <p className="text-muted-foreground mb-4">{feature.description}</p>
                 
-                {expandedFeature === feature.id && (
+                {(expandedFeature === feature.id || expandedFeature === "all") && (
                   <div className="space-y-2">
                     {feature.details.map((detail, index) => (
                       <div key={index} className="flex items-start gap-2 text-sm">

@@ -25,7 +25,8 @@ import {
   Shield,
   Handshake,
   Quote,
-  Eye
+  Eye,
+  MessageCircle
 } from "lucide-react"
 
 interface LandingPageProps {
@@ -39,6 +40,10 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState("")
   const [assistantName, setAssistantName] = useState("Piper")
+  // Landing page section visibility settings
+  const [showTargetPersonas, setShowTargetPersonas] = useState(true)
+  const [showPowerfulFramework, setShowPowerfulFramework] = useState(true)
+  const [showBenefitsSection, setShowBenefitsSection] = useState(true)
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false)
@@ -101,47 +106,55 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         const data = await response.json()
         if (data.success) {
           setVideoDemoVisible(data.settings.videoDemoVisible)
+          // Update landing page section visibility
+          setShowTargetPersonas(data.settings.showTargetPersonas ?? true)
+          setShowPowerfulFramework(data.settings.showPowerfulFramework ?? true)
+          setShowBenefitsSection(data.settings.showBenefitsSection ?? true)
         }
       } catch (error) {
-        console.error('Error checking video demo visibility:', error)
-        // Default to false if there's an error
+        console.error('Error checking admin settings:', error)
+        // Default to showing all sections if there's an error
         setVideoDemoVisible(false)
+        setShowTargetPersonas(true)
+        setShowPowerfulFramework(true)
+        setShowBenefitsSection(true)
       }
     }
 
     checkSession()
     checkVideoDemoVisibility()
   }, [])
+
   const benefits = [
     {
-      icon: <TrendingUp className="w-6 h-6" />,
-      title: "Strategic Planning & Forecasting",
-      description: "Model growth scenarios, analyze what-if situations, and make data-driven strategic decisions"
-    },
-    {
-      icon: <DollarSign className="w-6 h-6" />,
-      title: "Cash Flow Management",
-      description: "13-week cash flow forecasting, working capital optimization, and liquidity planning"
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: "KPI Dashboard & Analytics",
-      description: "Track performance metrics, benchmark against industry standards, identify trends"
+      icon: <MessageCircle className="w-6 h-6" />,
+      title: "Conversational AI Analysis",
+      description: "Chat with your AI advisor powered by 31 years of CPA expertise. Upload documents, ask questions, and get instant strategic insights through natural conversation."
     },
     {
       icon: <FileText className="w-6 h-6" />,
-      title: "Tax Strategy & Compliance",
-      description: "Year-round tax planning, compliance monitoring, and deduction optimization"
+      title: "Professional Client Reporting",
+      description: "Transform AI conversations into polished, executive-ready reports with secure client portals, expiring links, and engagement tracking."
     },
     {
-      icon: <Handshake className="w-6 h-6" />,
-      title: "M&A & Investment Readiness",
-      description: "Prepare for acquisitions, investor presentations, and valuation analysis"
+      icon: <Zap className="w-6 h-6" />,
+      title: "AI-Powered Suggestions",
+      description: "Automatically generate professional titles and descriptions for your reports. Save time while maintaining executive-level presentation quality."
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Risk & Compliance Guardian",
-      description: "Monitor regulatory requirements, loan covenants, and flag potential issues early"
+      title: "Secure Document Exchange",
+      description: "Bidirectional file sharing with clients. Send forms for signature, receive completed documents, and maintain complete audit trails with enterprise-grade security."
+    },
+    {
+      icon: <BarChart3 className="w-6 h-6" />,
+      title: "Strategic Financial Intelligence",
+      description: "13-week cash flow forecasting, scenario modeling, M&A readiness, and executive-level business insights for confident decision-making."
+    },
+    {
+      icon: <Target className="w-6 h-6" />,
+      title: "Complete Workflow Management",
+      description: "Manage the entire client engagement lifecycle from initial analysis to final deliverable with integrated file management and response tracking."
     }
   ]
 
@@ -217,95 +230,54 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         </div>
       </header>
 
-      {/* Hero Section */}
+
+      {/* Target Personas Section */}
+      {showTargetPersonas && (
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
-              Artificial Intelligence for Your Business
+            <h3 className="text-3xl font-bold text-foreground mb-6">
+            AI-driven efficiency for every business, every professional, every day.
             </h3>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From financial analysis to daily operations, PeakSuite.ai empowers every employee with expert-level business insights. Built by a CPA with 30+ years of real-world business experience—because your business deserves more than generic AI.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            {/* Performance */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <TrendingUp className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">
-                <span className="text-2xl font-bold text-primary">P</span>erformance
-              </h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Boost productivity across all departments with AI tools that streamline operations, optimize decision-making, and drive measurable results for your entire team.              </p>
-            </Card>
-
-            {/* Empower */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8 text-green-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">
-                <span className="text-2xl font-bold text-primary">E</span>mpower
-              </h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Transform every employee into a strategic contributor with business intelligence that turns data into actionable insights, regardless of their role or experience level.
-              </p>
-            </Card>
-
-            {/* Analysis */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <BarChart3 className="w-8 h-8 text-purple-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">
-                <span className="text-2xl font-bold text-primary">A</span>nalysis
-              </h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Get comprehensive business insights—from financial KPIs to operational metrics—that help you compete with larger companies while maintaining your small business agility.
-              </p>
-            </Card>
-
-            {/* Knowledge */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <FileText className="w-8 h-8 text-orange-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">
-                <span className="text-2xl font-bold text-primary">K</span>nowledge
-              </h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Access three decades of proven business expertise combined with cutting-edge AI. It's like having a seasoned business advisor available 24/7 for your entire team.
-              </p>
-            </Card>
-          </div>
-
-        </div>
-      </section>
-
-      {/* Target Personas Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
-            Built for Growing Small Businesses and Their Teams
-            </h3>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Whether you're wearing multiple hats or leading a finance team, PeakSuite.ai adapts to your role
-            </p>
+            <p className="text-2xl text-muted-foreground max-w-2xl mx-auto">
+            Every business professional—from bookkeepers to CEOs—deserves an AI-powered platform that transforms how they work, streamlining client communications to save time while delivering exceptional results.            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* The Multi-Hat Owner */}
+            {/* CPA Firms & Tax Professionals */}
             <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Briefcase className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Calculator className="w-8 h-8 text-blue-600" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Multi-Hat Owner</h4>
+              <h4 className="text-xl font-bold text-foreground mb-4">CPA Firms & Tax Professionals</h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-              You wear every hat in your business. Get executive-level insights for financial decisions, strategic planning, and daily operations—without hiring expensive consultants or full-time specialists.              </p>
+                Streamline client workflows with AI-powered analysis and professional document exchange. Send forms for signature, provide strategic tax planning, and deliver advisory-level insights that differentiate your practice.
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Secure client document exchange</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Professional report generation</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Year-round tax strategy planning</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* CFOs, Controllers & Finance Teams */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <BarChart3 className="w-8 h-8 text-green-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">CFOs & Finance Teams</h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                From executive leadership to bookkeeping services, enhance your financial expertise with AI-powered forecasting, strategic analysis, and professional reporting. Elevate your role from data entry to strategic advisor with insights that drive business growth.
+              </p>
               <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -313,75 +285,75 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Strategic planning scenarios</span>
+                  <span>Board-ready presentations & KPI reporting</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Client advisory & business insights</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* CEOs & Business Owners */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Building2 className="w-8 h-8 text-purple-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">CEOs & Business Owners</h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Get the executive-level financial insights you need without hiring expensive consultants. Make confident strategic decisions with AI-powered analysis, scenario modeling, and professional reporting that scales with your business growth.
+              </p>
+              <div className="text-left space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Strategic planning & scenario modeling</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
                   <span>Investment & exit preparation</span>
                 </div>
-              </div>
-            </Card>
-
-            {/* The Growing Team */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <BarChart3 className="w-8 h-8 text-green-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Growing Team</h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Your employees want to contribute more strategically. Give them access to business intelligence tools that elevate their impact and help them think like business owners.              </p>
-              <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Management reporting automation</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>KPI dashboards & benchmarking</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Strategic recommendations</span>
+                  <span>Executive dashboards & insights</span>
                 </div>
               </div>
             </Card>
+          </div>
 
-            {/* The Accounting Professional */}
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Target className="w-8 h-8 text-purple-600" />
-              </div>
-              <h4 className="text-xl font-bold text-foreground mb-4">The Accounting Professional</h4>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-              Whether you're serving clients or managing internal operations, deliver advisory-level insights that position you as a strategic partner, not just a number-cruncher.              </p>
-              <div className="text-left space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Advanced financial modeling</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Board presentation support</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>M&A due diligence prep</span>
-                </div>
+          {/* Horizontal Summary Box */}
+          <div className="mt-12">
+            <Card className="p-8 hover:shadow-lg transition-shadow">
+              <div className="text-center">
+                <h4 className="text-xl font-bold text-foreground mb-4">What Every Professional Gets</h4>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Whether you're a CPA streamlining client workflows, a CFO preparing board presentations, or a CEO making strategic decisions, 
+                  PeakSuite.ai provides the AI-powered insights, professional reporting capabilities, and secure collaboration tools 
+                  that transform how you work—saving time while delivering exceptional results that set you apart from the competition.
+                </p>
+                <Link href="/features">
+                  <Button size="lg" className="text-lg px-8 py-3">
+                    <Eye className="w-5 h-5 mr-2" />
+                    See Reports and Workflows in Action
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>
         </div>
       </section>
-
+      )}
 
       {/* Benefits Section */}
+      {showBenefitsSection && (
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-Your Complete Business Intelligence Platform            </h3>
+              Platform Capabilities at a Glance
+            </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Professional-grade business tools designed for companies from Start-up to $50M in revenue            </p>
+              See why financial professionals choose PeakSuite.ai for client engagement, strategic analysis, and professional reporting
+            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
@@ -405,27 +377,80 @@ Your Complete Business Intelligence Platform            </h3>
           </div>
         </div>
       </section>
+      )}
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-3xl font-bold mb-4">
-          Every Small Business Deserves Enterprise-Level Intelligence          </h3>
-          <p className="text-xl mb-8 opacity-90">
-          Join growing companies that are making smarter decisions faster with AI-powered business insights built by someone who understands your challenges.          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => setShowWaitlistModal(true)}>
-              Request Access
-            </Button>
-            <Link href="/features">
-              <Button size="lg" variant="ghost" className="text-lg px-8 py-6 text-primary-foreground hover:bg-primary-foreground/10">
-                <Eye className="w-5 h-5 mr-2" />
-                View Features
-              </Button>
-            </Link>
+      {/* POWERFUL Framework Section */}
+      {showPowerfulFramework && (
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              What Makes PeakSuite.ai POWERFUL
+            </h3>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Transform how you research, communicate, organize, and make business decisions with AI-powered capabilities
+            </p>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            {/* Powerful Research */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <BarChart3 className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                Powerful Research
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                AI-powered analysis of business documents, financial data, and market trends. Upload PDFs, Excel files, and get instant expert-level insights with conversational AI.
+              </p>
+            </Card>
+
+            {/* Powerful Client Communications */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <FileText className="w-8 h-8 text-green-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                Powerful Client Communications
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Transform conversations into professional reports with secure client portals. Bidirectional document exchange for forms, signatures, and collaborative workflows.
+              </p>
+            </Card>
+
+            {/* Powerful Organization */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Target className="w-8 h-8 text-purple-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                Powerful Organization
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Complete report lifecycle management with AI-generated titles and descriptions. Track engagement, manage client responses, and maintain professional documentation.
+              </p>
+            </Card>
+
+            {/* Powerful Business Decisions */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow border-l-4 border-l-orange-500">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <TrendingUp className="w-8 h-8 text-orange-600" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-4">
+                Powerful Business Decisions
+              </h4>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Strategic insights backed by decades of CPA experience. Cash flow forecasting, scenario modeling, and executive-level recommendations for confident decision-making.
+              </p>
+            </Card>
+          </div>
+
         </div>
       </section>
+      )}
+
+
 
       {/* Pricing Section - Hidden during selective access period */}
       <section className="py-20 px-4 bg-muted/30 hidden">

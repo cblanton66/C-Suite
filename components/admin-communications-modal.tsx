@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Megaphone, X, Plus, MessageSquare, Send, Clock, User, Star, Reply } from "lucide-react"
+import { Megaphone, X, Plus, MessageSquare, Send, Clock, User, Star, Reply, Settings, ToggleLeft, ToggleRight } from "lucide-react"
 
 interface FeedbackItem {
   rowIndex: number
@@ -25,7 +25,7 @@ interface AdminCommunicationsModalProps {
 }
 
 export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCommunicationsModalProps) {
-  const [activeTab, setActiveTab] = useState<'create' | 'feedback'>('create')
+  const [activeTab, setActiveTab] = useState<'create' | 'feedback' | 'settings'>('create')
   const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -39,6 +39,14 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null)
   const [responseText, setResponseText] = useState('')
   const [responding, setResponding] = useState(false)
+
+  // Landing Page Settings State
+  const [videoDemoVisible, setVideoDemoVisible] = useState(false)
+  const [showTargetPersonas, setShowTargetPersonas] = useState(true)
+  const [showPowerfulFramework, setShowPowerfulFramework] = useState(true)
+  const [showBenefitsSection, setShowBenefitsSection] = useState(true)
+  const [dynamicMessage, setDynamicMessage] = useState('You Have the Advantage Today!')
+  const [updatingSettings, setUpdatingSettings] = useState(false)
 
   const fetchFeedback = async () => {
     setLoading(true)
@@ -57,9 +65,61 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
     }
   }
 
+  const fetchAdminSettings = async () => {
+    try {
+      const response = await fetch('/api/admin-settings')
+      const data = await response.json()
+      
+      if (data.success) {
+        setVideoDemoVisible(data.settings.videoDemoVisible ?? false)
+        setShowTargetPersonas(data.settings.showTargetPersonas ?? true)
+        setShowPowerfulFramework(data.settings.showPowerfulFramework ?? true)
+        setShowBenefitsSection(data.settings.showBenefitsSection ?? true)
+        setDynamicMessage(data.settings.dynamicMessage ?? 'You Have the Advantage Today!')
+      }
+    } catch (error) {
+      console.error('Error fetching admin settings:', error)
+    }
+  }
+
+  const updateAdminSettings = async () => {
+    setUpdatingSettings(true)
+    try {
+      const response = await fetch('/api/admin-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail,
+          videoDemoVisible,
+          showTargetPersonas,
+          showPowerfulFramework,
+          showBenefitsSection,
+          dynamicMessage
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('Settings updated successfully!')
+      } else {
+        alert(data.error || 'Failed to update settings')
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error)
+      alert('Failed to update settings')
+    } finally {
+      setUpdatingSettings(false)
+    }
+  }
+
   useEffect(() => {
-    if (isOpen && activeTab === 'feedback') {
-      fetchFeedback()
+    if (isOpen) {
+      if (activeTab === 'feedback') {
+        fetchFeedback()
+      } else if (activeTab === 'settings') {
+        fetchAdminSettings()
+      }
     }
   }, [isOpen, activeTab])
 
@@ -304,6 +364,17 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'settings'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Settings className="w-4 h-4 mr-2 inline" />
+                Landing Page Settings
+              </button>
             </div>
 
             {/* Content */}
@@ -362,7 +433,7 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
                     <Plus className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
-              ) : (
+              ) : activeTab === 'feedback' ? (
                 <div className="space-y-6">
                   {/* Unresponded Feedback */}
                   {unrespondedFeedback.length > 0 && (
@@ -499,6 +570,128 @@ export function AdminCommunicationsModal({ isOpen, onClose, userEmail }: AdminCo
                       <p className="text-muted-foreground">No feedback submissions yet</p>
                     </div>
                   )}
+                </div>
+              ) : activeTab === 'settings' ? (
+                <div className="space-y-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      Landing Page Settings
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Control which sections are visible on the landing page to customize the user experience.
+                    </p>
+                  </div>
+
+                  {/* Dynamic Message */}
+                  <div>
+                    <label htmlFor="dynamicMessage" className="block text-sm font-medium text-foreground mb-2">
+                      Dynamic Message
+                    </label>
+                    <Input
+                      id="dynamicMessage"
+                      type="text"
+                      placeholder="Enter dynamic message..."
+                      value={dynamicMessage}
+                      onChange={(e) => setDynamicMessage(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This message appears prominently on the landing page
+                    </p>
+                  </div>
+
+                  {/* Toggle Controls */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-foreground">Section Visibility</h4>
+                    
+                    {/* Video Demo Toggle */}
+                    <div className="flex items-center justify-between p-3 border border-input rounded-lg">
+                      <div>
+                        <div className="font-medium text-foreground">Video Demo</div>
+                        <div className="text-sm text-muted-foreground">Show the video demonstration section</div>
+                      </div>
+                      <button
+                        onClick={() => setVideoDemoVisible(!videoDemoVisible)}
+                        className="flex items-center"
+                      >
+                        {videoDemoVisible ? (
+                          <ToggleRight className="w-8 h-8 text-primary" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Target Personas Toggle */}
+                    <div className="flex items-center justify-between p-3 border border-input rounded-lg">
+                      <div>
+                        <div className="font-medium text-foreground">Target Personas Section</div>
+                        <div className="text-sm text-muted-foreground">Show the "Designed for Financial Professionals" section</div>
+                      </div>
+                      <button
+                        onClick={() => setShowTargetPersonas(!showTargetPersonas)}
+                        className="flex items-center"
+                      >
+                        {showTargetPersonas ? (
+                          <ToggleRight className="w-8 h-8 text-primary" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* POWERFUL Framework Toggle */}
+                    <div className="flex items-center justify-between p-3 border border-input rounded-lg">
+                      <div>
+                        <div className="font-medium text-foreground">POWERFUL Framework Section</div>
+                        <div className="text-sm text-muted-foreground">Show the "What Makes PeakSuite.ai POWERFUL" section</div>
+                      </div>
+                      <button
+                        onClick={() => setShowPowerfulFramework(!showPowerfulFramework)}
+                        className="flex items-center"
+                      >
+                        {showPowerfulFramework ? (
+                          <ToggleRight className="w-8 h-8 text-primary" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Benefits Section Toggle */}
+                    <div className="flex items-center justify-between p-3 border border-input rounded-lg">
+                      <div>
+                        <div className="font-medium text-foreground">Benefits Section</div>
+                        <div className="text-sm text-muted-foreground">Show the "Platform Capabilities at a Glance" section</div>
+                      </div>
+                      <button
+                        onClick={() => setShowBenefitsSection(!showBenefitsSection)}
+                        className="flex items-center"
+                      >
+                        {showBenefitsSection ? (
+                          <ToggleRight className="w-8 h-8 text-primary" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <Button 
+                    onClick={updateAdminSettings}
+                    disabled={updatingSettings}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {updatingSettings ? 'Updating...' : 'Update Landing Page Settings'}
+                    <Settings className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Select a tab to get started</p>
                 </div>
               )}
             </div>

@@ -9,13 +9,21 @@ interface AdminSettings {
   dynamicMessage: string
   lastUpdated: string
   updatedBy: string
+  // Landing Page Section Toggles
+  showTargetPersonas: boolean
+  showPowerfulFramework: boolean
+  showBenefitsSection: boolean
 }
 
 const defaultSettings: AdminSettings = {
   videoDemoVisible: false,
   dynamicMessage: 'You Have the Advantage Today!',
   lastUpdated: new Date().toISOString(),
-  updatedBy: 'system'
+  updatedBy: 'system',
+  // Landing Page Sections - All visible by default
+  showTargetPersonas: true,
+  showPowerfulFramework: true,
+  showBenefitsSection: true
 }
 
 async function getGoogleCloudStorage() {
@@ -83,7 +91,14 @@ export async function GET(request: NextRequest) {
 // POST - Update settings (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { videoDemoVisible, dynamicMessage, userEmail } = await request.json()
+    const { 
+      videoDemoVisible, 
+      dynamicMessage, 
+      userEmail,
+      showTargetPersonas,
+      showPowerfulFramework,
+      showBenefitsSection
+    } = await request.json()
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
@@ -129,6 +144,9 @@ export async function POST(request: NextRequest) {
       ...currentSettings,
       videoDemoVisible: videoDemoVisible ?? currentSettings.videoDemoVisible,
       dynamicMessage: dynamicMessage ?? currentSettings.dynamicMessage,
+      showTargetPersonas: showTargetPersonas ?? currentSettings.showTargetPersonas,
+      showPowerfulFramework: showPowerfulFramework ?? currentSettings.showPowerfulFramework,
+      showBenefitsSection: showBenefitsSection ?? currentSettings.showBenefitsSection,
       lastUpdated: new Date().toISOString(),
       updatedBy: userEmail
     }
