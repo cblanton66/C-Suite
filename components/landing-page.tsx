@@ -281,7 +281,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
               <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>13-week cash flow forecasting</span>
+                  <span>Cash flow forecasting</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -534,7 +534,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
             
             <div className="text-sm text-muted-foreground space-y-1">
               <p>• No files to download or software to install</p>
-              <p>• Immediate access via web browser</p>
+              <p>• Immediate access via web browser once activated</p>
               <p>• No IT setup required</p>
               <p>• Start analyzing within 5 minutes</p>
             </div>

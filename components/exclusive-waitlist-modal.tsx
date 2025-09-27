@@ -176,10 +176,11 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-foreground mb-3">
-                Request Platform Access
+                Get Started with PeakSuite.ai
               </h3>
               <p className="text-muted-foreground leading-relaxed">
                 Join the exclusive community of business leaders using PeakSuite.ai. As a platform member, you'll gain access to enterprise-grade AI intelligence tools designed for strategic decision-making and business growth.
+                After submission, our team will begin configuring your personalized account access. Your login credentials will arrive via email once we complete your secure platform setup.
               </p>
             </div>
 
