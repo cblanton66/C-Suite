@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
 Requirements:
 - Title should be concise, professional, and capture the main topic/focus (max 80 characters)
-- Description should be a brief summary of what the report covers (max 150 characters)
+- Description should be a brief summary of what the report covers (max 12 words)
 - Use business terminology appropriate for executives
 - Focus on key insights, metrics, or analysis areas
 - Avoid generic phrases like "Business Report" or "Analysis Report"
@@ -100,8 +100,14 @@ Return your response in JSON format with "title" and "description" fields only.`
       ? suggestions.title.substring(0, 80).trim() 
       : "Business Intelligence Report"
     
+    // Limit description to 12 words
+    const limitDescriptionToWords = (text: string, maxWords: number) => {
+      const words = text.trim().split(/\s+/)
+      return words.length > maxWords ? words.slice(0, maxWords).join(' ') : text
+    }
+    
     const description = typeof suggestions.description === 'string' 
-      ? suggestions.description.substring(0, 150).trim() 
+      ? limitDescriptionToWords(suggestions.description.trim(), 12)
       : "AI-generated insights and analysis"
 
     const finalResponse = {

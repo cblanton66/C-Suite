@@ -40,28 +40,92 @@ export default function FeaturesPage() {
                 className="bg-primary hover:bg-primary/90"
               >
                 <Zap className="w-4 h-4 mr-2" />
-                Request Access
+                Get Started Today
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* 1. Live Examples - Client-Ready Reports You Control */}
+      {/* 1. Simple Yet Powerful Workflow */}
+      <section className="py-24 bg-gradient-to-b from-background to-muted/20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-foreground mb-2">
+            Streamline Every Client Interaction
+            </h3>
+            <p className="text-muted-foreground">
+            Elevate your communication strategy with seamless, professional workflows.
+            </p>
+          </div>
+            
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
+                  1
+                </div>
+                <h4 className="font-semibold mb-2">Receive Client Question</h4>
+                <p className="text-sm text-muted-foreground">
+                  Client asks business question or submits documents for analysis
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
+                  2
+                </div>
+                <h4 className="font-semibold mb-2">Research & Analyze</h4>
+                <p className="text-sm text-muted-foreground">
+                  AI analyzes data and provides comprehensive business insights and recommendations
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
+                  3
+                </div>
+                <h4 className="font-semibold mb-2">Refine & Customize</h4>
+                <p className="text-sm text-muted-foreground">
+                  Review AI response, add personal insights, and tailor for client
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
+                  4
+                </div>
+                <h4 className="font-semibold mb-2">Share Professional Report</h4>
+                <p className="text-sm text-muted-foreground">
+                  Deliver polished report to client with tracking and engagement analytics
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-sm text-green-600 dark:text-green-400 mt-6 font-medium text-center">
+              🚀 From client question to professional response in minutes not hours
+            </p>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="border-t border-border mx-4"></div>
+
+      {/* 2. Live Examples - Client-Ready Reports You Control */}
       <section className="py-24 bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
               <FileText className="w-4 h-4" />
-              Live Examples
+              Click the Reports below for Real World Questions
             </div>
             
             <h3 className="text-2xl font-bold text-foreground mb-2">
               Client-Ready Reports You Control
             </h3>
             <p className="text-muted-foreground">
-              See exactly what your clients will see. These are real client-facing reports with secure web links 
-              that you control - set custom expiration dates and track engagement.
+            Every report contains the original question and PeakSuite's initial answer. From there, users can ask follow-up 
+            questions to refine the response or share it with a client or colleague. Each shared report has an expiration 
+            date that you control, and all activity is tracked on your PeakSuite dashboard.
             </p>
           </div>
           
@@ -122,65 +186,6 @@ export default function FeaturesPage() {
           <p className="text-sm text-blue-600 dark:text-blue-400 mt-6 font-medium text-center">
             ✨ Click any report to experience what your clients will see
           </p>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="border-t border-border mx-4"></div>
-
-      {/* 2. Simple Yet Powerful Workflow */}
-      <section className="py-24 bg-gradient-to-b from-background to-muted/20">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-foreground mb-2">
-              Simple Yet Powerful Workflow
-            </h3>
-            <p className="text-muted-foreground">
-              From conversation to professional report in minutes
-            </p>
-          </div>
-            
-            <div className="grid md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
-                  1
-                </div>
-                <h4 className="font-semibold mb-2">Chat & Upload</h4>
-                <p className="text-sm text-muted-foreground">
-                  Ask questions and upload business documents for analysis
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
-                  2
-                </div>
-                <h4 className="font-semibold mb-2">AI Analysis</h4>
-                <p className="text-sm text-muted-foreground">
-                  Get expert insights with 31 years of CPA knowledge
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
-                  3
-                </div>
-                <h4 className="font-semibold mb-2">Smart Suggestions</h4>
-                <p className="text-sm text-muted-foreground">
-                  AI suggests professional titles and descriptions automatically
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold mb-4">
-                  4
-                </div>
-                <h4 className="font-semibold mb-2">Share & Track</h4>
-                <p className="text-sm text-muted-foreground">
-                  Generate professional reports with engagement analytics
-                </p>
-              </div>
-            </div>
         </div>
       </section>
 

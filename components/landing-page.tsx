@@ -512,6 +512,36 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
         </div>
       </section>
 
+      {/* Getting Started Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="max-w-4xl mx-auto text-center">
+          <h3 className="text-3xl font-bold text-foreground mb-6">
+            Getting Started is Simple
+          </h3>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            No downloads, no installations, no complex setup. Access your AI-powered virtual CFO 
+            instantly through your web browser and start making smarter business decisions today.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              size="lg"
+              onClick={() => setShowWaitlistModal(true)}
+              className="bg-primary hover:bg-primary/90 px-8 py-3"
+            >
+              Get Started Now
+            </Button>
+            
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>• No files to download or software to install</p>
+              <p>• Immediate access via web browser</p>
+              <p>• No IT setup required</p>
+              <p>• Start analyzing within 5 minutes</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto text-center">
