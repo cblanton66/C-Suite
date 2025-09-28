@@ -103,6 +103,7 @@ export function ChatInterface() {
   const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
   const [selectedModel, setSelectedModel] = useState<'grok-4' | 'grok-4-fast'>('grok-4-fast')
+  const [searchMyHistory, setSearchMyHistory] = useState(false)
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -141,6 +142,11 @@ export function ChatInterface() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
+  const [showPrivateNoteModal, setShowPrivateNoteModal] = useState(false)
+  const [privateNoteContent, setPrivateNoteContent] = useState('')
+  const [privateNoteClient, setPrivateNoteClient] = useState('')
+  const [privateNoteTitle, setPrivateNoteTitle] = useState('')
+  const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
@@ -609,6 +615,53 @@ export function ChatInterface() {
     setTimeout(() => setForceHidden(false), 1000)
   }
 
+  // Save private note function
+  const savePrivateNote = async () => {
+    if (!privateNoteClient.trim() || !privateNoteContent.trim() || !userEmail) {
+      alert('Please fill in both client name and content')
+      return
+    }
+
+    setSavingPrivateNote(true)
+    try {
+      const response = await fetch('/api/save-private-note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userEmail,
+          clientName: privateNoteClient,
+          content: privateNoteContent,
+          title: privateNoteTitle || `Private Note - ${privateNoteClient}`,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Private note saved successfully!')
+        setShowPrivateNoteModal(false)
+        setPrivateNoteContent('')
+        setPrivateNoteClient('')
+        setPrivateNoteTitle('')
+      } else {
+        alert('Failed to save private note. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error saving private note:', error)
+      alert('Failed to save private note. Please try again.')
+    } finally {
+      setSavingPrivateNote(false)
+    }
+  }
+
+  // Function to prepare private note from message
+  const preparePrivateNote = (message: Message) => {
+    setPrivateNoteContent(message.content)
+    setPrivateNoteClient('')
+    setPrivateNoteTitle('')
+    setShowPrivateNoteModal(true)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading || !apiStatus?.hasApiKey) return
@@ -650,6 +703,8 @@ export function ChatInterface() {
           content: msg.content,
         })),
         model: selectedModel,
+        searchMyHistory,
+        userId: userEmail,
         ...(uploadedFiles.length > 0 && {
           fileContext: uploadedFiles.map(file => ({
             filename: file.name,
@@ -1137,6 +1192,8 @@ export function ChatInterface() {
             content: msg.content,
           })),
           model: selectedModel,
+          searchMyHistory,
+          userId: userEmail,
           ...(uploadedFile && {
             fileContext: {
               filename: uploadedFile.name,
@@ -2919,6 +2976,22 @@ ${message.content}
 
                   <form onSubmit={handleSubmit} className="space-y-3">
                     
+                    {/* Search History Toggle */}
+                    <div className="flex justify-center mb-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <input 
+                          type="checkbox" 
+                          id="searchHistory" 
+                          checked={searchMyHistory}
+                          onChange={(e) => setSearchMyHistory(e.target.checked)}
+                          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
+                        />
+                        <label htmlFor="searchHistory" className="text-muted-foreground cursor-pointer">
+                          Search my client history only
+                        </label>
+                      </div>
+                    </div>
+                    
                     <div className="flex justify-center">
                       <div className="flex-1 relative max-w-2xl">
                         <textarea
@@ -3304,6 +3377,16 @@ ${message.content}
                             <Edit3 className="w-3 h-3 mr-1" />
                             Edit
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => preparePrivateNote(message)}
+                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+                            title="Save to private notes"
+                          >
+                            <FolderOpen className="w-3 h-3 mr-1" />
+                            Private Note
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -3364,6 +3447,16 @@ ${message.content}
                             <Share2 className="w-3 h-3 mr-1" />
                           )}
                           {shareReportLoading === message.id ? "Sharing..." : "Share"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => preparePrivateNote(message)}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                          title="Save to private notes"
+                        >
+                          <FolderOpen className="w-3 h-3 mr-1" />
+                          Private Note
                         </Button>
                       </div>
                     </div>
@@ -3476,6 +3569,22 @@ ${message.content}
               )}
 
               <form onSubmit={handleSubmit} className="space-y-3">
+                
+                {/* Search History Toggle */}
+                <div className="flex justify-center mb-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <input 
+                      type="checkbox" 
+                      id="searchHistory2" 
+                      checked={searchMyHistory}
+                      onChange={(e) => setSearchMyHistory(e.target.checked)}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
+                    />
+                    <label htmlFor="searchHistory2" className="text-muted-foreground cursor-pointer">
+                      Search my client history only
+                    </label>
+                  </div>
+                </div>
                 
                 <div className="flex justify-center">
                   <div className="flex-1 relative max-w-2xl">
@@ -3791,6 +3900,103 @@ ${message.content}
         isSharing={shareReportLoading === currentMessageToShare?.id}
         reportContent={currentMessageToShare?.content}
       />
+
+      {/* Private Notes Modal */}
+      {showPrivateNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Save Private Note</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowPrivateNoteModal(false)
+                  setPrivateNoteContent('')
+                  setPrivateNoteClient('')
+                  setPrivateNoteTitle('')
+                }}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="clientName" className="block text-sm font-medium mb-1">
+                  Client Name *
+                </label>
+                <Input
+                  id="clientName"
+                  type="text"
+                  value={privateNoteClient}
+                  onChange={(e) => setPrivateNoteClient(e.target.value)}
+                  placeholder="Enter client name..."
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="noteTitle" className="block text-sm font-medium mb-1">
+                  Title (optional)
+                </label>
+                <Input
+                  id="noteTitle"
+                  type="text"
+                  value={privateNoteTitle}
+                  onChange={(e) => setPrivateNoteTitle(e.target.value)}
+                  placeholder="Optional note title..."
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="noteContent" className="block text-sm font-medium mb-1">
+                  Content *
+                </label>
+                <textarea
+                  id="noteContent"
+                  value={privateNoteContent}
+                  onChange={(e) => setPrivateNoteContent(e.target.value)}
+                  placeholder="Note content..."
+                  className="w-full min-h-[200px] p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  rows={8}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPrivateNoteModal(false)
+                  setPrivateNoteContent('')
+                  setPrivateNoteClient('')
+                  setPrivateNoteTitle('')
+                }}
+                disabled={savingPrivateNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={savePrivateNote}
+                disabled={savingPrivateNote || !privateNoteClient.trim() || !privateNoteContent.trim()}
+                className="min-w-[100px]"
+              >
+                {savingPrivateNote ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Note'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

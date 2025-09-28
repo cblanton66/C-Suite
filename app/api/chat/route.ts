@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { streamText } from "ai"
 import { xai } from "@ai-sdk/xai"
+import { getUserReports } from "@/lib/google-cloud-storage"
 
 const taxInstructions = `
 # Act as an expert business advisor, CPA and attorney
@@ -88,7 +89,14 @@ const taxInstructions = `
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-4-fast' } = await req.json()
+    const { messages, fileContext, model = 'grok-4-fast', searchMyHistory, userId } = await req.json()
+    
+    console.log('[DEBUG] Chat request received:', { 
+      searchMyHistory, 
+      userId, 
+      model,
+      messagesCount: messages?.length 
+    })
 
     if (!process.env.XAI_API_KEY) {
       return NextResponse.json({ error: "XAI API key not configured" }, { status: 500 })
@@ -96,6 +104,25 @@ export async function POST(req: NextRequest) {
 
     // Include file context in system instructions if available
     let systemInstructions = taxInstructions
+    
+    // Include user history context if requested
+    if (searchMyHistory && userId) {
+      try {
+        const userHistory = await getUserReports(userId)
+        if (userHistory) {
+          console.log(`[DEBUG] Including ${userHistory.length} characters of user history context`)
+          systemInstructions += `\n\nUSER HISTORY CONTEXT:\nThe following are your previous reports and conversations with this user. Use this context to provide personalized responses based on their specific business needs and past work:\n\n${userHistory}\n\nEND USER HISTORY CONTEXT\n\n`
+        } else {
+          console.log('[DEBUG] No user history found')
+        }
+      } catch (error) {
+        console.error('Error fetching user history:', error)
+        // Continue without history context if there's an error
+      }
+    } else {
+      console.log('[DEBUG] Not searching user history:', { searchMyHistory, userId })
+    }
+    
     if (fileContext) {
       if (Array.isArray(fileContext)) {
         // Multiple files
