@@ -104,9 +104,6 @@ export function ChatInterface() {
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
   const [selectedModel, setSelectedModel] = useState<'grok-4' | 'grok-4-fast'>('grok-4-fast')
   const [searchMyHistory, setSearchMyHistory] = useState(false)
-  const [saveAsNote, setSaveAsNote] = useState(false)
-  const [quickNoteClient, setQuickNoteClient] = useState('')
-  const [quickNoteContent, setQuickNoteContent] = useState('')
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -681,9 +678,9 @@ export function ChatInterface() {
     return { isCommand: false }
   }
 
-  // Quick note saving function
-  const saveQuickNote = async (clientName: string, content: string, fromCommand = false) => {
-    console.log('saveQuickNote called with:', { clientName, content, userEmail, fromCommand })
+  // Quick note saving function for voice commands
+  const saveQuickNote = async (clientName: string, content: string) => {
+    console.log('saveQuickNote called with:', { clientName, content, userEmail })
     
     if (!userEmail) {
       alert('User email not available')
@@ -712,10 +709,6 @@ export function ChatInterface() {
           createdAt: new Date(),
         }
         setMessages(prev => [...prev, savedMessage])
-        
-        setQuickNoteClient('')
-        setQuickNoteContent('')
-        setSaveAsNote(false)
         
         return true
       } else {
@@ -753,37 +746,10 @@ export function ChatInterface() {
       setMessages(prev => [...prev, userMessage])
       setInput('')
       
-      await saveQuickNote(saveNoteCommand.clientName, saveNoteCommand.content, true)
+      await saveQuickNote(saveNoteCommand.clientName, saveNoteCommand.content)
       return
     }
 
-    // Check if checkbox is checked for direct save
-    if (saveAsNote) {
-      const clientName = quickNoteClient.trim()
-      const noteContent = quickNoteContent.trim() || input.trim()
-      
-      if (!clientName) {
-        alert('Please enter a client name')
-        return
-      }
-      
-      if (!noteContent) {
-        alert('Please enter note content')
-        return
-      }
-      
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: "user",
-        content: `Save note for ${clientName}: ${noteContent}`,
-        createdAt: new Date(),
-      }
-      setMessages(prev => [...prev, userMessage])
-      setInput('')
-      
-      await saveQuickNote(clientName, noteContent, false)
-      return
-    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -3105,47 +3071,6 @@ ${message.content}
                       </div>
                     </div>
 
-                    {/* Save to Client Folder Toggle */}
-                    <div className="flex justify-center mb-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <input 
-                          type="checkbox" 
-                          id="saveAsNote" 
-                          checked={saveAsNote}
-                          onChange={(e) => setSaveAsNote(e.target.checked)}
-                          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
-                        />
-                        <label htmlFor="saveAsNote" className="text-muted-foreground cursor-pointer">
-                          Save to client folder
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Expandable Quick Note Form */}
-                    {saveAsNote && (
-                      <div className="flex justify-center mb-2">
-                        <div className="w-full max-w-md space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                          <div>
-                            <Input
-                              type="text"
-                              placeholder="Client name..."
-                              value={quickNoteClient}
-                              onChange={(e) => setQuickNoteClient(e.target.value)}
-                              className="w-full text-sm"
-                            />
-                          </div>
-                          <div>
-                            <Input
-                              type="text"
-                              placeholder="Note content (or use main input below)..."
-                              value={quickNoteContent}
-                              onChange={(e) => setQuickNoteContent(e.target.value)}
-                              className="w-full text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                     
                     <div className="flex justify-center">
                       <div className="flex-1 relative max-w-2xl">
@@ -3741,47 +3666,6 @@ ${message.content}
                   </div>
                 </div>
 
-                {/* Save to Client Folder Toggle */}
-                <div className="flex justify-center mb-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <input 
-                      type="checkbox" 
-                      id="saveAsNote2" 
-                      checked={saveAsNote}
-                      onChange={(e) => setSaveAsNote(e.target.checked)}
-                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
-                    />
-                    <label htmlFor="saveAsNote2" className="text-muted-foreground cursor-pointer">
-                      Save to client folder
-                    </label>
-                  </div>
-                </div>
-
-                {/* Expandable Quick Note Form */}
-                {saveAsNote && (
-                  <div className="flex justify-center mb-2">
-                    <div className="w-full max-w-md space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                      <div>
-                        <Input
-                          type="text"
-                          placeholder="Client name..."
-                          value={quickNoteClient}
-                          onChange={(e) => setQuickNoteClient(e.target.value)}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          type="text"
-                          placeholder="Note content (or use main input below)..."
-                          value={quickNoteContent}
-                          onChange={(e) => setQuickNoteContent(e.target.value)}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
                 
                 <div className="flex justify-center">
                   <div className="flex-1 relative max-w-2xl">
