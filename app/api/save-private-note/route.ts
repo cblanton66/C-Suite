@@ -4,8 +4,11 @@ import { savePrivateNote } from "@/lib/google-cloud-storage"
 export async function POST(req: NextRequest) {
   try {
     const { userId, clientName, content, title } = await req.json()
+    
+    console.log('API received save-private-note request:', { userId, clientName, content, title })
 
     if (!userId || !clientName || !content) {
+      console.log('Missing required fields:', { userId: !!userId, clientName: !!clientName, content: !!content })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
