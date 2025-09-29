@@ -3105,7 +3105,7 @@ ${message.content}
                           onFocus={() => setInputHasFocus(true)}
                           onBlur={() => setInputHasFocus(false)}
                           placeholder="What's on the Agenda today?"
-                          className={`pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y ${messages.length === 0 && !input ? 'text-center placeholder:text-center' : ''}`}
+                          className="pr-10 min-h-32 h-32 w-full rounded-md border border-input !bg-gray-200 dark:!bg-gray-700 px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y text-center placeholder:text-center"
                           disabled={isLoading || !apiStatus?.hasApiKey}
                         />
                       </div>
