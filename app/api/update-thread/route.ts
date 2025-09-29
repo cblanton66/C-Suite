@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
   try {
     const { userId, filePath, messages, clientName, title, projectType, status, priority } = await req.json()
 
-    if (!userId || !filePath || !messages) {
+    if (!userId || !filePath) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -54,7 +54,10 @@ export async function PUT(req: NextRequest) {
     const threadData = JSON.parse(content.toString())
 
     // Update the conversation and metadata
-    threadData.conversation = messages
+    if (messages) {
+      threadData.conversation = messages
+    }
+    
     threadData.metadata = {
       ...threadData.metadata,
       ...(clientName && { clientName }),
@@ -63,7 +66,7 @@ export async function PUT(req: NextRequest) {
       ...(status && { status }),
       ...(priority && { priority }),
       lastUpdated: new Date().toISOString(),
-      messageCount: messages.length
+      ...(messages && { messageCount: messages.length })
     }
 
     // Save the updated thread content back to the same location
