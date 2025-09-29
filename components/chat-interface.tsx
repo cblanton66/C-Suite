@@ -43,6 +43,8 @@ import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
 import { FeedbackModal } from "@/components/feedback-modal"
 import { CommunicationsModal } from "@/components/communications-modal"
+import { ThreadSaveModal } from "@/components/thread-save-modal"
+import { ThreadManagementModal } from "@/components/thread-management-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
@@ -146,6 +148,8 @@ export function ChatInterface() {
   const [privateNoteContent, setPrivateNoteContent] = useState('')
   const [privateNoteClient, setPrivateNoteClient] = useState('')
   const [privateNoteTitle, setPrivateNoteTitle] = useState('')
+  const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
+  const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
@@ -660,6 +664,15 @@ export function ChatInterface() {
     setPrivateNoteClient('')
     setPrivateNoteTitle('')
     setShowPrivateNoteModal(true)
+  }
+
+  // Function to load thread messages into current conversation
+  const handleLoadThread = (threadMessages: Message[]) => {
+    setMessages(threadMessages)
+    // Clear current input
+    setInput('')
+    // Close the thread management modal
+    setShowThreadManagementModal(false)
   }
 
   // Voice command detection for quick notes
@@ -2740,6 +2753,17 @@ ${message.content}
 
                     <button
                       onClick={() => {
+                        setShowThreadManagementModal(true)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Manage Threads
+                    </button>
+
+                    <button
+                      onClick={() => {
                         setShowMyReportsModal(true)
                         setShowUserMenu(false)
                       }}
@@ -3467,6 +3491,16 @@ ${message.content}
                             <FolderOpen className="w-3 h-3 mr-1" />
                             Private Note
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowThreadSaveModal(true)}
+                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+                            title="Save conversation thread"
+                          >
+                            <MessageCircle className="w-3 h-3 mr-1" />
+                            Save Thread
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -3537,6 +3571,16 @@ ${message.content}
                         >
                           <FolderOpen className="w-3 h-3 mr-1" />
                           Private Note
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowThreadSaveModal(true)}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                          title="Save conversation thread"
+                        >
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Save Thread
                         </Button>
                       </div>
                     </div>
@@ -4078,6 +4122,22 @@ ${message.content}
           </div>
         </div>
       )}
+
+      {/* Thread Save Modal */}
+      <ThreadSaveModal
+        isOpen={showThreadSaveModal}
+        onClose={() => setShowThreadSaveModal(false)}
+        messages={messages}
+        userEmail={userEmail}
+      />
+
+      {/* Thread Management Modal */}
+      <ThreadManagementModal
+        isOpen={showThreadManagementModal}
+        onClose={() => setShowThreadManagementModal(false)}
+        userEmail={userEmail}
+        onLoadThread={handleLoadThread}
+      />
 
     </div>
   )

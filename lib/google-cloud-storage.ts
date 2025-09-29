@@ -113,14 +113,52 @@ export async function getUserReports(userId: string): Promise<string> {
         const fileName = file.name.split('/').pop() || 'Unknown'
         const folderPath = file.name.split('/').slice(-2, -1)[0] || 'general'
         
-        // Add report content for AI context
-        allReportsContent += `\n\n--- REPORT: ${fileName} ---\n`
-        allReportsContent += `Client/Category: ${folderPath}\n`
-        allReportsContent += `File: ${file.name}\n`
-        allReportsContent += `Content:\n${reportContent}\n`
-        allReportsContent += `--- END REPORT ---\n`
-        
-        console.log(`[getUserReports] Loaded report: ${fileName} from ${folderPath}`)
+        // Check if this is a conversation thread file (starts with [THREAD] and contains JSON)
+        if (fileName.startsWith('[THREAD]')) {
+          try {
+            const threadData = JSON.parse(reportContent)
+            
+            // Format thread content for AI context
+            allReportsContent += `\n\n--- CONVERSATION THREAD: ${threadData.metadata?.title || fileName} ---\n`
+            allReportsContent += `Client: ${threadData.metadata?.clientName || folderPath}\n`
+            allReportsContent += `Project Type: ${threadData.metadata?.projectType || 'General'}\n`
+            allReportsContent += `Status: ${threadData.metadata?.status || 'Active'}\n`
+            allReportsContent += `Priority: ${threadData.metadata?.priority || 'Normal'}\n`
+            allReportsContent += `Created: ${threadData.metadata?.createdAt || 'Unknown'}\n`
+            allReportsContent += `Messages: ${threadData.metadata?.messageCount || 0}\n`
+            allReportsContent += `Thread ID: ${threadData.threadId || 'Unknown'}\n`
+            allReportsContent += `Conversation:\n`
+            
+            // Include the conversation messages
+            if (threadData.conversation && Array.isArray(threadData.conversation)) {
+              for (const message of threadData.conversation) {
+                allReportsContent += `\n[${message.role?.toUpperCase() || 'UNKNOWN'}]: ${message.content || ''}\n`
+              }
+            }
+            
+            allReportsContent += `--- END CONVERSATION THREAD ---\n`
+            
+            console.log(`[getUserReports] Loaded thread: ${threadData.metadata?.title || fileName} from ${folderPath}`)
+          } catch (jsonError) {
+            // If JSON parsing fails, treat as regular file
+            allReportsContent += `\n\n--- REPORT: ${fileName} ---\n`
+            allReportsContent += `Client/Category: ${folderPath}\n`
+            allReportsContent += `File: ${file.name}\n`
+            allReportsContent += `Content:\n${reportContent}\n`
+            allReportsContent += `--- END REPORT ---\n`
+            
+            console.log(`[getUserReports] Loaded report: ${fileName} from ${folderPath}`)
+          }
+        } else {
+          // Regular report file
+          allReportsContent += `\n\n--- REPORT: ${fileName} ---\n`
+          allReportsContent += `Client/Category: ${folderPath}\n`
+          allReportsContent += `File: ${file.name}\n`
+          allReportsContent += `Content:\n${reportContent}\n`
+          allReportsContent += `--- END REPORT ---\n`
+          
+          console.log(`[getUserReports] Loaded report: ${fileName} from ${folderPath}`)
+        }
       } catch (parseError) {
         console.error(`Error reading report file ${file.name}:`, parseError)
         continue
