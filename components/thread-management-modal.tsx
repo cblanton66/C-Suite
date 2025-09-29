@@ -46,7 +46,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
   const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("active")
   const [filterProjectType, setFilterProjectType] = useState("all")
   const [sortBy, setSortBy] = useState("lastUpdated")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
@@ -90,7 +90,10 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
         thread.metadata.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.metadata.projectType.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = filterStatus === "all" || thread.metadata.status === filterStatus
+      const matchesStatus = 
+        filterStatus === "all" || 
+        (filterStatus === "active" && thread.metadata.status !== "Completed") ||
+        thread.metadata.status === filterStatus
       const matchesProjectType = filterProjectType === "all" || thread.metadata.projectType === filterProjectType
 
       return matchesSearch && matchesStatus && matchesProjectType
@@ -227,9 +230,10 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
             
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="Active Threads" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="active">Active Threads</SelectItem>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
