@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Search, MessageCircle, Calendar, User, Folder, ArrowUpDown } from "lucide-react"
+import { X, Search, MessageCircle, Calendar, User, Folder, ArrowUpDown, Edit } from "lucide-react"
+import { EditThreadModal } from "@/components/edit-thread-modal"
 
 interface ThreadMetadata {
   clientName: string
@@ -49,6 +50,8 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
   const [filterProjectType, setFilterProjectType] = useState("all")
   const [sortBy, setSortBy] = useState("lastUpdated")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [threadToEdit, setThreadToEdit] = useState<SavedThread | null>(null)
 
   useEffect(() => {
     if (isOpen && userEmail) {
@@ -154,6 +157,17 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
       console.error('Error loading thread:', error)
       alert('Failed to load thread')
     }
+  }
+
+  const editThread = (thread: SavedThread) => {
+    setThreadToEdit(thread)
+    setShowEditModal(true)
+  }
+
+  const handleThreadUpdated = () => {
+    loadThreads() // Refresh the thread list
+    setShowEditModal(false)
+    setThreadToEdit(null)
   }
 
   const formatDate = (dateString: string) => {
@@ -323,9 +337,29 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
                       </div>
                     </div>
                     
-                    <Button variant="outline" size="sm">
-                      Load Thread
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          editThread(thread)
+                        }}
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          loadThread(thread)
+                        }}
+                      >
+                        Load Thread
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -344,6 +378,18 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
           </div>
         </div>
       </div>
+
+      {/* Edit Thread Modal */}
+      <EditThreadModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setThreadToEdit(null)
+        }}
+        thread={threadToEdit}
+        userEmail={userEmail}
+        onThreadUpdated={handleThreadUpdated}
+      />
     </div>
   )
 }
