@@ -152,6 +152,11 @@ export function ChatInterface() {
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
+  const [loadedThread, setLoadedThread] = useState<{
+    threadId: string
+    filePath: string
+    metadata: any
+  } | null>(null)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
@@ -667,8 +672,9 @@ export function ChatInterface() {
   }
 
   // Function to load thread messages into current conversation
-  const handleLoadThread = (threadMessages: Message[]) => {
+  const handleLoadThread = (threadMessages: Message[], threadData: { threadId: string; filePath: string; metadata: any }) => {
     setMessages(threadMessages)
+    setLoadedThread(threadData)
     // Clear current input
     setInput('')
     // Close the thread management modal
@@ -4129,6 +4135,8 @@ ${message.content}
         onClose={() => setShowThreadSaveModal(false)}
         messages={messages}
         userEmail={userEmail}
+        loadedThread={loadedThread}
+        onThreadSaved={() => setLoadedThread(null)}
       />
 
       {/* Thread Management Modal */}

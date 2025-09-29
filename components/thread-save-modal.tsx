@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,17 +18,84 @@ interface ThreadSaveModalProps {
   onClose: () => void
   messages: Message[]
   userEmail: string | null
+  loadedThread?: {
+    threadId: string
+    filePath: string
+    metadata: any
+  } | null
+  onThreadSaved?: () => void
 }
 
-export function ThreadSaveModal({ isOpen, onClose, messages, userEmail }: ThreadSaveModalProps) {
+export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, loadedThread, onThreadSaved }: ThreadSaveModalProps) {
   const [clientName, setClientName] = useState("")
   const [title, setTitle] = useState("")
   const [projectType, setProjectType] = useState("")
   const [status, setStatus] = useState("")
   const [priority, setPriority] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [saveMode, setSaveMode] = useState<'new' | 'update'>('new')
 
-  const handleSave = async () => {
+  // Initialize form with loaded thread data
+  useEffect(() => {
+    if (isOpen && loadedThread) {
+      setSaveMode('update')
+      setClientName(loadedThread.metadata.clientName || '')
+      setTitle(loadedThread.metadata.title || '')
+      setProjectType(loadedThread.metadata.projectType || '')
+      setStatus(loadedThread.metadata.status || '')
+      setPriority(loadedThread.metadata.priority || '')
+    } else {
+      setSaveMode('new')
+      setClientName('')
+      setTitle('')
+      setProjectType('')
+      setStatus('')
+      setPriority('')
+    }
+  }, [isOpen, loadedThread])
+
+  const handleUpdateThread = async () => {
+    if (!loadedThread || !userEmail) {
+      alert("No thread to update")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const response = await fetch("/api/update-thread", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userEmail,
+          filePath: loadedThread.filePath,
+          messages: messages,
+          clientName: clientName.trim(),
+          title: title.trim(),
+          projectType: projectType || "General",
+          status: status || "Active",
+          priority: priority || "Normal"
+        }),
+      })
+
+      if (response.ok) {
+        alert("Thread updated successfully!")
+        onThreadSaved?.()
+        onClose()
+      } else {
+        const error = await response.text()
+        alert(`Failed to update thread: ${error}`)
+      }
+    } catch (error) {
+      console.error("Error updating thread:", error)
+      alert("Failed to update thread. Please try again.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveAsNew = async () => {
     if (!clientName.trim() || !title.trim() || !userEmail) {
       alert("Please fill in client name and title")
       return
@@ -55,11 +122,7 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail }: Thread
       if (response.ok) {
         const result = await response.json()
         alert(`Thread saved successfully! Thread ID: ${result.threadId}`)
-        setClientName("")
-        setTitle("")
-        setProjectType("")
-        setStatus("")
-        setPriority("")
+        onThreadSaved?.()
         onClose()
       } else {
         const error = await response.text()
@@ -79,7 +142,16 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail }: Thread
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Save Conversation Thread</h2>
+          <div>
+            <h2 className="text-lg font-semibold">
+              {loadedThread ? "Update Conversation Thread" : "Save Conversation Thread"}
+            </h2>
+            {loadedThread && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Currently editing: {loadedThread.metadata.title}
+              </p>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -180,9 +252,20 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail }: Thread
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Thread"}
-          </Button>
+          {loadedThread ? (
+            <>
+              <Button variant="outline" onClick={handleSaveAsNew} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save as New Thread"}
+              </Button>
+              <Button onClick={handleUpdateThread} disabled={isSaving}>
+                {isSaving ? "Updating..." : `Update "${loadedThread.metadata.title}"`}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleSaveAsNew} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Thread"}
+            </Button>
+          )}
         </div>
       </div>
     </div>

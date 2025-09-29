@@ -38,7 +38,7 @@ interface ThreadManagementModalProps {
   isOpen: boolean
   onClose: () => void
   userEmail: string | null
-  onLoadThread: (messages: Message[]) => void
+  onLoadThread: (messages: Message[], threadData: { threadId: string; filePath: string; metadata: any }) => void
 }
 
 export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread }: ThreadManagementModalProps) {
@@ -151,7 +151,12 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
           createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date()
         }))
 
-        onLoadThread(messages)
+        const threadData = {
+          threadId: thread.threadId,
+          filePath: thread.filePath,
+          metadata: thread.metadata
+        }
+        onLoadThread(messages, threadData)
         onClose()
       } else {
         alert('Failed to load thread conversation')

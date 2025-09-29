@@ -26,9 +26,9 @@ const initializeStorage = () => {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { userId, filePath, clientName, title, projectType, status, priority } = await req.json()
+    const { userId, filePath, messages, clientName, title, projectType, status, priority } = await req.json()
 
-    if (!userId || !filePath || !clientName || !title) {
+    if (!userId || !filePath || !messages) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -53,48 +53,34 @@ export async function PUT(req: NextRequest) {
     const [content] = await file.download()
     const threadData = JSON.parse(content.toString())
 
-    // Update the metadata
+    // Update the conversation and metadata
+    threadData.conversation = messages
     threadData.metadata = {
       ...threadData.metadata,
-      clientName,
-      title,
-      projectType: projectType || "General",
-      status: status || "Active",
-      priority: priority || "Normal",
-      lastUpdated: new Date().toISOString()
+      ...(clientName && { clientName }),
+      ...(title && { title }),
+      ...(projectType && { projectType }),
+      ...(status && { status }),
+      ...(priority && { priority }),
+      lastUpdated: new Date().toISOString(),
+      messageCount: messages.length
     }
 
-    // If client name changed, we need to move the file to the new client folder
-    const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
-    const newClientFolder = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const newFileName = `[THREAD] ${title} - ${projectType} - ${timestamp}.json`
-    const newFilePath = `Reports-view/${folderUserId}/private/${newClientFolder}/${newFileName}`
-
-    // Save the updated thread content
+    // Save the updated thread content back to the same location
     const updatedContent = JSON.stringify(threadData, null, 2)
     
     try {
-      // Save to new location
-      const newFile = bucket.file(newFilePath)
-      await newFile.save(updatedContent, {
+      await file.save(updatedContent, {
         metadata: {
           contentType: 'application/json',
         },
       })
 
-      // Delete old file if path changed
-      if (newFilePath !== filePath) {
-        await file.delete()
-        console.log(`[update-thread] Moved thread from ${filePath} to ${newFilePath}`)
-      } else {
-        console.log(`[update-thread] Updated thread at ${filePath}`)
-      }
+      console.log(`[update-thread] Updated thread at ${filePath}`)
 
       return NextResponse.json({ 
         success: true, 
-        message: "Thread updated successfully",
-        newFilePath: newFilePath
+        message: "Thread updated successfully"
       })
     } catch (saveError) {
       console.error('Error updating thread in Google Cloud Storage:', saveError)
