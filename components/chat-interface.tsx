@@ -2811,7 +2811,7 @@ ${message.content}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Manage Threads
+                      Manage Projects
                     </button>
 
                     <button
@@ -2822,7 +2822,7 @@ ${message.content}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                     >
                       <FileText className="w-4 h-4" />
-                      My Reports
+                      Client Comms
                     </button>
                     
                     {/* Help Guide */}
@@ -4069,7 +4069,7 @@ ${message.content}
         reportTitle={currentSharedReportTitle}
       />
 
-      {/* My Reports Modal */}
+      {/* Client Comms Modal */}
       <MyReportsModal
         isOpen={showMyReportsModal}
         onClose={() => setShowMyReportsModal(false)}
