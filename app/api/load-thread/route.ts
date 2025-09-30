@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Storage } from '@google-cloud/storage'
 
+export const dynamic = 'force-dynamic'
+
 let storage: Storage | null = null
 
 const initializeStorage = () => {
