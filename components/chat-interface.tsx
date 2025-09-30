@@ -1894,27 +1894,34 @@ export function ChatInterface() {
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = (smooth = true, force = false) => {
     if (messagesEndRef.current && (!isAutoScrollPaused || force)) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: smooth ? 'smooth' : 'auto',
-        block: 'end'
+      // Use instant scroll during streaming to prevent jumps
+      const shouldUseSmooth = smooth && !isLoading
+      messagesEndRef.current.scrollIntoView({
+        behavior: shouldUseSmooth ? 'smooth' : 'auto',
+        block: isLoading ? 'nearest' : 'end'
       })
     }
   }
 
-  // Scroll to bottom when messages change (new message added or streaming update)
+  // Debounced scroll to bottom - only scroll when content stabilizes
   useEffect(() => {
-    // Small delay to ensure DOM has updated
-    const timer = setTimeout(() => scrollToBottom(), 100)
-    return () => clearTimeout(timer)
-  }, [messages])
+    if (!chatContainerRef.current) return
 
-  // Also scroll when loading state changes (when response starts)
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => scrollToBottom(), 100)
-      return () => clearTimeout(timer)
-    }
-  }, [isLoading])
+    const container = chatContainerRef.current
+    const { scrollTop, scrollHeight, clientHeight } = container
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150
+
+    // Only auto-scroll if user is already near bottom
+    if (!isNearBottom && !isAutoScrollPaused) return
+
+    // Debounce scroll during streaming to reduce jumps
+    const debounceTime = isLoading ? 250 : 100
+    const timer = setTimeout(() => {
+      requestAnimationFrame(() => scrollToBottom(false))
+    }, debounceTime)
+
+    return () => clearTimeout(timer)
+  }, [messages, isLoading])
 
   // Smart scroll behavior - pause auto-scroll when user scrolls up
   useEffect(() => {
