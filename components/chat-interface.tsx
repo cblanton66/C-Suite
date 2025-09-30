@@ -157,6 +157,7 @@ export function ChatInterface() {
     filePath: string
     metadata: any
   } | null>(null)
+  const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout>()
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
   const [inputHasFocus, setInputHasFocus] = useState(false)
@@ -1891,8 +1892,8 @@ export function ChatInterface() {
 
 
   // Auto-scroll to bottom when new messages arrive
-  const scrollToBottom = (smooth = true) => {
-    if (messagesEndRef.current) {
+  const scrollToBottom = (smooth = true, force = false) => {
+    if (messagesEndRef.current && (!isAutoScrollPaused || force)) {
       messagesEndRef.current.scrollIntoView({ 
         behavior: smooth ? 'smooth' : 'auto',
         block: 'end'
@@ -1914,6 +1915,44 @@ export function ChatInterface() {
       return () => clearTimeout(timer)
     }
   }, [isLoading])
+
+  // Smart scroll behavior - pause auto-scroll when user scrolls up
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!chatContainerRef.current) return
+      
+      const container = chatContainerRef.current
+      const { scrollTop, scrollHeight, clientHeight } = container
+      
+      // Check if user is near the bottom (within 100px)
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      
+      // If user scrolled up from bottom, pause auto-scroll
+      if (!isNearBottom && !isAutoScrollPaused) {
+        setIsAutoScrollPaused(true)
+      }
+      
+      // If user scrolled back to bottom, resume auto-scroll
+      if (isNearBottom && isAutoScrollPaused) {
+        setIsAutoScrollPaused(false)
+      }
+    }
+
+    // Attach scroll listener to window (since chat might scroll the whole page)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    // Also attach to chat container if it's scrollable
+    if (chatContainerRef.current) {
+      chatContainerRef.current.addEventListener('scroll', handleScroll, { passive: true })
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (chatContainerRef.current) {
+        chatContainerRef.current.removeEventListener('scroll', handleScroll)
+      }
+    }
+  }, [isAutoScrollPaused])
 
   const exportConversationAsText = () => {
     const currentSession = chatSessions.find(s => s.id === currentSessionId)
@@ -3617,6 +3656,17 @@ ${message.content}
             {/* Invisible element to scroll to */}
             <div ref={messagesEndRef} />
           </div>
+        )}
+
+        {/* Scroll to bottom button - show when auto-scroll is paused */}
+        {isAutoScrollPaused && messages.length > 0 && (
+          <Button
+            onClick={() => scrollToBottom(true, true)}
+            className="fixed bottom-20 right-6 z-40 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground p-3 h-12 w-12"
+            size="sm"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </Button>
         )}
 
         {/* Input Area - Only show when there are messages */}

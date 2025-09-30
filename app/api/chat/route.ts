@@ -109,12 +109,15 @@ export async function POST(req: NextRequest) {
     // Include user history context if requested
     if (searchMyHistory && userId) {
       try {
-        const userHistory = await getUserReports(userId)
+        // Get the user's latest message to analyze for search context
+        const latestUserMessage = messages[messages.length - 1]?.content || ''
+        
+        const userHistory = await getUserReports(userId, latestUserMessage)
         if (userHistory) {
           console.log(`[DEBUG] Including ${userHistory.length} characters of user history context`)
           systemInstructions += `\n\nUSER HISTORY CONTEXT:\nThe following are your previous reports and conversations with this user. Use this context to provide personalized responses based on their specific business needs and past work:\n\n${userHistory}\n\nEND USER HISTORY CONTEXT\n\n`
         } else {
-          console.log('[DEBUG] No user history found')
+          console.log('[DEBUG] No relevant user history found for this query')
         }
       } catch (error) {
         console.error('Error fetching user history:', error)
