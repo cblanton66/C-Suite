@@ -222,35 +222,50 @@ export async function getUserReports(userId: string, query?: string): Promise<st
 
     console.log(`[getUserReports] Found ${allFiles.length} total files across all locations`)
     
-    // Filter files based on search criteria
+    // Filter files based on search criteria - FUZZY MATCHING
     const relevantFiles = allFiles.filter(file => {
       const fileName = file.name.toLowerCase()
       const filePath = file.name.toLowerCase()
-      
-      // Check if file matches client names
+
+      // FUZZY CLIENT NAME MATCHING
+      // Match if ANY word from the client name appears in the file path
       if (searchAnalysis.clientNames.length > 0) {
-        const matchesClient = searchAnalysis.clientNames.some(clientName => 
-          filePath.includes(clientName.toLowerCase().replace(/\s+/g, '-'))
-        )
+        const matchesClient = searchAnalysis.clientNames.some(clientName => {
+          // Split client name into individual words
+          const words = clientName.toLowerCase().split(/\s+/)
+
+          // Match if ANY word appears in the path (handles "Jacquita" matching "cline-jacquita")
+          const anyWordMatches = words.some(word =>
+            word.length > 2 && filePath.includes(word)
+          )
+
+          if (anyWordMatches) return true
+
+          // Also try exact phrase match (handles "jacquita cline" → "jacquita-cline")
+          const exactPhrase = clientName.toLowerCase().replace(/\s+/g, '-')
+          if (filePath.includes(exactPhrase)) return true
+
+          return false
+        })
         if (matchesClient) return true
       }
-      
+
       // Check if file matches date keywords
       if (searchAnalysis.dateKeywords.length > 0) {
-        const matchesDate = searchAnalysis.dateKeywords.some(dateKeyword => 
+        const matchesDate = searchAnalysis.dateKeywords.some(dateKeyword =>
           fileName.includes(dateKeyword.toLowerCase())
         )
         if (matchesDate) return true
       }
-      
+
       // Check if file matches project keywords
       if (searchAnalysis.projectKeywords.length > 0) {
-        const matchesProject = searchAnalysis.projectKeywords.some(projectKeyword => 
+        const matchesProject = searchAnalysis.projectKeywords.some(projectKeyword =>
           fileName.includes(projectKeyword.toLowerCase())
         )
         if (matchesProject) return true
       }
-      
+
       return false
     })
     
