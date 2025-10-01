@@ -1,7 +1,7 @@
 # PeakSuite.ai User Guide
 **AI-Powered Executive Intelligence Platform**
 
-Version 1.0 | Last Updated: September 2025
+Version 1.1 | Last Updated: September 30, 2025
 
 ---
 
@@ -273,9 +273,9 @@ Generated reports include:
 
 ## Managing Your Reports
 
-### My Reports Dashboard
+### Client Comms Dashboard
 
-Access via the user menu (top right) → **"My Reports"**
+Access via the user menu (top right) → **"Client Comms"**
 
 **Report Library Overview**
 - Complete list of all your shared reports
@@ -342,6 +342,119 @@ Track engagement:
 ---
 
 ## Advanced Features
+
+### Client History Search
+
+**Smart Context from Your Past Work**
+- Access via checkbox below chat input: **"Search my client history only"**
+- When enabled, searches your saved reports, threads, and private notes
+- Provides personalized responses based on your specific client work
+
+**How It Works**
+1. Check the "Search my client history only" box
+2. Ask questions about clients, projects, or past work
+3. AI analyzes your query for client names, dates, and project keywords
+4. Searches your Google Cloud Storage for relevant files
+5. Includes context in response for personalized, accurate answers
+
+**Smart Query Detection**
+The system automatically identifies when to search based on:
+- **Client names**: "Tell me about Jack Vanderlans"
+- **Date references**: "last week", "this year", "2024"
+- **Project keywords**: "tax return", "consultation", "audit"
+- **History references**: "previous work", "remember", "we discussed"
+
+**Best Queries for History Search**
+- "Show me Jack Vanderlans work from last week"
+- "What did we discuss with Betty Green about taxes?"
+- "Previous consultation for ABC Company"
+- "John Smith 2024 tax return status"
+
+**What Gets Searched**
+- **Saved reports**: All your shared client reports
+- **Conversation threads**: Your saved project conversations
+- **Private notes**: Client-specific notes you've saved
+- Searches file paths, names, and content for matches
+- Returns up to 20 most recent relevant files
+
+**Search Requirements**
+System requires at least 2 signals to trigger search:
+- Client name + date keyword
+- Client name + project keyword
+- Date + project keyword
+- Explicit history reference (counts as 2 signals)
+
+This ensures fast responses on general questions while providing deep context when you need it.
+
+### Manage Projects
+
+**Conversation Thread Management**
+
+Access via the user menu (top right) → **"Manage Projects"**
+
+**Project Library Overview**
+- Complete list of all your saved conversation threads
+- Organize client work by project with rich metadata
+- Search, filter, and sort your entire project portfolio
+- Load threads back into chat to continue work
+
+**Thread Information Display**
+
+Each project thread shows:
+- **📝 Title**: Descriptive project name
+- **👤 Client Name**: Associated client
+- **📁 Project Type**: Business Consultation, Tax Preparation, Financial Planning, etc.
+- **📊 Status**: Active, In Progress, Pending, or Completed
+- **🎯 Priority**: High, Normal, or Low
+- **📅 Created Date**: When thread was started
+- **🕒 Last Updated**: Most recent activity
+- **💬 Message Count**: Number of exchanges in conversation
+
+**Search and Filter**
+
+**Smart Search**
+Search across:
+- Project titles
+- Client names
+- Project types
+- Thread content
+
+**Filter Options**
+- **Status**: Active, Completed, or All
+- **Project Type**: Filter by business category
+- Works in combination with search
+
+**Sort Options**
+- Last Updated (default - newest first)
+- Created Date
+- Client Name (alphabetical)
+- Priority (high to low)
+- Message Count
+- Toggle ascending/descending order
+
+**Project Actions**
+
+**📂 Load Thread**
+- Opens conversation back in chat interface
+- Restores full conversation history
+- Continue working on existing project
+- Perfect for ongoing client work
+
+**✏️ Edit Metadata**
+- Update project title and details
+- Change client information
+- Adjust project type, status, or priority
+- Keeps your project library organized
+
+**Complete Project Management Workflow**
+1. Have conversation with AI about client work
+2. Save thread with descriptive metadata
+3. Use "Manage Projects" to track all client conversations
+4. Search and filter to find specific projects
+5. Load threads back to continue work or create reports
+6. Update status as projects progress
+
+This feature transforms PeakSuite into a complete client work management system, not just a chat tool.
 
 ### Speech-to-Text Input
 
@@ -752,11 +865,20 @@ A: Yes, contact support for onboarding assistance. We provide setup guidance, tr
 
 ---
 
-*This user guide covers PeakSuite.ai version 1.0. The platform continues to evolve with new features and improvements based on user feedback.*
+*This user guide covers PeakSuite.ai version 1.1. The platform continues to evolve with new features and improvements based on user feedback.*
 
-**Last Updated**: September 2025
-**Platform Version**: 1.0
-**Document Version**: 1.0
+## Recent Updates (Version 1.1)
+
+**New Features:**
+- **Client History Search**: Checkbox to search your past client work for personalized context
+- **Manage Projects**: Renamed from "Manage Threads" for clarity - comprehensive project/thread management
+- **Client Comms**: Renamed from "My Reports" to better reflect client communication focus
+- **Improved Search Intelligence**: Smarter query detection requiring 2+ signals for relevant searches
+- **Enhanced Client Name Extraction**: Better recognition of client names in queries
+
+**Last Updated**: September 30, 2025
+**Platform Version**: 1.1
+**Document Version**: 1.1
 
 ---
 

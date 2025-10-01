@@ -77,45 +77,56 @@ const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 function extractSearchKeywords(query: string): { clientNames: string[], dateKeywords: string[], projectKeywords: string[], shouldSearch: boolean } {
   const originalQuery = query
   const lowerQuery = query.toLowerCase()
-  
-  // Check if query contains specific client-related terms or names (improved patterns)
-  const clientPatterns = [
-    /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g, // "John Smith" pattern (case sensitive for proper names)
-    /\b([a-z]+ [a-z]+)\b/g, // "betty green" pattern (lowercase names)
-    /\b([a-z]{3,})\b(?=\s*(client|customer|taxpayer|business|company|llc|inc|corp))/g, // Names before business terms
-    /(?:for|about|client|customer)\s+([a-z]+ ?[a-z]*)/g, // "for john smith" pattern
-    /(?:with|discuss|work)\s+([a-z]+ ?[a-z]*)/g // "discuss with betty" pattern
-  ]
-  
+
   const clientNames: string[] = []
-  
-  // Use original query for proper name detection
-  const properNameMatches = [...originalQuery.matchAll(/\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g)]
+
+  // 1. Extract proper names (capitalized) from original query - most reliable
+  const properNameMatches = [...originalQuery.matchAll(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/g)]
   properNameMatches.forEach(match => {
     if (match[1] && match[1].length > 3) {
       clientNames.push(match[1].trim())
     }
   })
-  
-  // Use lowercase query for other patterns
-  const otherPatterns = [
-    /\b([a-z]+ [a-z]+)\b/g,
-    /\b([a-z]{3,})\b(?=\s*(client|customer|taxpayer|business|company|llc|inc|corp))/g,
-    /(?:for|about|client|customer|with|discuss)\s+([a-z]+ ?[a-z]*)/g
-  ]
-  
-  otherPatterns.forEach(pattern => {
-    const matches = [...lowerQuery.matchAll(pattern)]
-    matches.forEach(match => {
-      if (match[1] && match[1].length > 2 && !match[1].includes('the') && !match[1].includes('and') && !match[1].includes('tax')) {
-        clientNames.push(match[1].trim())
+
+  // 2. Extract names after client-related keywords (case insensitive)
+  // Matches: "client Jack Vanderlans" or "for john smith" etc.
+  const clientKeywordPattern = /(?:client|customer|for|about|with|discuss)\s+([a-z]+(?:\s+[a-z]+)+?)(?=\s+(?:project|in|last|this|the|and|or|\.|$))/gi
+  const clientKeywordMatches = [...originalQuery.matchAll(clientKeywordPattern)]
+  clientKeywordMatches.forEach(match => {
+    if (match[1] && match[1].trim().length > 3) {
+      // Capitalize first letter of each word for consistency
+      const name = match[1].trim().split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ')
+      if (!clientNames.includes(name)) {
+        clientNames.push(name)
+      }
+    }
+  })
+
+  // 3. Fallback: Extract multi-word lowercase names that look like names (2-3 words)
+  if (clientNames.length === 0) {
+    const namePattern = /\b([a-z]{3,}\s+[a-z]{3,}(?:\s+[a-z]{3,})?)\b/g
+    const nameMatches = [...lowerQuery.matchAll(namePattern)]
+    nameMatches.forEach(match => {
+      const name = match[1].trim()
+      // Skip common stop words and generic terms
+      const skipWords = ['the client', 'the customer', 'last week', 'this year', 'last year', 'tax return', 'and the']
+      if (name.length > 5 && !skipWords.some(skip => name.includes(skip))) {
+        const capitalizedName = name.split(' ').map(word =>
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')
+        if (!clientNames.includes(capitalizedName)) {
+          clientNames.push(capitalizedName)
+        }
       }
     })
-  })
+  }
   
   // Check for date-related keywords
   const dateKeywords = [
-    '2023', '2024', '2025', 'last year', 'this year', 'recent', 'latest', 
+    '2023', '2024', '2025', 'last year', 'this year', 'last week', 'this week',
+    'last month', 'this month', 'recent', 'latest', 'today', 'yesterday',
     'january', 'february', 'march', 'april', 'may', 'june',
     'july', 'august', 'september', 'october', 'november', 'december'
   ].filter(keyword => lowerQuery.includes(keyword))
@@ -126,26 +137,23 @@ function extractSearchKeywords(query: string): { clientNames: string[], dateKeyw
     'return', 'deduction', 'expense', 'income', 'consultation', 'report'
   ].filter(keyword => lowerQuery.includes(keyword))
   
-  // More liberal search criteria
-  const shouldSearch = (
-    clientNames.length > 0 || 
-    dateKeywords.length > 0 || 
-    projectKeywords.length > 0 || // Just 1 project keyword now
-    lowerQuery.includes('previous') ||
-    lowerQuery.includes('before') ||
-    lowerQuery.includes('history') ||
-    lowerQuery.includes('past') ||
-    lowerQuery.includes('earlier') ||
-    lowerQuery.includes('remember') ||
-    lowerQuery.includes('recall') ||
-    lowerQuery.includes('work') ||
-    lowerQuery.includes('discuss') ||
-    lowerQuery.includes('client') ||
-    lowerQuery.includes('show me') ||
-    lowerQuery.includes('tell me about') ||
-    lowerQuery.includes('what about') ||
-    lowerQuery.includes('find')
-  )
+  // Explicit history reference keywords (strong signals)
+  const explicitHistoryKeywords = [
+    'previous', 'before', 'history', 'past', 'earlier',
+    'remember', 'recall', 'last time', 'we discussed', 'we worked'
+  ]
+  const hasExplicitHistory = explicitHistoryKeywords.some(keyword => lowerQuery.includes(keyword))
+
+  // Count total signals
+  const signalCount =
+    (clientNames.length > 0 ? 1 : 0) +
+    (dateKeywords.length > 0 ? 1 : 0) +
+    (projectKeywords.length > 0 ? 1 : 0) +
+    (hasExplicitHistory ? 2 : 0) // Explicit history is worth 2 signals
+
+  // Require at least 2 signals to trigger search
+  // OR explicit history reference (which counts as 2)
+  const shouldSearch = signalCount >= 2
   
   return { clientNames, dateKeywords, projectKeywords, shouldSearch }
 }
