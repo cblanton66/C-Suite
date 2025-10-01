@@ -32,25 +32,24 @@ export async function GET(request: NextRequest) {
     const userFolder = userEmail.replace(/@/g, '_').replace(/\./g, '_')
     const clientFilesPrefix = `Reports-view/${userFolder}/client-files/`
 
-    // Get folder names from Google Cloud Storage
+    // Get all files from Google Cloud Storage under this user's client-files
     const bucket = await getGoogleCloudStorage()
     const [files] = await bucket.getFiles({
       prefix: clientFilesPrefix,
-      delimiter: '/', // This makes it only get top-level "folders"
     })
 
-    // Extract unique client folder names
+    console.log(`[clients API] Found ${files.length} files under ${clientFilesPrefix}`)
+
+    // Extract unique client folder names from file paths
     const clientNames = new Set<string>()
 
-    // Get prefixes (folder names) from the response
-    const prefixes = files.map(file => file.name)
+    for (const file of files) {
+      // File path example: Reports-view/{user}/client-files/{client}/reports/...
+      // Extract the client folder name
+      const pathAfterPrefix = file.name.replace(clientFilesPrefix, '')
+      const clientFolder = pathAfterPrefix.split('/')[0]
 
-    for (const prefix of prefixes) {
-      // Extract client name from path: Reports-view/{user}/client-files/{client}/
-      const parts = prefix.replace(clientFilesPrefix, '').split('/')
-      const clientFolder = parts[0]
-
-      if (clientFolder) {
+      if (clientFolder && clientFolder.trim()) {
         // Convert folder name back to display name (kebab-case to Title Case)
         const clientName = clientFolder
           .split('-')
@@ -60,6 +59,8 @@ export async function GET(request: NextRequest) {
         clientNames.add(clientName)
       }
     }
+
+    console.log(`[clients API] Extracted unique client folders:`, Array.from(clientNames))
 
     // Convert to sorted array
     const sortedClients = Array.from(clientNames).sort((a, b) =>
