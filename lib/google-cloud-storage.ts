@@ -158,22 +158,27 @@ function extractSearchKeywords(query: string): { clientNames: string[], dateKeyw
   return { clientNames, dateKeywords, projectKeywords, shouldSearch }
 }
 
-export async function getUserReports(userId: string, query?: string): Promise<string> {
+export async function getUserReports(userId: string, query?: string, forceSearch: boolean = true): Promise<string> {
   try {
     // If no query provided, return empty (no context search)
     if (!query) {
       console.log('[getUserReports] No query provided, skipping history search')
       return ''
     }
-    
+
     // Analyze query to determine if we should search
     const searchAnalysis = extractSearchKeywords(query)
-    
-    if (!searchAnalysis.shouldSearch) {
+
+    // ALWAYS search when forceSearch is true (toggle is ON)
+    // Otherwise, respect the signal-based shouldSearch logic
+    if (!forceSearch && !searchAnalysis.shouldSearch) {
       console.log('[getUserReports] Query does not require history search, skipping')
       return ''
     }
-    
+
+    if (forceSearch) {
+      console.log('[getUserReports] Force search enabled - searching regardless of signals')
+    }
     console.log('[getUserReports] Query analysis:', searchAnalysis)
     
     // Check cache first
