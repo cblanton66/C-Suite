@@ -207,7 +207,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">Saved Conversation Threads</h2>
+          <h2 className="text-lg font-semibold">Manage Projects</h2>
           <Button
             variant="ghost"
             size="sm"
@@ -225,7 +225,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Search threads by title, client, or project type..."
+                  placeholder="Search projects by title, client, or project type..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -235,10 +235,10 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
             
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Active Threads" />
+                <SelectValue placeholder="Active Projects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active Threads</SelectItem>
+                <SelectItem value="active">Active Projects</SelectItem>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
@@ -293,11 +293,11 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span className="ml-2">Loading threads...</span>
+              <span className="ml-2">Loading projects...</span>
             </div>
           ) : filteredThreads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {threads.length === 0 ? "No saved threads found" : "No threads match your search criteria"}
+              {threads.length === 0 ? "No saved projects found" : "No projects match your search criteria"}
             </div>
           ) : (
             <div className="space-y-3">
@@ -379,7 +379,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
         <div className="p-6 border-t bg-muted/20">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
-              Showing {filteredThreads.length} of {threads.length} threads
+              Showing {filteredThreads.length} of {threads.length} projects
             </span>
             <Button variant="outline" onClick={loadThreads}>
               Refresh

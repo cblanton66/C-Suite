@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2, Bell, MessageCircle, Paperclip } from "lucide-react"
+import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2, Bell, MessageCircle, Paperclip, AlertTriangle } from "lucide-react"
 
 interface Report {
   reportId: string
@@ -220,7 +220,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
               <FileText className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">My Reports</h2>
+              <h2 className="text-2xl font-bold text-foreground">Client Comms</h2>
               <p className="text-sm text-muted-foreground">
                 {reports.length} report{reports.length !== 1 ? 's' : ''} shared
               </p>
@@ -434,40 +434,60 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <Card className="w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-4">Delete Report</h3>
-            <p className="text-muted-foreground mb-6">
-              Are you sure you want to delete this report? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => deleteReport(deleteConfirm)}
-                disabled={isDeleting === deleteConfirm}
-                className="flex-1"
-              >
-                {isDeleting === deleteConfirm ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete Report'
-                )}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      {deleteConfirm && (() => {
+        const reportToDelete = reports.find(r => r.reportId === deleteConfirm)
+        const hasAttachments = reportToDelete?.hasAttachments || (reportToDelete?.attachmentCount && reportToDelete.attachmentCount > 0)
+
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <Card className="w-full max-w-md mx-4 p-6">
+              <h3 className="text-lg font-semibold mb-4">Delete Report</h3>
+
+              {hasAttachments && (
+                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">
+                      This report has {reportToDelete?.attachmentCount || 1} client attachment{reportToDelete?.attachmentCount !== 1 ? 's' : ''}
+                    </p>
+                    <p className="text-yellow-700 dark:text-yellow-500">
+                      Make sure you've downloaded all attachments before deleting. You won't be able to access them after deletion.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-muted-foreground mb-6">
+                Are you sure you want to delete this report? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteReport(deleteConfirm)}
+                  disabled={isDeleting === deleteConfirm}
+                  className="flex-1"
+                >
+                  {isDeleting === deleteConfirm ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Report'
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )
+      })()}
 
       {/* Edit Report Modal */}
       {editingReport && (
