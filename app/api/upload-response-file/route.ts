@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Storage } from '@google-cloud/storage'
 import { nanoid } from 'nanoid'
+import { google } from 'googleapis'
 
 async function getGoogleCloudStorage() {
   if (!process.env.GOOGLE_CREDENTIALS) {
@@ -8,13 +9,48 @@ async function getGoogleCloudStorage() {
   }
 
   const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
-  
+
   const storage = new Storage({
     credentials,
     projectId: credentials.project_id,
   })
 
   return storage.bucket('peaksuite-files')
+}
+
+async function getClientNameFromReport(reportId: string): Promise<string | null> {
+  try {
+    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
+      return null
+    }
+
+    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    })
+
+    const sheets = google.sheets({ version: 'v4', auth })
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'ReportLinks!A:G',
+    })
+
+    const rows = response.data.values
+    if (!rows) return null
+
+    // Skip header row and find the report by ID (column A)
+    const reportRow = rows.slice(1).find(row => row[0] === reportId)
+    if (!reportRow) return null
+
+    // Client name is in column G (index 6)
+    return reportRow[6] || null
+  } catch (error) {
+    console.error('Error looking up client name:', error)
+    return null
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -62,7 +98,16 @@ export async function POST(request: NextRequest) {
     const fileId = nanoid(12)
     const fileExtension = file.name.split('.').pop() || 'bin'
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filePath = `response-attachments/${reportId}/${fileId}.${fileExtension}`
+
+    // Look up client name from reportId
+    const clientName = await getClientNameFromReport(reportId)
+    const clientFolder = clientName?.toLowerCase().replace(/\s+/g, '-') || 'unknown-client'
+
+    // NEW STRUCTURE: Organize by client name for easy management
+    const filePath = `attachments-from-client/${clientFolder}/${reportId}/${fileId}.${fileExtension}`
+
+    // OLD STRUCTURE (kept as comment for reference):
+    // const filePath = `response-attachments/${reportId}/${fileId}.${fileExtension}`
 
     // Upload to Google Cloud Storage
     const bucket = await getGoogleCloudStorage()

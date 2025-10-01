@@ -122,6 +122,7 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
         const formData = new FormData()
         formData.append('file', file)
         formData.append('reportId', reportId)
+        formData.append('clientName', clientName || 'general')
 
         const response = await fetch('/api/upload-report-file', {
           method: 'POST',

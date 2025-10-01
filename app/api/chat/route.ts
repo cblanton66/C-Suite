@@ -111,13 +111,40 @@ export async function POST(req: NextRequest) {
       try {
         // Get the user's latest message to analyze for search context
         const latestUserMessage = messages[messages.length - 1]?.content || ''
-        
+
         const userHistory = await getUserReports(userId, latestUserMessage)
-        if (userHistory) {
+        if (userHistory && userHistory.trim().length > 0) {
           console.log(`[DEBUG] Including ${userHistory.length} characters of user history context`)
-          systemInstructions += `\n\nUSER HISTORY CONTEXT:\nThe following are your previous reports and conversations with this user. Use this context to provide personalized responses based on their specific business needs and past work:\n\n${userHistory}\n\nEND USER HISTORY CONTEXT\n\n`
+          systemInstructions += `\n\n# CRITICAL: USER HISTORY CONTEXT PROVIDED
+The following are your previous reports and conversations with this user. Use this context to provide personalized responses based on their specific business needs and past work.
+
+IMPORTANT RULES FOR USER HISTORY:
+1. ONLY reference information that appears in the USER HISTORY CONTEXT below
+2. If the user asks about a client or project NOT mentioned in the context, you MUST say: "I don't have any records for [client name] in your history. This could mean: (a) no work has been saved for this client yet, (b) the client name doesn't match exactly, or (c) the work is stored under a different name. Please check your Client Comms or Manage Projects to verify."
+3. NEVER fabricate, estimate, or make up client work, project details, dates, or activities
+4. If uncertain, ask for clarification rather than guessing
+
+USER HISTORY CONTEXT:
+${userHistory}
+
+END USER HISTORY CONTEXT
+
+`
         } else {
           console.log('[DEBUG] No relevant user history found for this query')
+          systemInstructions += `\n\n# USER HISTORY SEARCH: NO RESULTS FOUND
+The user has enabled client history search, but no relevant records were found for this query.
+
+CRITICAL INSTRUCTION: You MUST inform the user that no client history was found. Say something like:
+"I searched your client history but didn't find any records matching this query. This could mean:
+- No work has been saved for this client yet
+- The client name doesn't match exactly
+- The work might be under a different name or project
+
+You can check your Client Comms or Manage Projects to see all saved work."
+
+DO NOT make up or fabricate any client information, project details, dates, or work activities.
+`
         }
       } catch (error) {
         console.error('Error fetching user history:', error)

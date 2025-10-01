@@ -22,10 +22,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const reportId = formData.get('reportId') as string
+    const clientName = formData.get('clientName') as string
 
     if (!file || !reportId) {
-      return NextResponse.json({ 
-        error: 'File and reportId are required' 
+      return NextResponse.json({
+        error: 'File and reportId are required'
       }, { status: 400 })
     }
 
@@ -62,7 +63,15 @@ export async function POST(request: NextRequest) {
     const fileId = nanoid(12)
     const fileExtension = file.name.split('.').pop() || 'bin'
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filePath = `report-attachments/${reportId}/${fileId}.${fileExtension}`
+
+    // NEW STRUCTURE: Save to client-files/{client}/attachments-to-client/
+    // Extract user from reportId context (this is a simplification - in production might need user email passed)
+    // For now, store in a general attachments folder organized by client
+    const clientFolder = clientName?.toLowerCase().replace(/\s+/g, '-') || 'general'
+    const filePath = `attachments-to-client/${clientFolder}/${reportId}/${fileId}.${fileExtension}`
+
+    // OLD STRUCTURE (kept as comment for reference):
+    // const filePath = `report-attachments/${reportId}/${fileId}.${fileExtension}`
 
     // Upload to Google Cloud Storage
     const bucket = await getGoogleCloudStorage()

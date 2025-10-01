@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
     // Generate unique report ID
     const reportId = `rpt_${nanoid(10)}`
     
-    // Create organized folder structure: Reports-view/user/client/reportId.md
+    // NEW STRUCTURE: Save reports to client-files/{client}/reports/
     const reportUserEmail = userEmail || 'anonymous'
     const userFolder = reportUserEmail.replace('@', '_').replace(/\./g, '_')
     const clientFolder = clientName?.toLowerCase().replace(/\s+/g, '-') || 'general'
-    const contentPath = `Reports-view/${userFolder}/${clientFolder}/${reportId}.md`
+    const contentPath = `Reports-view/${userFolder}/client-files/${clientFolder}/reports/${reportId}.md`
+
+    // OLD STRUCTURE (kept as comment for reference):
+    // const contentPath = `Reports-view/${userFolder}/${clientFolder}/${reportId}.md`
 
     // Save content to Google Cloud Storage
     const bucket = await getGoogleCloudStorage()

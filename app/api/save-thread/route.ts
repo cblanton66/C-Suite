@@ -60,11 +60,16 @@ export async function POST(req: NextRequest) {
     // Convert email to Google Cloud folder format
     const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
     const clientFolder = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-    
+
     const bucket = storage.bucket(bucketName)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const fileName = `[THREAD] ${title} - ${projectType} - ${timestamp}.json`
-    const filePath = `Reports-view/${folderUserId}/private/${clientFolder}/${fileName}`
+
+    // NEW STRUCTURE: Save threads to client-files/{client}/threads/
+    const filePath = `Reports-view/${folderUserId}/client-files/${clientFolder}/threads/${fileName}`
+
+    // OLD STRUCTURE (kept as comment for reference):
+    // const filePath = `Reports-view/${folderUserId}/private/${clientFolder}/${fileName}`
     
     const content = JSON.stringify(threadData, null, 2)
     

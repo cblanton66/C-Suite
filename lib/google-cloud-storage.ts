@@ -194,24 +194,33 @@ export async function getUserReports(userId: string, query?: string): Promise<st
 
     // Convert email to Google Cloud folder format: @ becomes _ and . becomes _
     const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
-    
+
     const bucket = storage.bucket(bucketName)
-    const folderPrefix = `Reports-view/${folderUserId}/`
-    
-    console.log(`[getUserReports] Performing targeted search in: ${folderPrefix}`)
-    
-    // Get file list first (lightweight operation)
-    const [sharedFiles] = await bucket.getFiles({
-      prefix: folderPrefix,
-    })
-    
-    const privatePrefix = `Reports-view/${folderUserId}/private/`
-    const [privateFiles] = await bucket.getFiles({
-      prefix: privatePrefix,
-    })
-    
-    const allFiles = [...sharedFiles, ...privateFiles]
-    console.log(`[getUserReports] Found ${allFiles.length} total files`)
+
+    console.log(`[getUserReports] Performing targeted search for user: ${folderUserId}`)
+
+    // Search in BOTH old and new file structures for backward compatibility
+    const searchPrefixes = [
+      // Old structure (existing files)
+      `Reports-view/${folderUserId}/`,           // Old reports location
+      `Reports-view/${folderUserId}/private/`,   // Old threads location
+      // New structure (new files going forward)
+      `Reports-view/${folderUserId}/client-files/`  // New unified client files location
+    ]
+
+    // Get files from all locations
+    const allFiles = []
+    for (const prefix of searchPrefixes) {
+      try {
+        const [files] = await bucket.getFiles({ prefix })
+        allFiles.push(...files)
+        console.log(`[getUserReports] Found ${files.length} files in ${prefix}`)
+      } catch (error) {
+        console.error(`[getUserReports] Error searching ${prefix}:`, error)
+      }
+    }
+
+    console.log(`[getUserReports] Found ${allFiles.length} total files across all locations`)
     
     // Filter files based on search criteria
     const relevantFiles = allFiles.filter(file => {
