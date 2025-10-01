@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Search, MessageCircle, Calendar, User, Folder, ArrowUpDown, Edit } from "lucide-react"
+import { X, MessageCircle, Calendar, User, Folder, Edit, Filter, Search } from "lucide-react"
 import { EditThreadModal } from "@/components/edit-thread-modal"
 
 interface ThreadMetadata {
@@ -43,102 +42,81 @@ interface ThreadManagementModalProps {
 }
 
 export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread }: ThreadManagementModalProps) {
-  const [threads, setThreads] = useState<SavedThread[]>([])
-  const [filteredThreads, setFilteredThreads] = useState<SavedThread[]>([])
   const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("active")
-  const [filterProjectType, setFilterProjectType] = useState("all")
-  const [sortBy, setSortBy] = useState("lastUpdated")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [showEditModal, setShowEditModal] = useState(false)
   const [threadToEdit, setThreadToEdit] = useState<SavedThread | null>(null)
 
+  // States for grouped client view
+  const [clientSummaries, setClientSummaries] = useState<Array<{
+    clientName: string
+    threadCount: number
+    activeCount: number
+    lastUpdated: string
+  }>>([])
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set())
+  const [clientThreads, setClientThreads] = useState<Map<string, SavedThread[]>>(new Map())
+  const [showAllClients, setShowAllClients] = useState(false) // Default to active only
+  const [searchTerm, setSearchTerm] = useState("") // Client search filter
+
   useEffect(() => {
     if (isOpen && userEmail) {
-      loadThreads()
+      loadClientSummaries()
     }
-  }, [isOpen, userEmail])
+  }, [isOpen, userEmail, showAllClients]) // Reload when toggle changes
 
-  useEffect(() => {
-    filterAndSortThreads()
-  }, [threads, searchTerm, filterStatus, filterProjectType, sortBy, sortOrder])
-
-  const loadThreads = async () => {
+  const loadClientSummaries = async () => {
     if (!userEmail) return
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}`)
+      const response = await fetch(`/api/client-threads-summary?userEmail=${encodeURIComponent(userEmail)}&showAll=${showAllClients}`)
       const data = await response.json()
 
       if (data.success) {
-        setThreads(data.threads)
+        setClientSummaries(data.clients)
       } else {
-        console.error('Failed to load threads:', data.error)
+        console.error('Failed to load client summaries:', data.error)
       }
     } catch (error) {
-      console.error('Error loading threads:', error)
+      console.error('Error loading client summaries:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const filterAndSortThreads = () => {
-    let filtered = threads.filter(thread => {
-      const matchesSearch = 
-        thread.metadata.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        thread.metadata.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        thread.metadata.projectType.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = 
-        filterStatus === "all" || 
-        (filterStatus === "active" && thread.metadata.status !== "Completed") ||
-        thread.metadata.status === filterStatus
-      const matchesProjectType = filterProjectType === "all" || thread.metadata.projectType === filterProjectType
+  const toggleClientExpansion = async (clientName: string) => {
+    const newExpanded = new Set(expandedClients)
 
-      return matchesSearch && matchesStatus && matchesProjectType
-    })
+    if (newExpanded.has(clientName)) {
+      // Collapse
+      newExpanded.delete(clientName)
+    } else {
+      // Expand - load threads for this client if not already loaded
+      newExpanded.add(clientName)
 
-    // Sort threads
-    filtered.sort((a, b) => {
-      let aValue, bValue
+      if (!clientThreads.has(clientName) && userEmail) {
+        // Load threads for this specific client
+        try {
+          const response = await fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}`)
+          const data = await response.json()
 
-      switch (sortBy) {
-        case "title":
-          aValue = a.metadata.title.toLowerCase()
-          bValue = b.metadata.title.toLowerCase()
-          break
-        case "clientName":
-          aValue = a.metadata.clientName.toLowerCase()
-          bValue = b.metadata.clientName.toLowerCase()
-          break
-        case "createdAt":
-          aValue = new Date(a.metadata.createdAt).getTime()
-          bValue = new Date(b.metadata.createdAt).getTime()
-          break
-        case "lastAccessed":
-          aValue = a.metadata.lastAccessed ? new Date(a.metadata.lastAccessed).getTime() : 0
-          bValue = b.metadata.lastAccessed ? new Date(b.metadata.lastAccessed).getTime() : 0
-          break
-        case "messageCount":
-          aValue = a.messageCount
-          bValue = b.messageCount
-          break
-        default: // lastUpdated
-          aValue = new Date(a.lastUpdated).getTime()
-          bValue = new Date(b.lastUpdated).getTime()
+          if (data.success) {
+            // Filter threads for this client
+            const clientSpecificThreads = data.threads.filter(
+              (thread: SavedThread) => thread.metadata.clientName === clientName
+            )
+            setClientThreads(new Map(clientThreads).set(clientName, clientSpecificThreads))
+          }
+        } catch (error) {
+          console.error('Error loading client threads:', error)
+        }
       }
+    }
 
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
-    })
-
-    setFilteredThreads(filtered)
+    setExpandedClients(newExpanded)
   }
+
 
   const loadThread = async (thread: SavedThread) => {
     if (!userEmail) return
@@ -178,7 +156,11 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
   }
 
   const handleThreadUpdated = () => {
-    loadThreads() // Refresh the thread list
+    loadClientSummaries() // Refresh the client summaries
+    // Also refresh threads for any expanded clients
+    expandedClients.forEach(clientName => {
+      toggleClientExpansion(clientName) // This will reload threads for that client
+    })
     setShowEditModal(false)
     setThreadToEdit(null)
   }
@@ -212,7 +194,18 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">Manage Projects</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold">Manage Projects</h2>
+            <Button
+              variant={showAllClients ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setShowAllClients(!showAllClients)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-3 h-3" />
+              {showAllClients ? "Show Active Only" : "Show All Clients"}
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -223,176 +216,178 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
           </Button>
         </div>
 
-        {/* Filters and Search */}
-        <div className="p-6 border-b space-y-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search projects by title, client, or project type..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Active Projects" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active Projects</SelectItem>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="On Hold">On Hold</SelectItem>
-                <SelectItem value="Waiting for Client Info">Waiting</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterProjectType} onValueChange={setFilterProjectType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Projects" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                <SelectItem value="Tax Planning">Tax Planning</SelectItem>
-                <SelectItem value="Tax Preparation">Tax Preparation</SelectItem>
-                <SelectItem value="Business Consultation">Business Consultation</SelectItem>
-                <SelectItem value="Bookkeeping">Bookkeeping</SelectItem>
-                <SelectItem value="Financial Planning">Financial Planning</SelectItem>
-                <SelectItem value="Audit">Audit</SelectItem>
-                <SelectItem value="General">General</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lastUpdated">Last Updated</SelectItem>
-                <SelectItem value="lastAccessed">Last Accessed</SelectItem>
-                <SelectItem value="createdAt">Created Date</SelectItem>
-                <SelectItem value="title">Title</SelectItem>
-                <SelectItem value="clientName">Client Name</SelectItem>
-                <SelectItem value="messageCount">Message Count</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="px-3"
-            >
-              <ArrowUpDown className="w-4 h-4" />
-              {sortOrder === "asc" ? "↑" : "↓"}
-            </Button>
+        {/* Search Box */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search clients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
-        {/* Thread List */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Grouped Client List */}
+        <div className="flex-1 overflow-y-auto p-6 pt-2">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span className="ml-2">Loading projects...</span>
+              <span className="ml-2">Loading clients...</span>
             </div>
-          ) : filteredThreads.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {threads.length === 0 ? "No saved projects found" : "No projects match your search criteria"}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredThreads.map((thread) => (
-                <div
-                  key={thread.threadId}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => loadThread(thread)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                        <h3 className="font-medium">{thread.metadata.title}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(thread.metadata.status)}`}>
-                          {thread.metadata.status}
-                        </span>
-                        <span className={`text-xs font-medium ${getPriorityColor(thread.metadata.priority)}`}>
-                          {thread.metadata.priority}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {thread.metadata.clientName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Folder className="w-3 h-3" />
-                          {thread.metadata.projectType}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MessageCircle className="w-3 h-3" />
-                          {thread.messageCount} messages
+          ) : (() => {
+              // Filter clients by search term (client-side)
+              const filteredClients = clientSummaries.filter(client =>
+                client.clientName.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+
+              return filteredClients.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? `No clients found matching "${searchTerm}"` : "No clients found"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredClients.map((client) => {
+                const isExpanded = expandedClients.has(client.clientName)
+                const clientThreadList = clientThreads.get(client.clientName) || []
+
+                return (
+                  <div key={client.clientName} className="border rounded-lg overflow-hidden">
+                    {/* Client Header */}
+                    <button
+                      className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                      onClick={() => toggleClientExpansion(client.clientName)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="w-5 h-5 text-muted-foreground" />
+                        <div className="text-left">
+                          <h3 className="font-medium">{client.clientName}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {client.threadCount} {client.threadCount === 1 ? 'project' : 'projects'}
+                            {client.activeCount > 0 && ` • ${client.activeCount} active`}
+                          </p>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Created: {formatDate(thread.metadata.createdAt)}
-                        </div>
-                        <div>
-                          Updated: {formatDate(thread.lastUpdated)}
-                        </div>
-                        {thread.metadata.lastAccessed && (
-                          <div className="text-primary font-medium">
-                            Accessed: {formatDate(thread.metadata.lastAccessed)}
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(client.lastUpdated)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {isExpanded ? '▼' : '▶'}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Expanded Thread List */}
+                    {isExpanded && (
+                      <div className="border-t bg-muted/20">
+                        {clientThreadList.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Loading projects...
+                          </div>
+                        ) : (
+                          <div className="divide-y">
+                            {clientThreadList.map((thread) => (
+                              <div
+                                key={thread.threadId}
+                                className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                                onClick={() => loadThread(thread)}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                                      <h4 className="font-medium">{thread.metadata.title}</h4>
+                                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(thread.metadata.status)}`}>
+                                        {thread.metadata.status}
+                                      </span>
+                                      <span className={`text-xs font-medium ${getPriorityColor(thread.metadata.priority)}`}>
+                                        {thread.metadata.priority}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                                      <div className="flex items-center gap-1">
+                                        <Folder className="w-3 h-3" />
+                                        {thread.metadata.projectType}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <MessageCircle className="w-3 h-3" />
+                                        {thread.messageCount} messages
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        Created: {formatDate(thread.metadata.createdAt)}
+                                      </div>
+                                      <div>
+                                        Updated: {formatDate(thread.lastUpdated)}
+                                      </div>
+                                      {thread.metadata.lastAccessed && (
+                                        <div className="text-primary font-medium">
+                                          Accessed: {formatDate(thread.metadata.lastAccessed)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        editThread(thread)
+                                      }}
+                                    >
+                                      <Edit className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        loadThread(thread)
+                                      }}
+                                    >
+                                      Load
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          editThread(thread)
-                        }}
-                      >
-                        <Edit className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          loadThread(thread)
-                        }}
-                      >
-                        Load Thread
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-          )}
+              )
+            })()}
         </div>
 
         <div className="p-6 border-t bg-muted/20">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
-              Showing {filteredThreads.length} of {threads.length} projects
+              {(() => {
+                const filteredCount = clientSummaries.filter(client =>
+                  client.clientName.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length
+                const total = clientSummaries.length
+
+                if (searchTerm && filteredCount !== total) {
+                  return `Showing ${filteredCount} of ${total} ${total === 1 ? 'client' : 'clients'}`
+                }
+                return `Showing ${total} ${total === 1 ? 'client' : 'clients'}`
+              })()}
             </span>
-            <Button variant="outline" onClick={loadThreads}>
+            <Button variant="outline" onClick={loadClientSummaries}>
               Refresh
             </Button>
           </div>
