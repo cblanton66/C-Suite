@@ -15,6 +15,7 @@ interface ThreadMetadata {
   priority: string
   createdAt: string
   lastUpdated: string
+  lastAccessed?: string
   messageCount: number
 }
 
@@ -102,7 +103,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     // Sort threads
     filtered.sort((a, b) => {
       let aValue, bValue
-      
+
       switch (sortBy) {
         case "title":
           aValue = a.metadata.title.toLowerCase()
@@ -115,6 +116,10 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
         case "createdAt":
           aValue = new Date(a.metadata.createdAt).getTime()
           bValue = new Date(b.metadata.createdAt).getTime()
+          break
+        case "lastAccessed":
+          aValue = a.metadata.lastAccessed ? new Date(a.metadata.lastAccessed).getTime() : 0
+          bValue = b.metadata.lastAccessed ? new Date(b.metadata.lastAccessed).getTime() : 0
           break
         case "messageCount":
           aValue = a.messageCount
@@ -269,6 +274,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="lastUpdated">Last Updated</SelectItem>
+                <SelectItem value="lastAccessed">Last Accessed</SelectItem>
                 <SelectItem value="createdAt">Created Date</SelectItem>
                 <SelectItem value="title">Title</SelectItem>
                 <SelectItem value="clientName">Client Name</SelectItem>
@@ -343,6 +349,11 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
                         <div>
                           Updated: {formatDate(thread.lastUpdated)}
                         </div>
+                        {thread.metadata.lastAccessed && (
+                          <div className="text-primary font-medium">
+                            Accessed: {formatDate(thread.metadata.lastAccessed)}
+                          </div>
+                        )}
                       </div>
                     </div>
                     

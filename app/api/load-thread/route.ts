@@ -57,8 +57,23 @@ export async function GET(req: NextRequest) {
     const [content] = await file.download()
     const threadData = JSON.parse(content.toString())
 
-    return NextResponse.json({ 
-      success: true, 
+    // Update lastAccessed timestamp in metadata
+    if (threadData.metadata) {
+      threadData.metadata.lastAccessed = new Date().toISOString()
+
+      // Save updated metadata back to file
+      try {
+        await file.save(JSON.stringify(threadData, null, 2), {
+          contentType: 'application/json',
+        })
+      } catch (saveError) {
+        console.error('Error updating lastAccessed:', saveError)
+        // Don't fail the request if we can't save
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
       thread: threadData
     })
   } catch (error) {

@@ -280,7 +280,14 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
           ) : (
             <div className="p-4 space-y-3">
               {filteredReports.map((report) => (
-                <Card key={report.reportId} className="p-4 hover:bg-muted/50 transition-colors">
+                <Card
+                  key={report.reportId}
+                  className={`p-4 transition-colors ${
+                    report.hasResponse
+                      ? 'bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100/50 dark:hover:bg-green-950/30'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

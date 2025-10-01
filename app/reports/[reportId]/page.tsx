@@ -561,13 +561,12 @@ export default function SharedReportPage() {
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div className="flex items-center gap-6">
                 <span>Created: {new Date(report.createdDate).toLocaleDateString()}</span>
-                {report.projectType && <span>Type: {report.projectType}</span>}
               </div>
               <div className="flex items-center gap-2">
                 <span>Prepared by:</span>
-                <a 
-                  href="https://peaksuite.ai" 
-                  target="_blank" 
+                <a
+                  href="https://peaksuite.ai"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
                 >
