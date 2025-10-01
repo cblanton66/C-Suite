@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { ClientAutocomplete } from "@/components/client-autocomplete"
 import { X, Share2, Calendar, User, Mail, FileText, Loader2, MessageCircle, Upload, Paperclip, CheckCircle } from "lucide-react"
 
 interface ReportDetailsModalProps {
@@ -12,6 +13,7 @@ interface ReportDetailsModalProps {
   onShare: (details: ReportDetails) => void
   isSharing: boolean
   reportContent?: string
+  userEmail?: string
 }
 
 interface ReportDetails {
@@ -31,7 +33,7 @@ interface ReportDetails {
   }>
 }
 
-export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, reportContent }: ReportDetailsModalProps) {
+export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, reportContent, userEmail }: ReportDetailsModalProps) {
   const [title, setTitle] = useState("")
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
@@ -123,6 +125,7 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
         formData.append('file', file)
         formData.append('reportId', reportId)
         formData.append('clientName', clientName || 'general')
+        formData.append('userEmail', userEmail || '')
 
         const response = await fetch('/api/upload-report-file', {
           method: 'POST',
@@ -373,12 +376,12 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
               <User className="w-4 h-4" />
               Client Name
             </label>
-            <Input
-              type="text"
-              placeholder="Enter client or company name"
+            <ClientAutocomplete
               value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              disabled={isSharing}
+              onValueChange={setClientName}
+              userEmail={userEmail || ''}
+              placeholder="Select or type client name..."
+              className="w-full"
             />
           </div>
 

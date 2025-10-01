@@ -4087,6 +4087,7 @@ ${message.content}
         onShare={handleShareWithDetails}
         isSharing={shareReportLoading === currentMessageToShare?.id}
         reportContent={currentMessageToShare?.content}
+        userEmail={userEmail || undefined}
       />
 
       {/* Private Notes Modal */}

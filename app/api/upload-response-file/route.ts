@@ -18,10 +18,10 @@ async function getGoogleCloudStorage() {
   return storage.bucket('peaksuite-files')
 }
 
-async function getClientNameFromReport(reportId: string): Promise<string | null> {
+async function getReportDetails(reportId: string): Promise<{ clientName: string | null, userEmail: string | null }> {
   try {
     if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
-      return null
+      return { clientName: null, userEmail: null }
     }
 
     const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
@@ -35,21 +35,24 @@ async function getClientNameFromReport(reportId: string): Promise<string | null>
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:G',
+      range: 'ReportLinks!A:G', // A=reportId, F=createdBy (userEmail), G=clientName
     })
 
     const rows = response.data.values
-    if (!rows) return null
+    if (!rows) return { clientName: null, userEmail: null }
 
     // Skip header row and find the report by ID (column A)
     const reportRow = rows.slice(1).find(row => row[0] === reportId)
-    if (!reportRow) return null
+    if (!reportRow) return { clientName: null, userEmail: null }
 
-    // Client name is in column G (index 6)
-    return reportRow[6] || null
+    // Column F (index 5) = createdBy (userEmail), Column G (index 6) = clientName
+    return {
+      userEmail: reportRow[5] || null,
+      clientName: reportRow[6] || null
+    }
   } catch (error) {
-    console.error('Error looking up client name:', error)
-    return null
+    console.error('Error looking up report details:', error)
+    return { clientName: null, userEmail: null }
   }
 }
 
@@ -99,14 +102,16 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop() || 'bin'
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
 
-    // Look up client name from reportId
-    const clientName = await getClientNameFromReport(reportId)
+    // Look up report details (userEmail and clientName) from reportId
+    const { userEmail, clientName } = await getReportDetails(reportId)
+    const userFolder = userEmail?.replace(/@/g, '_').replace(/\./g, '_') || 'unknown-user'
     const clientFolder = clientName?.toLowerCase().replace(/\s+/g, '-') || 'unknown-client'
 
-    // NEW STRUCTURE: Organize by client name for easy management
-    const filePath = `attachments-from-client/${clientFolder}/${reportId}/${fileId}.${fileExtension}`
+    // UNIFIED STRUCTURE: Everything under Reports-view/{user}/client-files/{client}/
+    const filePath = `Reports-view/${userFolder}/client-files/${clientFolder}/attachments-from-client/${reportId}/${fileId}.${fileExtension}`
 
     // OLD STRUCTURE (kept as comment for reference):
+    // const filePath = `attachments-from-client/${clientFolder}/${reportId}/${fileId}.${fileExtension}`
     // const filePath = `response-attachments/${reportId}/${fileId}.${fileExtension}`
 
     // Upload to Google Cloud Storage

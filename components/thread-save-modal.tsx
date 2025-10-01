@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ClientAutocomplete } from "@/components/client-autocomplete"
 import { X } from "lucide-react"
 
 interface Message {
@@ -167,11 +168,11 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, loadedTh
             <label className="block text-sm font-medium mb-1">
               Client Name *
             </label>
-            <Input
-              type="text"
+            <ClientAutocomplete
               value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Enter client name"
+              onValueChange={setClientName}
+              userEmail={userEmail || ''}
+              placeholder="Select or type client name..."
               className="w-full"
             />
           </div>
