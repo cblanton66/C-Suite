@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Storage } from '@google-cloud/storage'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 async function getGoogleCloudStorage() {
   if (!process.env.GOOGLE_CREDENTIALS) {
     throw new Error('Google Cloud configuration missing')
