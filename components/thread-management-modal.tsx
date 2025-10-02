@@ -50,6 +50,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
   const [allThreads, setAllThreads] = useState<SavedThread[]>([])
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState("") // Client search filter
+  const [showAll, setShowAll] = useState(false) // Toggle for active vs all projects
 
   useEffect(() => {
     if (isOpen && userEmail) {
@@ -161,7 +162,18 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">Manage Projects</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold">Manage Projects</h2>
+            <Button
+              variant={showAll ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setShowAll(!showAll)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-3 h-3" />
+              {showAll ? "Show Active Only" : "Show All"}
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -193,9 +205,14 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
               <span className="ml-2">Loading projects...</span>
             </div>
           ) : (() => {
+              // Filter threads based on toggle
+              const filteredThreads = showAll
+                ? allThreads
+                : allThreads.filter(thread => thread.metadata.status !== 'Completed')
+
               // Group threads by client name
               const clientGroups = new Map<string, SavedThread[]>()
-              allThreads.forEach(thread => {
+              filteredThreads.forEach(thread => {
                 const clientName = thread.metadata.clientName || 'Unknown Client'
                 if (!clientGroups.has(clientName)) {
                   clientGroups.set(clientName, [])

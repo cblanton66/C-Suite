@@ -47,19 +47,16 @@ export async function GET(req: NextRequest) {
     const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
     const bucket = storage.bucket(bucketName)
 
-    // NEW STRUCTURE: Reports-view/{user}/client-files/{client}/threads/
-    // OLD STRUCTURE: Reports-view/{user}/private/{client}/ (for backward compatibility)
-    const newStructurePrefix = `Reports-view/${folderUserId}/client-files/`
-    const oldStructurePrefix = `Reports-view/${folderUserId}/private/`
+    // NEW UNIFIED STRUCTURE: Reports-view/{user}/client-files/{client}/threads/
+    const clientFilesPrefix = `Reports-view/${folderUserId}/client-files/`
 
     const threads = []
 
-    // Search in NEW structure first
-    console.log(`[list-threads] Searching NEW structure: ${newStructurePrefix}`)
-    const [newFiles] = await bucket.getFiles({ prefix: newStructurePrefix })
-    console.log(`[list-threads] Found ${newFiles.length} files in new structure`)
+    console.log(`[list-threads] Searching: ${clientFilesPrefix}`)
+    const [files] = await bucket.getFiles({ prefix: clientFilesPrefix })
+    console.log(`[list-threads] Found ${files.length} files`)
 
-    for (const file of newFiles) {
+    for (const file of files) {
       try {
         // Only look in /threads/ subdirectory
         if (!file.name.includes('/threads/')) continue
@@ -69,36 +66,6 @@ export async function GET(req: NextRequest) {
         // Check if this is a thread file
         if (fileName.startsWith('[THREAD]') && fileName.endsWith('.json')) {
           console.log(`[list-threads] Found thread file: ${file.name}`)
-          const [content] = await file.download()
-          const threadData = JSON.parse(content.toString())
-
-          threads.push({
-            threadId: threadData.threadId,
-            fileName: fileName,
-            filePath: file.name,
-            metadata: threadData.metadata,
-            messageCount: threadData.conversation?.length || 0,
-            lastUpdated: file.metadata?.timeCreated || threadData.metadata?.createdAt
-          })
-        }
-      } catch (parseError) {
-        console.error(`Error parsing thread file ${file.name}:`, parseError)
-        continue
-      }
-    }
-
-    // Search in OLD structure for backward compatibility
-    console.log(`[list-threads] Searching OLD structure: ${oldStructurePrefix}`)
-    const [oldFiles] = await bucket.getFiles({ prefix: oldStructurePrefix })
-    console.log(`[list-threads] Found ${oldFiles.length} files in old structure`)
-
-    for (const file of oldFiles) {
-      try {
-        const fileName = file.name.split('/').pop() || ''
-
-        // Check if this is a thread file
-        if (fileName.startsWith('[THREAD]') && fileName.endsWith('.json')) {
-          console.log(`[list-threads] Found OLD thread file: ${file.name}`)
           const [content] = await file.download()
           const threadData = JSON.parse(content.toString())
 
