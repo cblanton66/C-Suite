@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, MessageCircle, Calendar, User, Folder, Edit, Filter, Search } from "lucide-react"
+import { X, MessageCircle, Calendar, User, Folder, Edit, Filter, Search, Archive, Trash2 } from "lucide-react"
 import { EditThreadModal } from "@/components/edit-thread-modal"
 
 interface ThreadMetadata {
@@ -25,6 +25,7 @@ interface SavedThread {
   metadata: ThreadMetadata
   messageCount: number
   lastUpdated: string
+  isArchived?: boolean
 }
 
 interface Message {
@@ -54,20 +55,21 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState("") // Client search filter
   const [showAll, setShowAll] = useState(false) // Toggle for active vs all projects
+  const [includeArchive, setIncludeArchive] = useState(false) // Toggle for including archived projects
 
   useEffect(() => {
     if (isOpen && userEmail) {
       loadAllThreads()
     }
-  }, [isOpen, userEmail])
+  }, [isOpen, userEmail, includeArchive])
 
   const loadAllThreads = async () => {
     if (!userEmail) return
 
     setLoading(true)
     try {
-      console.log('[THREAD_MODAL] loadAllThreads - userEmail:', userEmail, 'workspaceOwner:', workspaceOwner)
-      const url = `/api/list-threads?userId=${encodeURIComponent(userEmail)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}`
+      console.log('[THREAD_MODAL] loadAllThreads - userEmail:', userEmail, 'workspaceOwner:', workspaceOwner, 'includeArchive:', includeArchive)
+      const url = `/api/list-threads?userId=${encodeURIComponent(userEmail)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}${includeArchive ? '&includeArchive=true' : ''}`
       console.log('[THREAD_MODAL] Fetching URL:', url)
       const response = await fetch(url)
       const data = await response.json()
@@ -139,6 +141,41 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
     setThreadToEdit(null)
   }
 
+  const archiveThread = async (thread: SavedThread) => {
+    if (!userEmail) return
+
+    const confirmMessage = `Are you sure you want to archive "${thread.metadata.title}"?\n\nArchived projects won't appear in search results but can be viewed by clicking "Show Archive".`
+
+    if (!confirm(confirmMessage)) return
+
+    try {
+      const response = await fetch('/api/archive-thread', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userEmail,
+          workspaceOwner: workspaceOwner,
+          filePath: thread.filePath
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Reload threads to reflect the change
+        await loadAllThreads()
+        alert('Thread archived successfully!')
+      } else {
+        alert(`Failed to archive thread: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Error archiving thread:', error)
+      alert('Failed to archive thread')
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
@@ -178,6 +215,15 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
             >
               <Filter className="w-3 h-3" />
               {showAll ? "Show Active Only" : "Show All"}
+            </Button>
+            <Button
+              variant={includeArchive ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setIncludeArchive(!includeArchive)}
+              className="flex items-center gap-2"
+            >
+              <Archive className="w-3 h-3" />
+              {includeArchive ? "Hide Archive" : "Show Archive"}
             </Button>
           </div>
           <Button
@@ -291,6 +337,12 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
                                     <div className="flex items-center gap-2 mb-2">
                                       <MessageCircle className="w-4 h-4 text-muted-foreground" />
                                       <h4 className="font-medium">{thread.metadata.title}</h4>
+                                      {thread.isArchived && (
+                                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+                                          <Archive className="w-3 h-3 inline mr-1" />
+                                          Archived
+                                        </span>
+                                      )}
                                       <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(thread.metadata.status)}`}>
                                         {thread.metadata.status}
                                       </span>
@@ -338,6 +390,20 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
                                       <Edit className="w-3 h-3 mr-1" />
                                       Edit
                                     </Button>
+                                    {!thread.isArchived && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          archiveThread(thread)
+                                        }}
+                                        className="text-orange-600 hover:text-orange-700"
+                                      >
+                                        <Archive className="w-3 h-3 mr-1" />
+                                        Archive
+                                      </Button>
+                                    )}
                                     <Button
                                       variant="outline"
                                       size="sm"

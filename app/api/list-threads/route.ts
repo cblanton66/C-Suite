@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
     const workspaceOwner = searchParams.get('workspaceOwner')
+    const includeArchive = searchParams.get('includeArchive') === 'true'
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 })
@@ -51,44 +52,56 @@ export async function GET(req: NextRequest) {
     const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
     const bucket = storage.bucket(bucketName)
 
-    // NEW UNIFIED STRUCTURE: Reports-view/{user}/client-files/{client}/threads/
-    const clientFilesPrefix = `Reports-view/${folderUserId}/client-files/`
+    // Search prefixes - include archive if requested
+    const searchPrefixes = [`Reports-view/${folderUserId}/client-files/`]
+    if (includeArchive) {
+      searchPrefixes.push(`Reports-view/${folderUserId}/archive/`)
+    }
 
     const threads = []
+    let totalFiles = 0
 
-    console.log(`[list-threads] Searching: ${clientFilesPrefix}`)
-    const [files] = await bucket.getFiles({ prefix: clientFilesPrefix })
-    console.log(`[list-threads] Found ${files.length} files`)
+    // Search all prefixes
+    for (const prefix of searchPrefixes) {
+      console.log(`[list-threads] Searching: ${prefix}`)
+      const [files] = await bucket.getFiles({ prefix })
+      console.log(`[list-threads] Found ${files.length} files in ${prefix}`)
+      totalFiles += files.length
 
-    for (const file of files) {
-      try {
-        // Only look in /threads/ subdirectory
-        if (!file.name.includes('/threads/')) continue
+      for (const file of files) {
+        try {
+          // Only look in /threads/ subdirectory
+          if (!file.name.includes('/threads/')) continue
 
-        const fileName = file.name.split('/').pop() || ''
+          const fileName = file.name.split('/').pop() || ''
 
-        // Check if this is a thread file
-        if (fileName.startsWith('[THREAD]') && fileName.endsWith('.json')) {
-          console.log(`[list-threads] Found thread file: ${file.name}`)
-          const [content] = await file.download()
-          const threadData = JSON.parse(content.toString())
+          // Check if this is a thread file
+          if (fileName.startsWith('[THREAD]') && fileName.endsWith('.json')) {
+            console.log(`[list-threads] Found thread file: ${file.name}`)
+            const [content] = await file.download()
+            const threadData = JSON.parse(content.toString())
 
-          threads.push({
-            threadId: threadData.threadId,
-            fileName: fileName,
-            filePath: file.name,
-            metadata: threadData.metadata,
-            messageCount: threadData.conversation?.length || 0,
-            lastUpdated: file.metadata?.timeCreated || threadData.metadata?.createdAt
-          })
+            // Mark if this thread is archived
+            const isArchived = file.name.includes('/archive/')
+
+            threads.push({
+              threadId: threadData.threadId,
+              fileName: fileName,
+              filePath: file.name,
+              metadata: threadData.metadata,
+              messageCount: threadData.conversation?.length || 0,
+              lastUpdated: file.metadata?.timeCreated || threadData.metadata?.createdAt,
+              isArchived: isArchived
+            })
+          }
+        } catch (parseError) {
+          console.error(`Error parsing thread file ${file.name}:`, parseError)
+          continue
         }
-      } catch (parseError) {
-        console.error(`Error parsing thread file ${file.name}:`, parseError)
-        continue
       }
     }
 
-    console.log(`[list-threads] Found ${threads.length} thread files`)
+    console.log(`[list-threads] Found ${threads.length} thread files (includeArchive: ${includeArchive})`)
 
     // Sort threads by last updated (newest first)
     threads.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())

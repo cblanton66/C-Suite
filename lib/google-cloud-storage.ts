@@ -208,12 +208,14 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     console.log(`[getUserReports] Performing targeted search for user: ${folderUserId}`)
 
     // Search in BOTH old and new file structures for backward compatibility
+    // EXCLUDE archive folder - archived files are not included in history search
     const searchPrefixes = [
       // Old structure (existing files)
       `Reports-view/${folderUserId}/`,           // Old reports location
       `Reports-view/${folderUserId}/private/`,   // Old threads location
       // New structure (new files going forward)
       `Reports-view/${folderUserId}/client-files/`  // New unified client files location
+      // NOTE: We explicitly do NOT search Reports-view/${folderUserId}/archive/
     ]
 
     // Get files from all locations
@@ -229,11 +231,16 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     }
 
     console.log(`[getUserReports] Found ${allFiles.length} total files across all locations`)
-    
+
     // Filter files based on search criteria - FUZZY MATCHING
     const relevantFiles = allFiles.filter(file => {
       const fileName = file.name.toLowerCase()
       const filePath = file.name.toLowerCase()
+
+      // EXCLUDE archived files
+      if (filePath.includes('/archive/')) {
+        return false
+      }
 
       // FUZZY CLIENT NAME MATCHING
       // Match if ANY word from the client name appears in the file path
