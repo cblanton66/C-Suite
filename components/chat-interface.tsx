@@ -211,11 +211,14 @@ export function ChatInterface() {
     
     // Load user data and validate session
     if (typeof window !== 'undefined') {
-      // Try to migrate old session first
-      SessionManager.migrateOldSession()
-      
-      // Get current session
-      const session = SessionManager.getSession()
+      // Get current session first
+      let session = SessionManager.getSession()
+
+      // Only migrate if no valid session exists
+      if (!session) {
+        SessionManager.migrateOldSession()
+        session = SessionManager.getSession()
+      }
       if (session) {
         setUserName(session.userName)
         setUserEmail(session.userEmail)

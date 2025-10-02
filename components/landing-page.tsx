@@ -73,13 +73,17 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
     const checkSession = () => {
       try {
         console.log('LandingPage - checking session...')
-        
-        // Migrate old session if exists
-        const migrated = SessionManager.migrateOldSession()
-        console.log('LandingPage - migration result:', migrated)
-        
-        // Check current session
-        const session = SessionManager.getSession()
+
+        // Check current session first
+        let session = SessionManager.getSession()
+
+        // Only migrate if no valid session exists
+        if (!session) {
+          const migrated = SessionManager.migrateOldSession()
+          console.log('LandingPage - migration result:', migrated)
+          session = SessionManager.getSession()
+        }
+
         console.log('LandingPage - session result:', session)
         
         if (session) {
