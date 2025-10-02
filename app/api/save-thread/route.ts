@@ -26,11 +26,15 @@ const initializeStorage = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, clientName, title, projectType, status, priority, messages } = await req.json()
+    const { userId, workspaceOwner, clientName, title, projectType, status, priority, messages } = await req.json()
 
     if (!userId || !clientName || !title || !messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
+
+    // Use workspaceOwner for file path (where files are stored)
+    // Use userId to track who created the thread
+    const fileOwner = workspaceOwner || userId
 
     // Create a structured thread document
     const threadData = {
@@ -42,7 +46,8 @@ export async function POST(req: NextRequest) {
         priority: priority || "Normal",
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
-        messageCount: messages.length
+        messageCount: messages.length,
+        createdBy: userId // Track who created this thread
       },
       conversation: messages,
       threadId: `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -57,8 +62,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Storage configuration error" }, { status: 500 })
     }
 
-    // Convert email to Google Cloud folder format
-    const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
+    // Convert email to Google Cloud folder format (use workspace owner for file path)
+    const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
     const clientFolder = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
 
     const bucket = storage.bucket(bucketName)

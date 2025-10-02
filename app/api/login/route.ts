@@ -27,38 +27,44 @@ export async function POST(request: NextRequest) {
     // Read all data from the sheet to check for matching credentials
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'A:L', // Covers all columns including Status, Permissions, and Assistant Name
+      range: 'A:M', // Covers all columns including WorkSpaceOwner
     })
 
     const rows = response.data.values || []
-    
+
     // Normalize email for case-insensitive comparison
     const normalizedEmail = email.toLowerCase()
-    
+
     // Skip header row and find matching email/password
     let userFound = false
     let userName = ''
     let userPermissions: string[] = ['chat'] // Default permission
     let assistantName = 'Piper' // Default assistant name
-    
+    let workspaceOwner = '' // Empty means user owns their own workspace
+
     for (let i = 1; i < rows.length; i++) {
-      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus, permissions, assistantNameFromSheet] = rows[i]
+      const [firstName, lastName, userIndustry, userCompany, userEmail, userPhone, userTimestamp, userSource, userPassword, userStatus, permissions, assistantNameFromSheet, workspaceOwnerFromSheet] = rows[i]
       
       // Compare emails case-insensitively
       if (userEmail && userEmail.toLowerCase() === normalizedEmail && userPassword === password && userStatus === 'Active') {
         userFound = true
         userName = `${firstName} ${lastName}`
-        
+
         // Parse permissions (comma-separated string to array)
         if (permissions && typeof permissions === 'string') {
           userPermissions = permissions.split(',').map(p => p.trim().toLowerCase())
         }
-        
+
         // Set assistant name from sheet or default to 'Piper'
         if (assistantNameFromSheet && typeof assistantNameFromSheet === 'string' && assistantNameFromSheet.trim()) {
           assistantName = assistantNameFromSheet.trim()
         }
-        
+
+        // Set workspace owner (if empty, user owns their own workspace)
+        if (workspaceOwnerFromSheet && typeof workspaceOwnerFromSheet === 'string' && workspaceOwnerFromSheet.trim()) {
+          workspaceOwner = workspaceOwnerFromSheet.trim().toLowerCase()
+        }
+
         break
       }
     }
@@ -95,13 +101,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`Successful login: ${userName} (${normalizedEmail})`)
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Login successful',
       userName,
       userEmail: normalizedEmail,
       permissions: userPermissions,
-      assistantName
+      assistantName,
+      workspaceOwner: workspaceOwner || normalizedEmail // Use own email if no workspace owner
     })
 
   } catch (error) {

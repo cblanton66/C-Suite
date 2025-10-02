@@ -19,6 +19,7 @@ interface ThreadSaveModalProps {
   onClose: () => void
   messages: Message[]
   userEmail: string | null
+  workspaceOwner?: string | null
   loadedThread?: {
     threadId: string
     filePath: string
@@ -27,7 +28,7 @@ interface ThreadSaveModalProps {
   onThreadSaved?: () => void
 }
 
-export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, loadedThread, onThreadSaved }: ThreadSaveModalProps) {
+export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspaceOwner, loadedThread, onThreadSaved }: ThreadSaveModalProps) {
   const [clientName, setClientName] = useState("")
   const [title, setTitle] = useState("")
   const [projectType, setProjectType] = useState("")
@@ -111,6 +112,7 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, loadedTh
         },
         body: JSON.stringify({
           userId: userEmail,
+          workspaceOwner,
           clientName: clientName.trim(),
           title: title.trim(),
           projectType: projectType || "General",

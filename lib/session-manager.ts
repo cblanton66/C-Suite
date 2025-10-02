@@ -3,6 +3,7 @@ interface SessionData {
   userEmail: string
   permissions: string[]
   assistantName: string
+  workspaceOwner: string // Email of workspace owner (same as userEmail if user owns their own workspace)
   loginTime: number
   lastActivity: number
   expiresAt: number
@@ -12,20 +13,21 @@ const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes in milliseconds
 const SESSION_KEY = 'peaksuite_session'
 
 export class SessionManager {
-  static createSession(userName: string, userEmail: string, permissions: string[], assistantName: string = 'Piper'): void {
+  static createSession(userName: string, userEmail: string, permissions: string[], assistantName: string = 'Piper', workspaceOwner?: string): void {
     const now = Date.now()
     const sessionData: SessionData = {
       userName,
       userEmail,
       permissions,
       assistantName,
+      workspaceOwner: workspaceOwner || userEmail, // Default to user's own email if not specified
       loginTime: now,
       lastActivity: now,
       expiresAt: now + SESSION_DURATION
     }
-    
+
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData))
-    
+
     // Also store in the old format for backward compatibility during transition
     localStorage.setItem('peaksuite_user_name', userName)
     localStorage.setItem('peaksuite_user_email', userEmail)

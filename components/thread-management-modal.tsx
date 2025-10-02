@@ -38,10 +38,11 @@ interface ThreadManagementModalProps {
   isOpen: boolean
   onClose: () => void
   userEmail: string | null
+  workspaceOwner?: string | null
   onLoadThread: (messages: Message[], threadData: { threadId: string; filePath: string; metadata: any }) => void
 }
 
-export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread }: ThreadManagementModalProps) {
+export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwner, onLoadThread }: ThreadManagementModalProps) {
   const [loading, setLoading] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [threadToEdit, setThreadToEdit] = useState<SavedThread | null>(null)
@@ -63,7 +64,8 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}`)
+      const url = `/api/list-threads?userId=${encodeURIComponent(userEmail)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}`
+      const response = await fetch(url)
       const data = await response.json()
 
       if (data.success) {

@@ -3,13 +3,16 @@ import { savePrivateNote } from "@/lib/google-cloud-storage"
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, clientName, content, title } = await req.json()
+    const { userId, workspaceOwner, clientName, content, title } = await req.json()
 
     if (!userId || !clientName || !content) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const success = await savePrivateNote(userId, clientName, content, title)
+    // Use workspaceOwner for file path
+    const fileOwner = workspaceOwner || userId
+
+    const success = await savePrivateNote(fileOwner, clientName, content, title)
 
     if (success) {
       return NextResponse.json({ success: true, message: "Private note saved successfully" })

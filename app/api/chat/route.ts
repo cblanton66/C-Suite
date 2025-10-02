@@ -90,13 +90,14 @@ const taxInstructions = `
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-4-fast', searchMyHistory, userId } = await req.json()
-    
-    console.log('[DEBUG] Chat request received:', { 
-      searchMyHistory, 
-      userId, 
+    const { messages, fileContext, model = 'grok-4-fast', searchMyHistory, userId, workspaceOwner } = await req.json()
+
+    console.log('[DEBUG] Chat request received:', {
+      searchMyHistory,
+      userId,
+      workspaceOwner,
       model,
-      messagesCount: messages?.length 
+      messagesCount: messages?.length
     })
 
     if (!process.env.XAI_API_KEY) {
@@ -105,14 +106,14 @@ export async function POST(req: NextRequest) {
 
     // Include file context in system instructions if available
     let systemInstructions = taxInstructions
-    
+
     // Include user history context if requested
     if (searchMyHistory && userId) {
       try {
         // Get the user's latest message to analyze for search context
         const latestUserMessage = messages[messages.length - 1]?.content || ''
 
-        const userHistory = await getUserReports(userId, latestUserMessage)
+        const userHistory = await getUserReports(userId, latestUserMessage, true, workspaceOwner)
         if (userHistory && userHistory.trim().length > 0) {
           console.log(`[DEBUG] Including ${userHistory.length} characters of user history context`)
           systemInstructions += `\n\n# CRITICAL: USER HISTORY CONTEXT PROVIDED

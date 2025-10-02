@@ -60,7 +60,8 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
               data.userName || data.userEmail,
               data.userEmail,
               data.permissions || [],
-              data.assistantName || 'Piper'
+              data.assistantName || 'Piper',
+              data.workspaceOwner // Pass workspace owner from login response
             )
             
             // Track successful login

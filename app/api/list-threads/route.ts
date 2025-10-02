@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
+    const workspaceOwner = searchParams.get('workspaceOwner')
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 })
@@ -37,14 +38,17 @@ export async function GET(req: NextRequest) {
 
     const storage = initializeStorage()
     const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
-    
+
     if (!bucketName) {
       console.error('GOOGLE_CLOUD_BUCKET_NAME environment variable is not set')
       return NextResponse.json({ error: "Storage configuration error" }, { status: 500 })
     }
 
+    // Use workspaceOwner for file path (where to look for files)
+    const fileOwner = workspaceOwner || userId
+
     // Convert email to Google Cloud folder format
-    const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
+    const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
     const bucket = storage.bucket(bucketName)
 
     // NEW UNIFIED STRUCTURE: Reports-view/{user}/client-files/{client}/threads/

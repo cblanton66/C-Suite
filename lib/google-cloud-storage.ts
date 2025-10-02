@@ -158,7 +158,7 @@ function extractSearchKeywords(query: string): { clientNames: string[], dateKeyw
   return { clientNames, dateKeywords, projectKeywords, shouldSearch }
 }
 
-export async function getUserReports(userId: string, query?: string, forceSearch: boolean = true): Promise<string> {
+export async function getUserReports(userId: string, query?: string, forceSearch: boolean = true, workspaceOwner?: string): Promise<string> {
   try {
     // If no query provided, return empty (no context search)
     if (!query) {
@@ -180,25 +180,28 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       console.log('[getUserReports] Force search enabled - searching regardless of signals')
     }
     console.log('[getUserReports] Query analysis:', searchAnalysis)
-    
+
+    // Use workspaceOwner for file path (where to look for files)
+    const fileOwner = workspaceOwner || userId
+
     // Check cache first
-    const cacheKey = `${userId}-${JSON.stringify(searchAnalysis)}-${query}`
+    const cacheKey = `${fileOwner}-${JSON.stringify(searchAnalysis)}-${query}`
     const cached = reportCache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       console.log('[getUserReports] Returning cached results')
       return cached.content
     }
-    
+
     const storage = initializeStorage()
     const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
-    
+
     if (!bucketName) {
       console.error('GOOGLE_CLOUD_BUCKET_NAME environment variable is not set')
       return ''
     }
 
     // Convert email to Google Cloud folder format: @ becomes _ and . becomes _
-    const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
+    const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
 
     const bucket = storage.bucket(bucketName)
 

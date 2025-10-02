@@ -97,6 +97,7 @@ export function ChatInterface() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [workspaceOwner, setWorkspaceOwner] = useState<string | null>(null) // For team members
   const [assistantName, setAssistantName] = useState<string>('Piper')
   const [dynamicMessage, setDynamicMessage] = useState<string>('You Have the Advantage Today!')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
@@ -218,9 +219,10 @@ export function ChatInterface() {
       if (session) {
         setUserName(session.userName)
         setUserEmail(session.userEmail)
+        setWorkspaceOwner(session.workspaceOwner) // Set workspace owner
         setUserPermissions(session.permissions)
         setAssistantName(session.assistantName || 'Piper')
-        
+
         // Check for unread updates
         checkForUnreadUpdates(session.userEmail)
       } else {
@@ -804,6 +806,7 @@ export function ChatInterface() {
         model: selectedModel,
         searchMyHistory,
         userId: userEmail,
+        workspaceOwner,
         ...(uploadedFiles.length > 0 && {
           fileContext: uploadedFiles.map(file => ({
             filename: file.name,
@@ -1293,6 +1296,7 @@ export function ChatInterface() {
           model: selectedModel,
           searchMyHistory,
           userId: userEmail,
+          workspaceOwner,
           ...(uploadedFile && {
             fileContext: {
               filename: uploadedFile.name,
@@ -3173,7 +3177,7 @@ ${message.content}
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setInput('Please give me a more detailed report with references.')}
+                          onClick={() => setInput('Please provide a very brief summary of the following:')}
                           className="text-xs hover:bg-primary/10"
                         >
                           😀
@@ -3799,7 +3803,7 @@ ${message.content}
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setInput('Please give me a more detailed report with references.')}
+                      onClick={() => setInput('Please provide a very brief summary of the following:')}
                       className="text-xs hover:bg-primary/10"
                     >
                       😀
@@ -4193,6 +4197,7 @@ ${message.content}
         onClose={() => setShowThreadSaveModal(false)}
         messages={messages}
         userEmail={userEmail}
+        workspaceOwner={workspaceOwner}
         loadedThread={loadedThread}
         onThreadSaved={() => setLoadedThread(null)}
       />
@@ -4202,6 +4207,7 @@ ${message.content}
         isOpen={showThreadManagementModal}
         onClose={() => setShowThreadManagementModal(false)}
         userEmail={userEmail}
+        workspaceOwner={workspaceOwner}
         onLoadThread={handleLoadThread}
       />
 

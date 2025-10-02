@@ -23,13 +23,17 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userEmail = searchParams.get('userEmail')
+    const workspaceOwner = searchParams.get('workspaceOwner')
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
+    // Use workspaceOwner for file path
+    const fileOwner = workspaceOwner || userEmail
+
     // Convert email to folder format
-    const userFolder = userEmail.replace(/@/g, '_').replace(/\./g, '_')
+    const userFolder = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
     const clientFilesPrefix = `Reports-view/${userFolder}/client-files/`
 
     // Get all files from Google Cloud Storage under this user's client-files
