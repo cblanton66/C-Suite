@@ -46,74 +46,44 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
   const [showEditModal, setShowEditModal] = useState(false)
   const [threadToEdit, setThreadToEdit] = useState<SavedThread | null>(null)
 
-  // States for grouped client view
-  const [clientSummaries, setClientSummaries] = useState<Array<{
-    clientName: string
-    threadCount: number
-    activeCount: number
-    lastUpdated: string
-  }>>([])
+  // Simple grouped view - load all threads upfront and group by client
+  const [allThreads, setAllThreads] = useState<SavedThread[]>([])
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set())
-  const [clientThreads, setClientThreads] = useState<Map<string, SavedThread[]>>(new Map())
-  const [showAllClients, setShowAllClients] = useState(false) // Default to active only
   const [searchTerm, setSearchTerm] = useState("") // Client search filter
 
   useEffect(() => {
     if (isOpen && userEmail) {
-      loadClientSummaries()
+      loadAllThreads()
     }
-  }, [isOpen, userEmail, showAllClients]) // Reload when toggle changes
+  }, [isOpen, userEmail])
 
-  const loadClientSummaries = async () => {
+  const loadAllThreads = async () => {
     if (!userEmail) return
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/client-threads-summary?userEmail=${encodeURIComponent(userEmail)}&showAll=${showAllClients}`)
+      const response = await fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}`)
       const data = await response.json()
 
       if (data.success) {
-        setClientSummaries(data.clients)
+        setAllThreads(data.threads)
       } else {
-        console.error('Failed to load client summaries:', data.error)
+        console.error('Failed to load threads:', data.error)
       }
     } catch (error) {
-      console.error('Error loading client summaries:', error)
+      console.error('Error loading threads:', error)
     } finally {
       setLoading(false)
     }
   }
 
-
-  const toggleClientExpansion = async (clientName: string) => {
+  const toggleClientExpansion = (clientName: string) => {
     const newExpanded = new Set(expandedClients)
-
     if (newExpanded.has(clientName)) {
-      // Collapse
       newExpanded.delete(clientName)
     } else {
-      // Expand - load threads for this client if not already loaded
       newExpanded.add(clientName)
-
-      if (!clientThreads.has(clientName) && userEmail) {
-        // Load threads for this specific client
-        try {
-          const response = await fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}`)
-          const data = await response.json()
-
-          if (data.success) {
-            // Filter threads for this client
-            const clientSpecificThreads = data.threads.filter(
-              (thread: SavedThread) => thread.metadata.clientName === clientName
-            )
-            setClientThreads(new Map(clientThreads).set(clientName, clientSpecificThreads))
-          }
-        } catch (error) {
-          console.error('Error loading client threads:', error)
-        }
-      }
     }
-
     setExpandedClients(newExpanded)
   }
 
@@ -155,12 +125,9 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     setShowEditModal(true)
   }
 
-  const handleThreadUpdated = () => {
-    loadClientSummaries() // Refresh the client summaries
-    // Also refresh threads for any expanded clients
-    expandedClients.forEach(clientName => {
-      toggleClientExpansion(clientName) // This will reload threads for that client
-    })
+  const handleThreadUpdated = async () => {
+    // Reload all threads
+    await loadAllThreads()
     setShowEditModal(false)
     setThreadToEdit(null)
   }
@@ -194,18 +161,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-background border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold">Manage Projects</h2>
-            <Button
-              variant={showAllClients ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setShowAllClients(!showAllClients)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="w-3 h-3" />
-              {showAllClients ? "Show Active Only" : "Show All Clients"}
-            </Button>
-          </div>
+          <h2 className="text-lg font-semibold">Manage Projects</h2>
           <Button
             variant="ghost"
             size="sm"
@@ -234,23 +190,42 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span className="ml-2">Loading clients...</span>
+              <span className="ml-2">Loading projects...</span>
             </div>
           ) : (() => {
-              // Filter clients by search term (client-side)
-              const filteredClients = clientSummaries.filter(client =>
+              // Group threads by client name
+              const clientGroups = new Map<string, SavedThread[]>()
+              allThreads.forEach(thread => {
+                const clientName = thread.metadata.clientName || 'Unknown Client'
+                if (!clientGroups.has(clientName)) {
+                  clientGroups.set(clientName, [])
+                }
+                clientGroups.get(clientName)!.push(thread)
+              })
+
+              // Convert to array and sort by client name
+              const clients = Array.from(clientGroups.entries())
+                .map(([clientName, threads]) => ({
+                  clientName,
+                  threads: threads.sort((a, b) =>
+                    new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+                  )
+                }))
+                .sort((a, b) => a.clientName.toLowerCase().localeCompare(b.clientName.toLowerCase()))
+
+              // Filter by search term
+              const filteredClients = clients.filter(client =>
                 client.clientName.toLowerCase().includes(searchTerm.toLowerCase())
               )
 
               return filteredClients.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? `No clients found matching "${searchTerm}"` : "No clients found"}
+                  {searchTerm ? `No clients found matching "${searchTerm}"` : "No projects found"}
                 </div>
               ) : (
                 <div className="space-y-2">
                   {filteredClients.map((client) => {
                 const isExpanded = expandedClients.has(client.clientName)
-                const clientThreadList = clientThreads.get(client.clientName) || []
 
                 return (
                   <div key={client.clientName} className="border rounded-lg overflow-hidden">
@@ -264,14 +239,13 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
                         <div className="text-left">
                           <h3 className="font-medium">{client.clientName}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {client.threadCount} {client.threadCount === 1 ? 'project' : 'projects'}
-                            {client.activeCount > 0 && ` • ${client.activeCount} active`}
+                            {client.threads.length} {client.threads.length === 1 ? 'project' : 'projects'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(client.lastUpdated)}
+                          {formatDate(client.threads[0].lastUpdated)}
                         </span>
                         <span className="text-muted-foreground">
                           {isExpanded ? '▼' : '▶'}
@@ -282,13 +256,8 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
                     {/* Expanded Thread List */}
                     {isExpanded && (
                       <div className="border-t bg-muted/20">
-                        {clientThreadList.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
-                            Loading projects...
-                          </div>
-                        ) : (
-                          <div className="divide-y">
-                            {clientThreadList.map((thread) => (
+                        <div className="divide-y">
+                          {client.threads.map((thread) => (
                               <div
                                 key={thread.threadId}
                                 className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -361,7 +330,6 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
                               </div>
                             ))}
                           </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -374,20 +342,8 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, onLoadThread
 
         <div className="p-6 border-t bg-muted/20">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              {(() => {
-                const filteredCount = clientSummaries.filter(client =>
-                  client.clientName.toLowerCase().includes(searchTerm.toLowerCase())
-                ).length
-                const total = clientSummaries.length
-
-                if (searchTerm && filteredCount !== total) {
-                  return `Showing ${filteredCount} of ${total} ${total === 1 ? 'client' : 'clients'}`
-                }
-                return `Showing ${total} ${total === 1 ? 'client' : 'clients'}`
-              })()}
-            </span>
-            <Button variant="outline" onClick={loadClientSummaries}>
+            <span>{allThreads.length} {allThreads.length === 1 ? 'project' : 'projects'} total</span>
+            <Button variant="outline" onClick={loadAllThreads}>
               Refresh
             </Button>
           </div>
