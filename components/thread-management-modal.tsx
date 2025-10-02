@@ -43,6 +43,8 @@ interface ThreadManagementModalProps {
 }
 
 export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwner, onLoadThread }: ThreadManagementModalProps) {
+  console.log('[THREAD_MODAL] Component rendered with props - userEmail:', userEmail, 'workspaceOwner:', workspaceOwner)
+
   const [loading, setLoading] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [threadToEdit, setThreadToEdit] = useState<SavedThread | null>(null)
@@ -64,7 +66,9 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
 
     setLoading(true)
     try {
+      console.log('[THREAD_MODAL] loadAllThreads - userEmail:', userEmail, 'workspaceOwner:', workspaceOwner)
       const url = `/api/list-threads?userId=${encodeURIComponent(userEmail)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}`
+      console.log('[THREAD_MODAL] Fetching URL:', url)
       const response = await fetch(url)
       const data = await response.json()
 

@@ -26,6 +26,7 @@ export class SessionManager {
       expiresAt: now + SESSION_DURATION
     }
 
+    console.log('[SESSION] Creating session with workspaceOwner:', sessionData.workspaceOwner, 'for user:', userEmail)
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData))
 
     // Also store in the old format for backward compatibility during transition

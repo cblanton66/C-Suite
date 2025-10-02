@@ -63,6 +63,9 @@ export async function POST(request: NextRequest) {
         // Set workspace owner (if empty, user owns their own workspace)
         if (workspaceOwnerFromSheet && typeof workspaceOwnerFromSheet === 'string' && workspaceOwnerFromSheet.trim()) {
           workspaceOwner = workspaceOwnerFromSheet.trim().toLowerCase()
+          console.log(`[LOGIN] WorkspaceOwner found for ${normalizedEmail}: ${workspaceOwner}`)
+        } else {
+          console.log(`[LOGIN] No WorkspaceOwner for ${normalizedEmail}, using own email`)
         }
 
         break
