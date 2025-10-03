@@ -37,7 +37,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2 } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -46,6 +46,7 @@ import { CommunicationsModal } from "@/components/communications-modal"
 import { ThreadSaveModal } from "@/components/thread-save-modal"
 import { ThreadManagementModal } from "@/components/thread-management-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
+import { ClientManagementModal } from "@/components/client-management-modal"
 import { ClientAutocomplete } from "@/components/client-autocomplete"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
@@ -151,6 +152,7 @@ export function ChatInterface() {
   const [privateNoteClient, setPrivateNoteClient] = useState('')
   const [privateNoteTitle, setPrivateNoteTitle] = useState('')
   const [showClientNotesModal, setShowClientNotesModal] = useState(false)
+  const [showClientManagementModal, setShowClientManagementModal] = useState(false)
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
@@ -2736,6 +2738,17 @@ ${message.content}
 
           {/* Right side - Main action buttons + User Menu + Theme */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Clients Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowClientManagementModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Clients</span>
+            </Button>
+
             {/* Client Notes Button */}
             <Button
               variant="ghost"
@@ -4122,6 +4135,7 @@ ${message.content}
         isSharing={shareReportLoading === currentMessageToShare?.id}
         reportContent={currentMessageToShare?.content}
         userEmail={userEmail || undefined}
+        workspaceOwner={workspaceOwner}
       />
 
       {/* Private Notes Modal */}
@@ -4365,6 +4379,16 @@ ${message.content}
         userEmail={userEmail}
         workspaceOwner={workspaceOwner}
         onLoadThread={handleLoadThread}
+      />
+
+      {/* Client Management Modal */}
+      <ClientManagementModal
+        isOpen={showClientManagementModal}
+        onClose={() => setShowClientManagementModal(false)}
+        userEmail={userEmail}
+        workspaceOwner={workspaceOwner}
+        onLoadThread={handleLoadThread}
+        onEditContent={handleEditReportContent}
       />
 
     </div>

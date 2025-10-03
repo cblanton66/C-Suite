@@ -494,6 +494,93 @@ export default function FeaturesPage() {
       {/* Divider */}
       <div className="border-t border-border mx-4"></div>
 
+      {/* FAQ Section */}
+      <section className="py-24 bg-gradient-to-b from-background to-muted/20">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-muted-foreground">
+              Quick answers to help you understand how PeakSuite.ai works
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>How is PeakSuite.ai different from ChatGPT or other AI tools?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> PeakSuite.ai is purpose-built for business and financial guidance with 31 years of CPA expertise integrated into every response. Unlike generic AI tools, we provide professional report generation, file analysis, chart creation, client management, and business-specific workflows that accountants and business owners actually need.
+              </p>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>Is my business data secure?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> Yes. We use enterprise-grade Google Cloud infrastructure with encrypted storage, automatic session timeouts, and permission-based access controls. Your data is never used to train AI models and stays completely private. Your business information is as secure as your bank account.
+              </p>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>Do I need to install any software?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> No downloads or installations required. PeakSuite.ai works entirely in your web browser. Just log in and start working - no IT setup, no software updates, no hassle. Works on desktop, laptop, and mobile devices.
+              </p>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>Can I use this for client work?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> Absolutely! PeakSuite.ai is designed for professional use. Generate client-ready reports with one click, track engagement analytics, manage multiple client projects, and deliver CFO-level insights that help you stand out from competitors. Many CPAs and bookkeepers use it to offer premium advisory services.
+              </p>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>How accurate is the AI advice?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> Our AI is trained on 31 years of real-world CPA experience and provides highly accurate, practical guidance. However, like any advisory tool, you should review recommendations and consult with your professional advisors for final decisions on complex tax and financial matters. Think of it as your always-available expert colleague.
+              </p>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-muted-foreground mb-6">
+              Have more questions? Check out our comprehensive{' '}
+              <Link href="/help" className="text-primary hover:underline font-medium">
+                User Guide
+              </Link>
+              {' '}for detailed answers.
+            </p>
+            <Button
+              size="lg"
+              onClick={() => setShowWaitlistModal(true)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Get Started Today
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="border-t border-border mx-4"></div>
+
       {/* Getting Started Section */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="max-w-4xl mx-auto text-center">

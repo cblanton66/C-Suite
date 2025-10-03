@@ -174,6 +174,7 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
               value={clientName}
               onValueChange={setClientName}
               userEmail={userEmail || ''}
+              workspaceOwner={workspaceOwner || undefined}
               placeholder="Select or type client name..."
               className="w-full"
             />

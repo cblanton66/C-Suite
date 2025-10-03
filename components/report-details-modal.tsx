@@ -14,6 +14,7 @@ interface ReportDetailsModalProps {
   isSharing: boolean
   reportContent?: string
   userEmail?: string
+  workspaceOwner?: string
 }
 
 interface ReportDetails {
@@ -33,7 +34,7 @@ interface ReportDetails {
   }>
 }
 
-export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, reportContent, userEmail }: ReportDetailsModalProps) {
+export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, reportContent, userEmail, workspaceOwner }: ReportDetailsModalProps) {
   const [title, setTitle] = useState("")
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
@@ -380,6 +381,7 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
               value={clientName}
               onValueChange={setClientName}
               userEmail={userEmail || ''}
+              workspaceOwner={workspaceOwner}
               placeholder="Select or type client name..."
               className="w-full"
             />

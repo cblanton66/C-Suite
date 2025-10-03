@@ -21,6 +21,7 @@ interface ClientAutocompleteProps {
   value: string
   onValueChange: (value: string) => void
   userEmail: string
+  workspaceOwner?: string
   placeholder?: string
   className?: string
 }
@@ -29,6 +30,7 @@ export function ClientAutocomplete({
   value,
   onValueChange,
   userEmail,
+  workspaceOwner,
   placeholder = "Select or type client name...",
   className
 }: ClientAutocompleteProps) {
@@ -43,12 +45,17 @@ export function ClientAutocomplete({
 
       setLoading(true)
       try {
-        const response = await fetch(`/api/clients?userEmail=${encodeURIComponent(userEmail)}`)
+        const owner = workspaceOwner || userEmail
+        const response = await fetch(
+          `/api/user-clients?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(owner)}`
+        )
         const data = await response.json()
-        console.log('[ClientAutocomplete] Fetched clients:', data)
+        console.log('[ClientAutocomplete] Fetched clients from UserClients sheet:', data)
         if (data.success && data.clients) {
-          setClients(data.clients)
-          console.log('[ClientAutocomplete] Set clients count:', data.clients.length)
+          // Extract just the client names
+          const clientNames = data.clients.map((c: any) => c.clientName)
+          setClients(clientNames)
+          console.log('[ClientAutocomplete] Set clients count:', clientNames.length)
         }
       } catch (error) {
         console.error('[ClientAutocomplete] Error fetching clients:', error)
@@ -58,7 +65,7 @@ export function ClientAutocomplete({
     }
 
     fetchClients()
-  }, [userEmail])
+  }, [userEmail, workspaceOwner])
 
   const filteredClients = clients.filter(client =>
     client.toLowerCase().includes(value.toLowerCase())
