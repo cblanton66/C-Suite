@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
 import { X, MessageCircle, Calendar, User, Folder, Edit, Filter, Search, Archive, Trash2 } from "lucide-react"
 import { EditThreadModal } from "@/components/edit-thread-modal"
 
@@ -203,7 +204,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-background border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-semibold">Manage Projects</h2>
@@ -239,12 +240,12 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
         {/* Search Box */}
         <div className="px-6 pt-4 pb-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Search clients..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-gray-900 dark:bg-gray-900 border-gray-700 dark:border-gray-700 text-white placeholder:text-gray-400"
             />
           </div>
         </div>
@@ -292,15 +293,15 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
                   {searchTerm ? `No clients found matching "${searchTerm}"` : "No projects found"}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {filteredClients.map((client) => {
                 const isExpanded = expandedClients.has(client.clientName)
 
                 return (
-                  <div key={client.clientName} className="border rounded-lg overflow-hidden">
+                  <div key={client.clientName} className="border border-gray-700 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-800/50 dark:bg-gray-800/50">
                     {/* Client Header */}
                     <button
-                      className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                      className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 dark:hover:bg-gray-700/50 transition-colors"
                       onClick={() => toggleClientExpansion(client.clientName)}
                     >
                       <div className="flex items-center gap-3">
@@ -324,12 +325,12 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
 
                     {/* Expanded Thread List */}
                     {isExpanded && (
-                      <div className="border-t bg-muted/20">
-                        <div className="divide-y">
+                      <div className="border-t border-gray-700 dark:border-gray-700 bg-gray-900/30 dark:bg-gray-900/30 p-3">
+                        <div className="space-y-3">
                           {client.threads.map((thread) => (
-                              <div
+                              <Card
                                 key={thread.threadId}
-                                className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                                className="p-4 bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 hover:bg-gray-700 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                                 onClick={() => loadThread(thread)}
                               >
                                 <div className="flex items-start justify-between">
@@ -416,7 +417,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
                                     </Button>
                                   </div>
                                 </div>
-                              </div>
+                              </Card>
                             ))}
                           </div>
                       </div>

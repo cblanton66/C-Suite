@@ -206,15 +206,15 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      <div
+        className="absolute inset-0 bg-black/50"
         onClick={handleClose}
       />
-      
+
       {/* Modal */}
-      <Card className="relative w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden shadow-2xl border-2 border-primary/20">
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-card/50">
+        <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-foreground" />
@@ -438,7 +438,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
             </p>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (() => {

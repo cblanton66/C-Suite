@@ -2734,7 +2734,7 @@ ${message.content}
             </div>
           </div>
 
-          {/* Right side - Feedback + User Menu + Theme + Status */}
+          {/* Right side - Main action buttons + User Menu + Theme */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Client Notes Button */}
             <Button
@@ -2747,34 +2747,27 @@ ${message.content}
               <span className="hidden sm:inline">Client Notes</span>
             </Button>
 
-            {/* Feedback Button - Important for platform improvement */}
+            {/* Manage Projects Button */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowFeedback(true)}
+              onClick={() => setShowThreadManagementModal(true)}
               className="flex items-center gap-2"
             >
               <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Share Feedback</span>
+              <span className="hidden sm:inline">Projects</span>
             </Button>
 
-            {/* Communications Button */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCommunications(true)}
-                className="flex items-center gap-2"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Updates</span>
-                {communicationsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {communicationsCount > 9 ? '9+' : communicationsCount}
-                  </span>
-                )}
-              </Button>
-            </div>
+            {/* Client Comms Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMyReportsModal(true)}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Client Comms</span>
+            </Button>
 
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -2824,28 +2817,23 @@ ${message.content}
                       )}
                     </button>
 
+                    {/* Updates/Communications */}
                     <button
                       onClick={() => {
-                        setShowThreadManagementModal(true)
+                        setShowCommunications(true)
                         setShowUserMenu(false)
                       }}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                     >
-                      <MessageCircle className="w-4 h-4" />
-                      Manage Projects
+                      <Bell className="w-4 h-4" />
+                      Updates
+                      {communicationsCount > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {communicationsCount > 9 ? '9+' : communicationsCount}
+                        </span>
+                      )}
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setShowMyReportsModal(true)
-                        setShowUserMenu(false)
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Client Comms
-                    </button>
-                    
                     {/* Help Guide */}
                     <button
                       onClick={() => {
@@ -2857,7 +2845,19 @@ ${message.content}
                       <HelpCircle className="w-4 h-4" />
                       User Guide
                     </button>
-                    
+
+                    {/* Share Feedback */}
+                    <button
+                      onClick={() => {
+                        setShowFeedback(true)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Share Feedback
+                    </button>
+
                     {messages.length > 0 && (
                       <>
                         <div className="border-t border-border my-2"></div>
