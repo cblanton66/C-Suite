@@ -4259,7 +4259,7 @@ ${message.content}
 
               <div>
                 <label htmlFor="clientNoteTitle" className="block text-sm font-medium mb-1">
-                  Title (optional)
+                  Title *
                 </label>
                 <Input
                   id="clientNoteTitle"
@@ -4267,21 +4267,48 @@ ${message.content}
                   value={privateNoteTitle}
                   onChange={(e) => setPrivateNoteTitle(e.target.value)}
                   placeholder="e.g., Advertising expense increase explanation..."
-                  className="w-full"
+                  className="w-full bg-black dark:bg-black text-white placeholder:text-gray-400"
                 />
               </div>
 
               <div>
-                <label htmlFor="clientNoteContent" className="block text-sm font-medium mb-1">
-                  Note Content *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="clientNoteContent" className="block text-sm font-medium">
+                    Note Content *
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSpeechRecognition}
+                    className={`h-8 px-3 text-xs transition-all ${isListening ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' : ''}`}
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff className="w-3 h-3 mr-1 animate-pulse" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-3 h-3 mr-1" />
+                        Speak
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <textarea
                   id="clientNoteContent"
                   value={privateNoteContent}
                   onChange={(e) => setPrivateNoteContent(e.target.value)}
-                  placeholder="Enter your note here..."
+                  placeholder="Enter your note here or click 'Speak' to use voice input..."
                   className="w-full min-h-[200px] p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
+                {isListening && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    Listening... speak now
+                  </p>
+                )}
               </div>
             </div>
 
@@ -4303,7 +4330,7 @@ ${message.content}
                   await savePrivateNote()
                   setShowClientNotesModal(false)
                 }}
-                disabled={savingPrivateNote || !privateNoteClient.trim() || !privateNoteContent.trim()}
+                disabled={savingPrivateNote || !privateNoteClient.trim() || !privateNoteTitle.trim() || !privateNoteContent.trim()}
                 className="min-w-[100px]"
               >
                 {savingPrivateNote ? (

@@ -1,7 +1,7 @@
 # PeakSuite.ai User Guide
 **AI-Powered Executive Intelligence Platform**
 
-Version 1.1 | Last Updated: September 30, 2025
+Version 1.2 | Last Updated: October 2, 2025
 
 ---
 
@@ -113,6 +113,18 @@ Each message has several options:
 - **📌 Bookmark**: Save important conversations for easy reference
 - **📊 Share as Report**: Convert AI responses into professional reports
 - **📋 Copy**: Copy message text to clipboard
+
+**Voice Commands** 🎙️
+
+Beyond voice-to-text input, PeakSuite.ai supports special voice commands for quick actions:
+
+- **Save Client Notes**: "save note [ClientName]: [your note content]"
+  - Example: "save note John Smith: discussed Q4 tax strategy, follow up next week"
+  - Note saves automatically to your Client Notes without opening any modals
+  - Confirmation appears in chat immediately
+  - Perfect for capturing important details during or right after client calls
+
+*This voice command feature streamlines note-taking and keeps you in the flow of conversation*
 
 ### Chat Features
 
@@ -275,7 +287,9 @@ Generated reports include:
 
 ### Client Comms Dashboard
 
-Access via the user menu (top right) → **"Client Comms"**
+Access via the **Client Comms button** in the main header (top of screen)
+
+**Note:** This feature was moved from the user menu to a standalone header button for faster access.
 
 **Report Library Overview**
 - Complete list of all your shared reports
@@ -329,7 +343,7 @@ Each report shows:
 **Smart Search**
 Search across:
 - Report titles
-- Client names  
+- Client names
 - Project types
 - Content descriptions
 
@@ -338,6 +352,50 @@ Track engagement:
 - Total view count per report
 - Last viewed timestamps
 - Client interaction patterns
+
+### Client Response Tracking ✨
+
+**Track Client Engagement**
+
+When clients respond to your shared reports, PeakSuite.ai automatically tracks their engagement and attachments.
+
+**Response Indicators:**
+- **Green "Response" badge**: Client has responded to your report
+- **Attachment counter**: Shows number of files client attached
+- **Response details**: View response date and client email in report details
+
+**Managing Client Responses:**
+
+1. **Identify Reports with Responses**
+   - Reports with client responses highlighted with green badge
+   - Response date displayed in report card
+   - Attachment count shows number of files sent by client
+
+2. **View Response Details**
+   - Click on report to see full response information
+   - Response email and date clearly displayed
+   - Download attachments before making any changes
+
+3. **Download Client Attachments**
+   - Access attached files from report details
+   - Download all attachments for your records
+   - Files linked to specific client responses
+
+**⚠️ Important Deletion Warning:**
+
+When deleting reports with client attachments, you'll receive a warning dialog:
+
+- **Red warning badge** alerts you to attached files
+- **Confirmation required** before deletion
+- **Attachments cannot be recovered** after report deletion
+- **Best practice**: Download all client attachments first, then delete
+
+**Best Practices:**
+- Check for response badges regularly to track client engagement
+- Download and save client attachments to your local system
+- Use response tracking to follow up on client communications
+- Keep reports with important attachments until files are safely archived
+- Response data helps measure client interaction and engagement
 
 ---
 
@@ -386,11 +444,63 @@ System requires at least 2 signals to trigger search:
 
 This ensures fast responses on general questions while providing deep context when you need it.
 
+### Client Notes
+
+**Quick Access to Client Information**
+
+Access via the **Client Notes button** in the main header (top of screen)
+
+The Client Notes feature provides a dedicated space for managing important client information, quick notes, and documentation separate from your conversation threads.
+
+**Key Features:**
+- **Organized by Client Name**: Notes automatically grouped by client for easy reference
+- **Quick Note Creation**: Save notes manually through the interface or via voice command
+- **Voice Command Support**: "save note [ClientName]: [content]" for instant note creation during calls
+- **Search Functionality**: Find client notes quickly across all your saved information
+- **Separate from Threads**: Keep notes independent of conversation history for better organization
+
+**How to Use Client Notes:**
+
+1. **Access the Feature**
+   - Click the **Client Notes** button in the main header
+   - Modal opens showing all your client notes organized by client name
+
+2. **Create New Notes**
+   - Click the "+" or "Add Note" button
+   - Enter client name and note content
+   - Notes save automatically to Google Cloud Storage
+
+3. **Voice Command for Quick Notes**
+   - During or after client calls, use: **"save note [ClientName]: [your note content]"**
+   - Example: "save note John Smith: discussed Q4 tax strategy, follow up next week"
+   - Note saves automatically without opening any modals
+   - Confirmation appears in chat
+
+4. **Organize and Search**
+   - Notes grouped alphabetically by client name
+   - Use search box to find specific clients or note content
+   - Edit or delete notes as needed
+
+**Best Use Cases:**
+- Record phone call summaries and action items
+- Track client preferences and important dates
+- Save reminders for follow-up actions
+- Document client-specific information and context
+- Keep quick reference notes separate from full project conversations
+
+**Privacy & Storage:**
+- Notes stored securely in your client-files folder structure
+- Only accessible to you and authorized team members
+- Organized by client name for easy retrieval
+- Separate from shared reports and conversation threads
+
 ### Manage Projects
 
 **Conversation Thread Management**
 
-Access via the user menu (top right) → **"Manage Projects"**
+Access via the **Projects button** in the main header (top of screen)
+
+**Note:** This feature was moved from the user menu to a standalone header button for quick project access.
 
 **Project Library Overview**
 - Complete list of all your saved conversation threads
@@ -446,6 +556,29 @@ Search across:
 - Adjust project type, status, or priority
 - Keeps your project library organized
 
+**Archive Projects** 🗄️
+
+Keep your project list focused by archiving completed or inactive projects:
+
+**How to Archive:**
+1. Click the **Archive** button on any project thread
+2. Confirm the archive action
+3. Archived projects are hidden from default view
+4. Archive badge appears on archived threads
+
+**Viewing Archived Projects:**
+- Click **"Show Archive"** / **"Hide Archive"** toggle in the Manage Projects modal
+- Archived projects appear with a gray "Archived" badge
+- Can still load and work with archived projects
+- Unarchive option available for archived threads
+
+**Best Practices:**
+- Archive completed projects to reduce clutter in active view
+- Keep only active projects visible in default view
+- Archived projects remain fully searchable when archive view is enabled
+- Use archive instead of delete to preserve complete project history
+- Archive status helps differentiate active from completed work
+
 **Complete Project Management Workflow**
 1. Have conversation with AI about client work
 2. Save thread with descriptive metadata
@@ -453,6 +586,7 @@ Search across:
 4. Search and filter to find specific projects
 5. Load threads back to continue work or create reports
 6. Update status as projects progress
+7. Archive completed projects to keep workspace organized
 
 This feature transforms PeakSuite into a complete client work management system, not just a chat tool.
 
@@ -865,20 +999,25 @@ A: Yes, contact support for onboarding assistance. We provide setup guidance, tr
 
 ---
 
-*This user guide covers PeakSuite.ai version 1.1. The platform continues to evolve with new features and improvements based on user feedback.*
+*This user guide covers PeakSuite.ai version 1.2. The platform continues to evolve with new features and improvements based on user feedback.*
 
-## Recent Updates (Version 1.1)
+## Recent Updates (Version 1.2)
 
 **New Features:**
+- **Client Notes**: Dedicated feature for managing client information and quick notes with voice command support
+- **Archive Projects**: Archive completed projects to keep workspace organized while preserving history
+- **Client Response Tracking**: Track client engagement, responses, and attachments on shared reports
+- **Voice Commands**: Quick note-taking with "save note [ClientName]: [content]" voice command
+- **Header Navigation**: Projects and Client Comms moved to main header buttons for faster access
 - **Client History Search**: Checkbox to search your past client work for personalized context
 - **Manage Projects**: Renamed from "Manage Threads" for clarity - comprehensive project/thread management
 - **Client Comms**: Renamed from "My Reports" to better reflect client communication focus
 - **Improved Search Intelligence**: Smarter query detection requiring 2+ signals for relevant searches
 - **Enhanced Client Name Extraction**: Better recognition of client names in queries
 
-**Last Updated**: September 30, 2025
-**Platform Version**: 1.1
-**Document Version**: 1.1
+**Last Updated**: October 2, 2025
+**Platform Version**: 1.2
+**Document Version**: 1.2
 
 ---
 
