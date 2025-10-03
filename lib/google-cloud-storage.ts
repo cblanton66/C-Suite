@@ -27,7 +27,7 @@ export async function savePrivateNote(userId: string, clientName: string, conten
   try {
     const storage = initializeStorage()
     const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
-    
+
     if (!bucketName) {
       console.error('GOOGLE_CLOUD_BUCKET_NAME environment variable is not set')
       return false
@@ -36,11 +36,12 @@ export async function savePrivateNote(userId: string, clientName: string, conten
     // Convert email to Google Cloud folder format: @ becomes _ and . becomes _
     const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
     const clientFolder = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-    
+
     const bucket = storage.bucket(bucketName)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const fileName = `note_${timestamp}.md`
-    const filePath = `Reports-view/${folderUserId}/private/${clientFolder}/${fileName}`
+    // NEW STRUCTURE: Use client-files/{client}/notes/ instead of private/{client}/
+    const filePath = `Reports-view/${folderUserId}/client-files/${clientFolder}/notes/${fileName}`
     
     const noteContent = `# ${title || `Private Note - ${clientName}`}
 **Date:** ${new Date().toLocaleDateString()}

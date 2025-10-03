@@ -46,6 +46,7 @@ import { CommunicationsModal } from "@/components/communications-modal"
 import { ThreadSaveModal } from "@/components/thread-save-modal"
 import { ThreadManagementModal } from "@/components/thread-management-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
+import { ClientAutocomplete } from "@/components/client-autocomplete"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
 import { MyReportsModal } from "@/components/my-reports-modal"
@@ -646,6 +647,7 @@ export function ChatInterface() {
         },
         body: JSON.stringify({
           userId: userEmail,
+          workspaceOwner,
           clientName: privateNoteClient,
           content: privateNoteContent,
           title: privateNoteTitle || `Private Note - ${privateNoteClient}`,
@@ -4123,12 +4125,12 @@ ${message.content}
                 <label htmlFor="clientName" className="block text-sm font-medium mb-1">
                   Client Name *
                 </label>
-                <Input
-                  id="clientName"
-                  type="text"
+                <ClientAutocomplete
                   value={privateNoteClient}
-                  onChange={(e) => setPrivateNoteClient(e.target.value)}
-                  placeholder="Enter client name..."
+                  onValueChange={setPrivateNoteClient}
+                  userEmail={userEmail || ''}
+                  workspaceOwner={workspaceOwner}
+                  placeholder="Select or type client name..."
                   className="w-full"
                 />
               </div>
