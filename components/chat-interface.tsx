@@ -37,7 +37,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -150,6 +150,7 @@ export function ChatInterface() {
   const [privateNoteContent, setPrivateNoteContent] = useState('')
   const [privateNoteClient, setPrivateNoteClient] = useState('')
   const [privateNoteTitle, setPrivateNoteTitle] = useState('')
+  const [showClientNotesModal, setShowClientNotesModal] = useState(false)
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
@@ -2735,6 +2736,17 @@ ${message.content}
 
           {/* Right side - Feedback + User Menu + Theme + Status */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Client Notes Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowClientNotesModal(true)}
+              className="flex items-center gap-2"
+            >
+              <StickyNote className="w-4 h-4" />
+              <span className="hidden sm:inline">Client Notes</span>
+            </Button>
+
             {/* Feedback Button - Important for platform improvement */}
             <Button
               variant="ghost"
@@ -3315,6 +3327,19 @@ ${message.content}
                         >
                           <Plus className="w-3 h-3" />
                           New
+                        </Button>
+                      </FastTooltip>
+
+                      {/* Client Notes Button */}
+                      <FastTooltip content="Create a client note without using AI">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowClientNotesModal(true)}
+                          className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                        >
+                          <StickyNote className="w-3 h-3" />
+                          Client Notes
                         </Button>
                       </FastTooltip>
                     </div>
@@ -4179,6 +4204,105 @@ ${message.content}
               </Button>
               <Button
                 onClick={savePrivateNote}
+                disabled={savingPrivateNote || !privateNoteClient.trim() || !privateNoteContent.trim()}
+                className="min-w-[100px]"
+              >
+                {savingPrivateNote ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Note'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Notes Modal */}
+      {showClientNotesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Create Client Note</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowClientNotesModal(false)
+                  setPrivateNoteContent('')
+                  setPrivateNoteClient('')
+                  setPrivateNoteTitle('')
+                }}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="clientNoteClientName" className="block text-sm font-medium mb-1">
+                  Client Name *
+                </label>
+                <ClientAutocomplete
+                  value={privateNoteClient}
+                  onValueChange={setPrivateNoteClient}
+                  userEmail={userEmail || ''}
+                  workspaceOwner={workspaceOwner}
+                  placeholder="Select or type client name..."
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="clientNoteTitle" className="block text-sm font-medium mb-1">
+                  Title (optional)
+                </label>
+                <Input
+                  id="clientNoteTitle"
+                  type="text"
+                  value={privateNoteTitle}
+                  onChange={(e) => setPrivateNoteTitle(e.target.value)}
+                  placeholder="e.g., Advertising expense increase explanation..."
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="clientNoteContent" className="block text-sm font-medium mb-1">
+                  Note Content *
+                </label>
+                <textarea
+                  id="clientNoteContent"
+                  value={privateNoteContent}
+                  onChange={(e) => setPrivateNoteContent(e.target.value)}
+                  placeholder="Enter your note here..."
+                  className="w-full min-h-[200px] p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowClientNotesModal(false)
+                  setPrivateNoteContent('')
+                  setPrivateNoteClient('')
+                  setPrivateNoteTitle('')
+                }}
+                disabled={savingPrivateNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await savePrivateNote()
+                  setShowClientNotesModal(false)
+                }}
                 disabled={savingPrivateNote || !privateNoteClient.trim() || !privateNoteContent.trim()}
                 className="min-w-[100px]"
               >
