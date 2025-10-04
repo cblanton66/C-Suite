@@ -107,6 +107,26 @@ export async function POST(req: NextRequest) {
     // Include file context in system instructions if available
     let systemInstructions = taxInstructions
 
+    // Fetch and include custom instructions if user is logged in
+    if (userId) {
+      try {
+        const customInstructionsResponse = await fetch(`${req.nextUrl.origin}/api/custom-instructions?userEmail=${encodeURIComponent(userId)}`)
+        if (customInstructionsResponse.ok) {
+          const customInstructionsData = await customInstructionsResponse.json()
+          console.log('[DEBUG] Custom instructions response:', customInstructionsData)
+          if (customInstructionsData.success && customInstructionsData.instructions) {
+            console.log('[DEBUG] Adding custom instructions to system prompt:', customInstructionsData.instructions)
+            systemInstructions += `\n\n# USER CUSTOM INSTRUCTIONS\n${customInstructionsData.instructions}`
+          } else {
+            console.log('[DEBUG] No custom instructions found or empty')
+          }
+        }
+      } catch (error) {
+        console.error('[DEBUG] Error fetching custom instructions:', error)
+        // Continue without custom instructions if there's an error
+      }
+    }
+
     // Include user history context if requested
     if (searchMyHistory && userId) {
       try {

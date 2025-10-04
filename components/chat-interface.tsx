@@ -52,6 +52,7 @@ import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
 import { MyReportsModal } from "@/components/my-reports-modal"
 import { ReportDetailsModal } from "@/components/report-details-modal"
+import { CustomInstructionsModal } from "@/components/custom-instructions-modal"
 // import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
@@ -155,6 +156,7 @@ export function ChatInterface() {
   const [showClientManagementModal, setShowClientManagementModal] = useState(false)
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
+  const [showCustomInstructions, setShowCustomInstructions] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
   const [loadedThread, setLoadedThread] = useState<{
@@ -2871,6 +2873,18 @@ ${message.content}
                       Share Feedback
                     </button>
 
+                    {/* Custom Instructions */}
+                    <button
+                      onClick={() => {
+                        setShowCustomInstructions(true)
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Custom Instructions
+                    </button>
+
                     {messages.length > 0 && (
                       <>
                         <div className="border-t border-border my-2"></div>
@@ -4031,6 +4045,13 @@ ${message.content}
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
         userEmail={userEmail}
+      />
+
+      {/* Custom Instructions Modal */}
+      <CustomInstructionsModal
+        isOpen={showCustomInstructions}
+        onClose={() => setShowCustomInstructions(false)}
+        userEmail={userEmail || ''}
       />
 
       {/* Communications Modal */}
