@@ -196,6 +196,7 @@ export function ClientManagementModal({
           setShowClientDetail(false)
           setSelectedClient(null)
         }}
+        onCloseAll={onClose}
         onUpdate={handleUpdateClient}
         onDelete={handleDeleteClient}
         userEmail={userEmail}
@@ -450,6 +451,7 @@ function NewClientModal({
 function ClientDetailModal({
   client,
   onClose,
+  onCloseAll,
   onUpdate,
   onDelete,
   userEmail,
@@ -459,6 +461,7 @@ function ClientDetailModal({
 }: {
   client: Client
   onClose: () => void
+  onCloseAll: () => void
   onUpdate: (client: Partial<Client>) => void
   onDelete: (clientName: string) => void
   userEmail: string
@@ -595,7 +598,7 @@ function ClientDetailModal({
           metadata: thread.metadata
         }
         onLoadThread(messages, threadData)
-        onClose()
+        onCloseAll() // Close all modals when loading a thread
       } else {
         const errorText = await response.text()
         console.error('[ClientDetailModal] Failed to load thread:', errorText)
@@ -609,6 +612,7 @@ function ClientDetailModal({
 
   const handleOpenReport = (reportId: string) => {
     window.open(`/reports/${reportId}`, '_blank')
+    onCloseAll() // Close all modals after opening report
   }
 
   const handleOpenNote = async (note: any) => {
