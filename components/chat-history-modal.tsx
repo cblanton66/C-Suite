@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { History, X, Search, Plus } from "lucide-react"
+import { History, X, Search, Plus, Trash2 } from "lucide-react"
 
 interface ChatSession {
   id: string
@@ -22,16 +22,18 @@ interface ChatHistoryModalProps {
   onLoadSession: (sessionId: string) => void
   onDeleteSession: (sessionId: string, e: React.MouseEvent) => void
   onStartNewChat: () => void
+  onClearAll: () => void
 }
 
-export function ChatHistoryModal({ 
-  isOpen, 
-  onClose, 
-  chatSessions, 
-  currentSessionId, 
-  onLoadSession, 
-  onDeleteSession, 
-  onStartNewChat 
+export function ChatHistoryModal({
+  isOpen,
+  onClose,
+  chatSessions,
+  currentSessionId,
+  onLoadSession,
+  onDeleteSession,
+  onStartNewChat,
+  onClearAll
 }: ChatHistoryModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -118,12 +120,24 @@ export function ChatHistoryModal({
               onStartNewChat()
               onClose()
             }}
-            className="w-full mb-4 justify-start"
+            className="w-full mb-2 justify-start"
             variant="outline"
           >
             <Plus className="w-4 h-4 mr-2" />
             Start New Chat
           </Button>
+
+          {/* Clear All History Button */}
+          {chatSessions.length > 0 && (
+            <Button
+              onClick={onClearAll}
+              className="w-full mb-4 justify-start"
+              variant="outline"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All History
+            </Button>
+          )}
 
           {/* Chat Sessions */}
           <div className="space-y-2">

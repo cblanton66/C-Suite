@@ -612,7 +612,7 @@ export function ChatInterface() {
   const deleteChatSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setChatSessions(prev => prev.filter(s => s.id !== sessionId))
-    
+
     if (sessionId === currentSessionId) {
       const remainingSessions = chatSessions.filter(s => s.id !== sessionId)
       if (remainingSessions.length > 0) {
@@ -620,6 +620,14 @@ export function ChatInterface() {
       } else {
         startNewChat()
       }
+    }
+  }
+
+  const clearAllChatSessions = () => {
+    if (window.confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+      setChatSessions([])
+      startNewChat()
+      setShowHistory(false)
     }
   }
 
@@ -4028,6 +4036,7 @@ ${message.content}
         onLoadSession={loadChatSession}
         onDeleteSession={deleteChatSession}
         onStartNewChat={startNewChat}
+        onClearAll={clearAllChatSessions}
       />
 
       {/* Bookmarks Modal */}
