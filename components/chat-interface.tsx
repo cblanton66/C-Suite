@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react"
 import type React from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 // Extend Window interface for Speech Recognition
 declare global {
@@ -647,7 +648,7 @@ export function ChatInterface() {
   // Save private note function
   const savePrivateNote = async () => {
     if (!privateNoteClient.trim() || !privateNoteContent.trim() || !userEmail) {
-      alert('Please fill in both client name and content')
+      toast.error('Please fill in both client name and content')
       return
     }
 
@@ -668,17 +669,17 @@ export function ChatInterface() {
       })
 
       if (response.ok) {
-        alert('Private note saved successfully!')
+        toast.success('Private note saved successfully!')
         setShowPrivateNoteModal(false)
         setPrivateNoteContent('')
         setPrivateNoteClient('')
         setPrivateNoteTitle('')
       } else {
-        alert('Failed to save private note. Please try again.')
+        toast.error('Failed to save private note. Please try again.')
       }
     } catch (error) {
       console.error('Error saving private note:', error)
-      alert('Failed to save private note. Please try again.')
+      toast.error('Failed to save private note. Please try again.')
     } finally {
       setSavingPrivateNote(false)
     }
@@ -2968,7 +2969,59 @@ ${message.content}
                         Upload Files
                       </button>
                     )}
-                    
+
+                    {/* Admin Section */}
+                    {userPermissions.includes('admin') && (
+                      <>
+                        <div className="border-t border-border my-2"></div>
+
+                        {/* Admin Communications */}
+                        <button
+                          onClick={() => {
+                            setShowAdminCommunications(true)
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Bell className="w-4 h-4" />
+                          Admin Comms
+                          {adminFeedbackCount > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                              {adminFeedbackCount > 9 ? '9+' : adminFeedbackCount}
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Admin Page */}
+                        <button
+                          onClick={() => {
+                            window.open('/admin', '_blank')
+                            setShowUserMenu(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          Admin Page
+                        </button>
+
+                        {/* Edit Welcome Message */}
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false)
+                            // Trigger the AdminNavToggle modal
+                            const adminButton = document.querySelector('[data-admin-nav-toggle]') as HTMLButtonElement
+                            if (adminButton) adminButton.click()
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Edit Welcome Message
+                        </button>
+                      </>
+                    )}
+
+                    <div className="border-t border-border my-2"></div>
+
                     <button
                       onClick={() => {
                         handleSignOut()
@@ -2983,44 +3036,13 @@ ${message.content}
                 </div>
               )}
             </div>
-            
-            {/* Admin Communications Button - Only visible to admin users */}
-            {userPermissions.includes('admin') && (
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAdminCommunications(true)}
-                  className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 hover:text-purple-800"
-                >
-                  <Bell className="w-4 h-4" />
-                  <span className="hidden sm:inline">Admin Comms</span>
-                  {adminFeedbackCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {adminFeedbackCount > 9 ? '9+' : adminFeedbackCount}
-                    </span>
-                  )}
-                </Button>
-              </div>
-            )}
-            
-            {/* Admin Button - Only visible to admin users */}
-            {userPermissions.includes('admin') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open('/admin', '_blank')}
-                className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 hover:text-purple-800"
-              >
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin Page</span>
-              </Button>
-            )}
-            
+
             <ThemeToggle />
-            
-            {/* Admin Controls - Only visible to admin users */}
-            <AdminNavToggle userEmail={userEmail} isAdmin={userPermissions.includes('admin')} />
+
+            {/* Admin Controls - Hidden, but still rendered for the Edit Welcome Message functionality */}
+            <div className="hidden">
+              <AdminNavToggle userEmail={userEmail} isAdmin={userPermissions.includes('admin')} />
+            </div>
             
             {/* Recording Status Indicator */}
             {isListening && (

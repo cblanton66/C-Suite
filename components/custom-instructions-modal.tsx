@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { X } from "lucide-react"
+import { toast } from "sonner"
 
 interface CustomInstructionsModalProps {
   isOpen: boolean
@@ -58,14 +59,14 @@ export function CustomInstructionsModal({ isOpen, onClose, userEmail }: CustomIn
       })
 
       if (response.ok) {
-        alert('Custom instructions saved successfully!')
+        toast.success('Custom instructions saved successfully!')
         onClose()
       } else {
-        alert('Failed to save custom instructions')
+        toast.error('Failed to save custom instructions')
       }
     } catch (error) {
       console.error('Error saving custom instructions:', error)
-      alert('Failed to save custom instructions')
+      toast.error('Failed to save custom instructions')
     } finally {
       setSaving(false)
     }

@@ -99,6 +99,7 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
             onClick={openMessageModal}
             disabled={updating}
             className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700"
+            data-admin-nav-toggle
           >
             <MessageSquareText className="w-4 h-4" />
           </Button>

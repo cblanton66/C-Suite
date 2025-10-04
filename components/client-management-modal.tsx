@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 import {
   X,
   Search,
@@ -107,14 +108,15 @@ export function ClientManagementModal({
       const data = await response.json()
 
       if (data.success) {
+        toast.success('Client created successfully!')
         await fetchClients()
         setShowNewClientModal(false)
       } else {
-        alert(data.error || 'Failed to create client')
+        toast.error(data.error || 'Failed to create client')
       }
     } catch (error) {
       console.error('Error creating client:', error)
-      alert('Failed to create client')
+      toast.error('Failed to create client')
     }
   }
 
@@ -133,15 +135,16 @@ export function ClientManagementModal({
       const data = await response.json()
 
       if (data.success) {
+        toast.success('Client updated successfully!')
         await fetchClients()
         setShowClientDetail(false)
         setSelectedClient(null)
       } else {
-        alert(data.error || 'Failed to update client')
+        toast.error(data.error || 'Failed to update client')
       }
     } catch (error) {
       console.error('Error updating client:', error)
-      alert('Failed to update client')
+      toast.error('Failed to update client')
     }
   }
 
@@ -159,15 +162,16 @@ export function ClientManagementModal({
       const data = await response.json()
 
       if (data.success) {
+        toast.success('Client deleted successfully!')
         await fetchClients()
         setShowClientDetail(false)
         setSelectedClient(null)
       } else {
-        alert(data.error || 'Failed to delete client')
+        toast.error(data.error || 'Failed to delete client')
       }
     } catch (error) {
       console.error('Error deleting client:', error)
-      alert('Failed to delete client')
+      toast.error('Failed to delete client')
     }
   }
 
@@ -354,7 +358,7 @@ function NewClientModal({
 
   const handleSubmit = () => {
     if (!formData.clientName.trim()) {
-      alert('Client name is required')
+      toast.error('Client name is required')
       return
     }
     onCreate(formData)
@@ -570,7 +574,7 @@ function ClientDetailModal({
       const thread = projects.find((p: any) => p.threadId === threadId)
       if (!thread) {
         console.error('[ClientDetailModal] Thread not found in projects list')
-        alert('Thread not found')
+        toast.error('Thread not found')
         return
       }
 
@@ -602,11 +606,11 @@ function ClientDetailModal({
       } else {
         const errorText = await response.text()
         console.error('[ClientDetailModal] Failed to load thread:', errorText)
-        alert(`Failed to load thread conversation: ${errorText}`)
+        toast.error(`Failed to load thread conversation: ${errorText}`)
       }
     } catch (error) {
       console.error('[ClientDetailModal] Error loading thread:', error)
-      alert('Failed to load thread')
+      toast.error('Failed to load thread')
     }
   }
 
@@ -638,7 +642,7 @@ function ClientDetailModal({
 
   const handleCopyNote = () => {
     navigator.clipboard.writeText(noteContent)
-    alert('Note content copied to clipboard!')
+    toast.success('Note content copied to clipboard!')
   }
 
   const handleCloseNote = () => {
