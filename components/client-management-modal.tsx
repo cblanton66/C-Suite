@@ -509,7 +509,7 @@ function ClientDetailModal({
     if (activeTab === 'reports') {
       fetchReports()
     }
-  }, [activeTab])
+  }, [activeTab, showArchived])
 
   const fetchProjects = async () => {
     setLoading(true)
@@ -554,9 +554,11 @@ function ClientDetailModal({
   const fetchReports = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}`)
+      const includeArchived = showArchived ? 'true' : 'false'
+      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=${includeArchived}`)
       const data = await response.json()
       const clientReports = data.reports?.filter((r: any) => r.clientName === client.clientName) || []
+
       setReports(clientReports)
     } catch (error) {
       console.error('Error fetching reports:', error)
@@ -952,7 +954,18 @@ function ClientDetailModal({
 
           {activeTab === 'reports' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Shared Reports ({reports.length})</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  {showArchived ? 'All Reports' : 'Active Reports'} ({reports.length})
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                >
+                  {showArchived ? 'Hide Archive' : 'Show Archive'}
+                </Button>
+              </div>
 
               {loading ? (
                 <div className="text-center py-12">
@@ -981,6 +994,11 @@ function ClientDetailModal({
                             {report.hasResponse && (
                               <span className="px-2 py-1 bg-green-600 text-white rounded text-xs">
                                 Has Response
+                              </span>
+                            )}
+                            {report.isActive === 'FALSE' && (
+                              <span className="px-2 py-1 bg-gray-500 text-white rounded text-xs">
+                                Archived
                               </span>
                             )}
                           </div>

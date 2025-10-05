@@ -7,18 +7,24 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const userEmail = request.nextUrl.searchParams.get('userEmail')
+    const includeArchived = request.nextUrl.searchParams.get('includeArchived') === 'true'
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
     // Query reports from Supabase
-    const { data: reports, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('report_links')
       .select('*')
       .eq('created_by', userEmail)
-      .eq('is_active', true)
-      .order('created_date', { ascending: false })
+
+    // Only filter by is_active if we're not including archived reports
+    if (!includeArchived) {
+      query = query.eq('is_active', true)
+    }
+
+    const { data: reports, error } = await query.order('created_date', { ascending: false })
 
     if (error) {
       console.error('[MY_REPORTS GET] Supabase error:', error)
