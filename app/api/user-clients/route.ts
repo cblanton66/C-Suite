@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
 
     const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Query clients from Supabase where user is the owner
+    // Query clients from Supabase where user is the owner OR the client is shared with them
     let query = supabaseAdmin
       .from('clients')
       .select('*')
-      .eq('user_email', owner)
+      .or(`user_email.eq.${owner},shared_with.eq.${userEmail.toLowerCase()}`)
       .eq('status', 'Active')
 
     if (recentOnly) {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       status: client.status,
       workspaceOwner: client.user_email,
       createdBy: client.user_email,
-      sharedWith: '',
+      sharedWith: client.shared_with || '',
       dateAdded: client.created_at,
     }))
 
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         status: data.status,
         workspaceOwner: data.user_email,
         createdBy: data.user_email,
-        sharedWith: '',
+        sharedWith: data.shared_with || '',
         dateAdded: data.created_at,
       },
     })
@@ -241,7 +241,7 @@ export async function PUT(request: NextRequest) {
         status: data.status,
         workspaceOwner: data.user_email,
         createdBy: data.user_email,
-        sharedWith: '',
+        sharedWith: data.shared_with || '',
         dateAdded: data.created_at,
       },
     })
