@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import {
   X,
@@ -516,6 +517,9 @@ function ClientDetailModal({
   const [selectedNote, setSelectedNote] = useState<any>(null)
   const [noteContent, setNoteContent] = useState('')
   const [loadingNote, setLoadingNote] = useState(false)
+  const [isEditingNote, setIsEditingNote] = useState(false)
+  const [editedNoteContent, setEditedNoteContent] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
 
   const handleSave = () => {
     onUpdate(formData)
@@ -682,6 +686,49 @@ function ClientDetailModal({
   const handleCloseNote = () => {
     setSelectedNote(null)
     setNoteContent('')
+    setIsEditingNote(false)
+    setEditedNoteContent('')
+  }
+
+  const handleEditNote = () => {
+    setEditedNoteContent(noteContent)
+    setIsEditingNote(true)
+  }
+
+  const handleCancelEditNote = () => {
+    setIsEditingNote(false)
+    setEditedNoteContent('')
+  }
+
+  const handleSaveNote = async () => {
+    if (!selectedNote) return
+
+    setSavingNote(true)
+    try {
+      const response = await fetch('/api/save-private-note', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: selectedNote.name,
+          content: editedNoteContent,
+          userEmail,
+          workspaceOwner
+        })
+      })
+
+      if (response.ok) {
+        setNoteContent(editedNoteContent)
+        setIsEditingNote(false)
+        toast.success('Note updated successfully!')
+      } else {
+        toast.error('Failed to save note')
+      }
+    } catch (error) {
+      console.error('Error saving note:', error)
+      toast.error('Failed to save note')
+    } finally {
+      setSavingNote(false)
+    }
   }
 
   return (
@@ -1053,10 +1100,37 @@ function ClientDetailModal({
             <div className="p-6 border-b flex items-center justify-between">
               <h2 className="text-xl font-semibold">{selectedNote.title || 'Note'}</h2>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopyNote}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </Button>
+                {isEditingNote ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSaveNote}
+                      disabled={savingNote}
+                    >
+                      {savingNote ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEditNote}
+                      disabled={savingNote}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleEditNote}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopyNote}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                  </>
+                )}
                 <Button variant="ghost" size="sm" onClick={handleCloseNote}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -1067,6 +1141,13 @@ function ClientDetailModal({
                 <div className="text-center py-12">
                   <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
+              ) : isEditingNote ? (
+                <Textarea
+                  value={editedNoteContent}
+                  onChange={(e) => setEditedNoteContent(e.target.value)}
+                  className="w-full h-full min-h-[400px] font-mono text-sm resize-none"
+                  placeholder="Enter note content..."
+                />
               ) : (
                 <div className="prose prose-invert max-w-none">
                   <pre className="whitespace-pre-wrap font-sans text-sm">{noteContent}</pre>
