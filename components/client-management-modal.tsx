@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 
 interface Client {
+  id?: string
   clientName: string
   email: string
   phone: string
@@ -34,7 +35,7 @@ interface Client {
   status: string
   workspaceOwner: string
   createdBy: string
-  sharedWith: string
+  sharedWith: string[] | string
   dateAdded: string
 }
 
@@ -506,7 +507,7 @@ function ClientDetailModal({
   onLoadThread?: (messages: any[], threadData: { threadId: string; filePath: string; metadata: any }) => void
   onEditContent?: (reportId: string) => void
 }) {
-  const [activeTab, setActiveTab] = useState<'info' | 'projects' | 'notes' | 'reports'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'projects' | 'notes' | 'reports' | 'sharing'>('info')
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(client)
   const [projects, setProjects] = useState<any[]>([])
@@ -520,6 +521,8 @@ function ClientDetailModal({
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [editedNoteContent, setEditedNoteContent] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+  const [newShareEmail, setNewShareEmail] = useState('')
+  const [addingShare, setAddingShare] = useState(false)
 
   const handleSave = () => {
     onUpdate(formData)
@@ -550,9 +553,11 @@ function ClientDetailModal({
   const fetchProjects = async () => {
     setLoading(true)
     try {
-      console.log('[ClientDetailModal] Fetching projects for client:', client.clientName)
+      // Use client.workspaceOwner (the actual owner) instead of workspaceOwner (current user)
+      const clientOwner = client.workspaceOwner || workspaceOwner
+      console.log('[ClientDetailModal] Fetching projects for client:', client.clientName, 'owner:', clientOwner)
       const response = await fetch(
-        `/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(workspaceOwner)}&includeArchive=${showArchived}`
+        `/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchive=${showArchived}`
       )
       const data = await response.json()
       console.log('[ClientDetailModal] API response:', data)
@@ -572,9 +577,11 @@ function ClientDetailModal({
     setLoading(true)
     try {
       const clientSlug = client.clientName.toLowerCase().replace(/\s+/g, '-')
-      console.log('[ClientDetailModal] Fetching notes for client slug:', clientSlug)
+      // Use client.workspaceOwner (the actual owner) instead of workspaceOwner (current user)
+      const clientOwner = client.workspaceOwner || workspaceOwner
+      console.log('[ClientDetailModal] Fetching notes for client slug:', clientSlug, 'owner:', clientOwner)
       const response = await fetch(
-        `/api/list-files?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(workspaceOwner)}&folder=client-files/${clientSlug}/notes`
+        `/api/list-files?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&folder=client-files/${clientSlug}/notes`
       )
       const data = await response.json()
       console.log('[ClientDetailModal] Notes response:', data)
@@ -731,6 +738,64 @@ function ClientDetailModal({
     }
   }
 
+  const handleAddShare = async () => {
+    if (!newShareEmail.trim() || !client.id) return
+
+    setAddingShare(true)
+    try {
+      const response = await fetch('/api/client-shares', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: client.id,
+          sharedWithEmail: newShareEmail.trim(),
+          sharedByEmail: userEmail
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(`Client shared with ${newShareEmail}`)
+        setNewShareEmail('')
+        // Update the client's sharedWith array
+        const currentSharedWith = Array.isArray(client.sharedWith) ? client.sharedWith : []
+        onUpdate({ ...client, sharedWith: [...currentSharedWith, newShareEmail.trim().toLowerCase()] })
+      } else {
+        toast.error(data.error || 'Failed to share client')
+      }
+    } catch (error) {
+      console.error('Error sharing client:', error)
+      toast.error('Failed to share client')
+    } finally {
+      setAddingShare(false)
+    }
+  }
+
+  const handleRemoveShare = async (emailToRemove: string) => {
+    if (!client.id) return
+
+    try {
+      const response = await fetch(
+        `/api/client-shares?clientId=${encodeURIComponent(client.id)}&sharedWithEmail=${encodeURIComponent(emailToRemove)}&userEmail=${encodeURIComponent(userEmail)}`,
+        { method: 'DELETE' }
+      )
+
+      if (response.ok) {
+        toast.success(`Removed share with ${emailToRemove}`)
+        // Update the client's sharedWith array
+        const currentSharedWith = Array.isArray(client.sharedWith) ? client.sharedWith : []
+        onUpdate({ ...client, sharedWith: currentSharedWith.filter(email => email !== emailToRemove) })
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to remove share')
+      }
+    } catch (error) {
+      console.error('Error removing share:', error)
+      toast.error('Failed to remove share')
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
@@ -820,6 +885,19 @@ function ClientDetailModal({
               Reports
               <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
                 {reports.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('sharing')}
+              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                activeTab === 'sharing'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Sharing
+              <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
+                {Array.isArray(client.sharedWith) ? client.sharedWith.length : 0}
               </span>
             </button>
           </div>
@@ -1088,6 +1166,72 @@ function ClientDetailModal({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'sharing' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Share Client Access</h3>
+
+              <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-200">
+                  Share this client with other users to give them full access to view and edit client information, notes, projects, and reports.
+                </p>
+              </div>
+
+              {/* Add new share */}
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="Enter email address to share with..."
+                  value={newShareEmail}
+                  onChange={(e) => setNewShareEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddShare()
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleAddShare}
+                  disabled={!newShareEmail.trim() || addingShare}
+                >
+                  {addingShare ? 'Adding...' : 'Share'}
+                </Button>
+              </div>
+
+              {/* List of current shares */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Shared With</h4>
+                {Array.isArray(client.sharedWith) && client.sharedWith.length > 0 ? (
+                  <div className="space-y-2">
+                    {client.sharedWith.map((email: string) => (
+                      <div
+                        key={email}
+                        className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span>{email}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveShare(email)}
+                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>This client is not shared with anyone</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

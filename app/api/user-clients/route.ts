@@ -33,36 +33,102 @@ export async function GET(request: NextRequest) {
 
     const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Query clients from Supabase where user is the owner OR the client is shared with them
-    let query = supabaseAdmin
+    // First, get clients owned by the user
+    let ownedQuery = supabaseAdmin
       .from('clients')
       .select('*')
-      .or(`user_email.eq.${owner},shared_with.eq.${userEmail.toLowerCase()}`)
+      .eq('user_email', owner)
       .eq('status', 'Active')
 
     if (recentOnly) {
-      // Get only recently accessed clients (limit 10, ordered by last_accessed)
-      query = query
+      ownedQuery = ownedQuery
         .not('last_accessed', 'is', null)
         .order('last_accessed', { ascending: false })
         .limit(10)
     } else {
-      // Get all clients ordered by name
-      query = query.order('client_name', { ascending: true })
+      ownedQuery = ownedQuery.order('client_name', { ascending: true })
     }
 
-    const { data: clients, error } = await query
+    const { data: ownedClients, error: ownedError } = await ownedQuery
 
-    if (error) {
-      console.error('[user-clients GET] Supabase error:', error)
+    if (ownedError) {
+      console.error('[user-clients GET] Owned clients error:', ownedError)
       return NextResponse.json(
-        { error: 'Failed to fetch clients' },
+        { error: 'Failed to fetch owned clients' },
         { status: 500 }
       )
     }
 
+    // Then, get clients shared with the user via client_shares table
+    const { data: sharedClientIds, error: sharesError } = await supabaseAdmin
+      .from('client_shares')
+      .select('client_id')
+      .eq('shared_with_email', userEmail.toLowerCase())
+
+    if (sharesError) {
+      console.error('[user-clients GET] Shared clients error:', sharesError)
+      return NextResponse.json(
+        { error: 'Failed to fetch shared clients' },
+        { status: 500 }
+      )
+    }
+
+    let sharedClients = []
+    if (sharedClientIds && sharedClientIds.length > 0) {
+      const clientIds = sharedClientIds.map(s => s.client_id)
+
+      let sharedQuery = supabaseAdmin
+        .from('clients')
+        .select('*')
+        .in('id', clientIds)
+        .eq('status', 'Active')
+
+      if (recentOnly) {
+        sharedQuery = sharedQuery
+          .not('last_accessed', 'is', null)
+          .order('last_accessed', { ascending: false })
+      } else {
+        sharedQuery = sharedQuery.order('client_name', { ascending: true })
+      }
+
+      const { data, error } = await sharedQuery
+
+      if (error) {
+        console.error('[user-clients GET] Error fetching shared client details:', error)
+      } else {
+        sharedClients = data || []
+      }
+    }
+
+    // Combine owned and shared clients
+    const allClients = [...(ownedClients || []), ...sharedClients]
+
+    // Sort by client_name if not recentOnly
+    if (!recentOnly) {
+      allClients.sort((a, b) => a.client_name.localeCompare(b.client_name))
+    }
+
+    // Get share information for all clients
+    const clientIds = allClients.map(c => c.id)
+    const { data: allShares } = await supabaseAdmin
+      .from('client_shares')
+      .select('client_id, shared_with_email')
+      .in('client_id', clientIds)
+
+    // Create a map of client_id to shared users
+    const sharesMap = new Map()
+    if (allShares) {
+      allShares.forEach(share => {
+        if (!sharesMap.has(share.client_id)) {
+          sharesMap.set(share.client_id, [])
+        }
+        sharesMap.get(share.client_id).push(share.shared_with_email)
+      })
+    }
+
     // Map to match expected format
-    const formattedClients = clients.map(client => ({
+    const formattedClients = allClients.map(client => ({
+      id: client.id,
       clientName: client.client_name,
       email: client.email || '',
       phone: client.phone || '',
@@ -71,7 +137,7 @@ export async function GET(request: NextRequest) {
       status: client.status,
       workspaceOwner: client.user_email,
       createdBy: client.user_email,
-      sharedWith: client.shared_with || '',
+      sharedWith: sharesMap.get(client.id) || [],
       dateAdded: client.created_at,
     }))
 
@@ -164,6 +230,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       client: {
+        id: data.id,
         clientName: data.client_name,
         email: data.email || '',
         phone: data.phone || '',
@@ -172,7 +239,7 @@ export async function POST(request: NextRequest) {
         status: data.status,
         workspaceOwner: data.user_email,
         createdBy: data.user_email,
-        sharedWith: data.shared_with || '',
+        sharedWith: [],
         dateAdded: data.created_at,
       },
     })
@@ -230,9 +297,18 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Get share information for this client
+    const { data: shares } = await supabaseAdmin
+      .from('client_shares')
+      .select('shared_with_email')
+      .eq('client_id', data.id)
+
+    const sharedWith = shares ? shares.map(s => s.shared_with_email) : []
+
     return NextResponse.json({
       success: true,
       client: {
+        id: data.id,
         clientName: data.client_name,
         email: data.email || '',
         phone: data.phone || '',
@@ -241,7 +317,7 @@ export async function PUT(request: NextRequest) {
         status: data.status,
         workspaceOwner: data.user_email,
         createdBy: data.user_email,
-        sharedWith: data.shared_with || '',
+        sharedWith: sharedWith,
         dateAdded: data.created_at,
       },
     })
