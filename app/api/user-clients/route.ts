@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     const userEmail = request.nextUrl.searchParams.get('userEmail')
     const workspaceOwner = request.nextUrl.searchParams.get('workspaceOwner')
+    const recentOnly = request.nextUrl.searchParams.get('recentOnly') === 'true'
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
@@ -33,12 +34,24 @@ export async function GET(request: NextRequest) {
     const owner = (workspaceOwner || userEmail).toLowerCase()
 
     // Query clients from Supabase where user is the owner
-    const { data: clients, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('clients')
       .select('*')
       .eq('user_email', owner)
       .eq('status', 'Active')
-      .order('client_name', { ascending: true })
+
+    if (recentOnly) {
+      // Get only recently accessed clients (limit 10, ordered by last_accessed)
+      query = query
+        .not('last_accessed', 'is', null)
+        .order('last_accessed', { ascending: false })
+        .limit(10)
+    } else {
+      // Get all clients ordered by name
+      query = query.order('client_name', { ascending: true })
+    }
+
+    const { data: clients, error } = await query
 
     if (error) {
       console.error('[user-clients GET] Supabase error:', error)
@@ -286,6 +299,46 @@ export async function DELETE(request: NextRequest) {
     console.error('[user-clients DELETE] Error:', error)
     return NextResponse.json(
       { error: 'Failed to delete client' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Update last_accessed timestamp
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { clientName, userEmail, workspaceOwner } = body
+
+    if (!clientName || !userEmail) {
+      return NextResponse.json(
+        { error: 'Client name and user email are required' },
+        { status: 400 }
+      )
+    }
+
+    const owner = (workspaceOwner || userEmail).toLowerCase()
+
+    // Update last_accessed timestamp
+    const { error } = await supabaseAdmin
+      .from('clients')
+      .update({ last_accessed: new Date().toISOString() })
+      .eq('user_email', owner)
+      .eq('client_name', clientName)
+
+    if (error) {
+      console.error('[user-clients PATCH] Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update last accessed time' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('[user-clients PATCH] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update last accessed time' },
       { status: 500 }
     )
   }

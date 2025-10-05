@@ -73,11 +73,14 @@ export function ClientManagementModal({
     }
   }, [isOpen, userEmail, workspaceOwner])
 
+  // Fetch clients based on search state
   const fetchClients = async () => {
     try {
       setLoading(true)
+      // If searching, get all clients; otherwise get only recent
+      const recentOnly = !searchTerm.trim()
       const response = await fetch(
-        `/api/user-clients?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(workspaceOwner)}`
+        `/api/user-clients?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(workspaceOwner)}&recentOnly=${recentOnly}`
       )
       const data = await response.json()
 
@@ -91,6 +94,16 @@ export function ClientManagementModal({
       setLoading(false)
     }
   }
+
+  // Refetch when search term changes
+  useEffect(() => {
+    if (isOpen) {
+      const timeoutId = setTimeout(() => {
+        fetchClients()
+      }, 300) // Debounce search
+      return () => clearTimeout(timeoutId)
+    }
+  }, [searchTerm])
 
 
   const handleCreateClient = async (clientData: Partial<Client>) => {
@@ -175,11 +188,15 @@ export function ClientManagementModal({
     }
   }
 
-  const filteredClients = clients.filter(client =>
-    client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.industry.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Filter clients on frontend only when searching
+  // (API already returns recent-only when not searching)
+  const filteredClients = searchTerm.trim()
+    ? clients.filter(client =>
+        client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.industry.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : clients
 
   if (!isOpen) return null
 
@@ -223,7 +240,7 @@ export function ClientManagementModal({
             <div>
               <h2 className="text-lg font-semibold">Client Management</h2>
               <p className="text-sm text-muted-foreground">
-                {clients.length} {clients.length === 1 ? 'client' : 'clients'}
+                {searchTerm.trim() ? 'All Clients' : 'Recently Accessed'} • {clients.length} {clients.length === 1 ? 'client' : 'clients'}
               </p>
             </div>
           </div>
@@ -285,9 +302,24 @@ export function ClientManagementModal({
                   <Card
                     key={client.clientName}
                     className="p-4 hover:shadow-lg transition-all cursor-pointer bg-gray-800/50 dark:bg-gray-800/50 border-gray-700 dark:border-gray-700"
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedClient(client)
                       setShowClientDetail(true)
+
+                      // Update last_accessed timestamp
+                      try {
+                        await fetch('/api/user-clients', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            clientName: client.clientName,
+                            userEmail,
+                            workspaceOwner
+                          })
+                        })
+                      } catch (error) {
+                        console.error('Failed to update last accessed:', error)
+                      }
                     }}
                   >
                     <div className="flex items-start justify-between">
