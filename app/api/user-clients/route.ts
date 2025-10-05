@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { google } from 'googleapis'
+import { supabaseAdmin } from '@/lib/supabase'
 import { Storage } from '@google-cloud/storage'
 
 export const runtime = 'nodejs'
@@ -20,36 +20,6 @@ async function getGoogleCloudStorage() {
   return storage.bucket('peaksuite-files')
 }
 
-interface ClientData {
-  clientName: string
-  email: string
-  phone: string
-  address: string
-  industry: string
-  status: string
-  workspaceOwner: string
-  createdBy: string
-  sharedWith: string
-  dateAdded: string
-}
-
-async function getGoogleSheetsClient() {
-  if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
-    throw new Error('Google Sheets configuration missing')
-  }
-
-  const credentials = JSON.parse(
-    Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8')
-  )
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  })
-
-  return google.sheets({ version: 'v4', auth })
-}
-
 // GET - Fetch all clients for a user
 export async function GET(request: NextRequest) {
   try {
@@ -60,53 +30,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
-    const sheets = await getGoogleSheetsClient()
+    const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Get all data from UserClients sheet
-    // Columns: A=Client Name, B=Email, C=Phone, D=Address, E=Industry, F=Status,
-    //          G=Workspace Owner, H=Created By, I=Shared With, J=Date Added
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'UserClients!A:J',
-    })
+    // Query clients from Supabase where user is the owner
+    const { data: clients, error } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .eq('user_email', owner)
+      .eq('status', 'Active')
+      .order('client_name', { ascending: true })
 
-    const rows = response.data.values
-    if (!rows || rows.length <= 1) {
-      return NextResponse.json({ clients: [] })
+    if (error) {
+      console.error('[user-clients GET] Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch clients' },
+        { status: 500 }
+      )
     }
 
-    const owner = workspaceOwner || userEmail
+    // Map to match expected format
+    const formattedClients = clients.map(client => ({
+      clientName: client.client_name,
+      email: client.email || '',
+      phone: client.phone || '',
+      address: client.address || '',
+      industry: client.industry || '',
+      status: client.status,
+      workspaceOwner: client.user_email,
+      createdBy: client.user_email,
+      sharedWith: '',
+      dateAdded: client.created_at,
+    }))
 
-    // Filter clients where user is workspace owner OR in sharedWith
-    const userClients = rows
-      .slice(1) // Skip header row
-      .filter(row => {
-        const rowWorkspaceOwner = row[6] || '' // Column G
-        const rowSharedWith = row[8] || '' // Column I
-        const status = row[5] || 'Active' // Column F
-
-        // Show if Active AND (owner OR shared with user)
-        return (
-          status === 'Active' &&
-          (rowWorkspaceOwner === owner || rowSharedWith.includes(userEmail))
-        )
-      })
-      .map(row => ({
-        clientName: row[0] || '',
-        email: row[1] || '',
-        phone: row[2] || '',
-        address: row[3] || '',
-        industry: row[4] || '',
-        status: row[5] || 'Active',
-        workspaceOwner: row[6] || '',
-        createdBy: row[7] || '',
-        sharedWith: row[8] || '',
-        dateAdded: row[9] || new Date().toISOString(),
-      }))
-
-    return NextResponse.json({ success: true, clients: userClients })
+    return NextResponse.json({ success: true, clients: formattedClients })
   } catch (error) {
-    console.error('Error fetching clients:', error)
+    console.error('[user-clients GET] Error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch clients' },
       { status: 500 }
@@ -127,51 +85,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const sheets = await getGoogleSheetsClient()
-    const owner = workspaceOwner || userEmail
+    const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Check if client already exists for this workspace
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'UserClients!A:J',
-    })
+    // Insert new client into Supabase
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .insert({
+        user_email: owner,
+        client_name: clientName,
+        company: clientName, // Use client name as company for now
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        industry: industry || null,
+        status: 'Active'
+      })
+      .select()
+      .single()
 
-    const rows = response.data.values || []
-
-    // Check for duplicate (same client name and workspace owner)
-    const duplicate = rows.slice(1).find(row =>
-      row[0] === clientName && row[6] === owner
-    )
-
-    if (duplicate) {
+    if (error) {
+      if (error.code === '23505') { // Unique constraint violation
+        return NextResponse.json(
+          { error: 'Client already exists' },
+          { status: 400 }
+        )
+      }
+      console.error('[user-clients POST] Supabase error:', error)
       return NextResponse.json(
-        { error: 'Client already exists' },
-        { status: 400 }
+        { error: 'Failed to create client' },
+        { status: 500 }
       )
     }
-
-    // Append new client row
-    const newRow = [
-      clientName,
-      email || '',
-      phone || '',
-      address || '',
-      industry || '',
-      'Active',
-      owner,
-      userEmail,
-      '', // sharedWith - empty initially
-      new Date().toISOString(),
-    ]
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'UserClients!A:J',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [newRow],
-      },
-    })
 
     // Create folder structure in Google Cloud Storage
     try {
@@ -198,30 +142,29 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.log(`[user-clients] Created folder structure for client: ${clientName} (${clientSlug})`)
+      console.log(`[user-clients POST] Created folder structure for client: ${clientName}`)
     } catch (storageError) {
-      console.error('[user-clients] Error creating GCS folders:', storageError)
+      console.error('[user-clients POST] Error creating GCS folders:', storageError)
       // Don't fail the entire request if folder creation fails
-      // The client is still created in the database
     }
 
     return NextResponse.json({
       success: true,
       client: {
-        clientName,
-        email: email || '',
-        phone: phone || '',
-        address: address || '',
-        industry: industry || '',
-        status: 'Active',
-        workspaceOwner: owner,
-        createdBy: userEmail,
+        clientName: data.client_name,
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+        industry: data.industry || '',
+        status: data.status,
+        workspaceOwner: data.user_email,
+        createdBy: data.user_email,
         sharedWith: '',
-        dateAdded: new Date().toISOString(),
+        dateAdded: data.created_at,
       },
     })
   } catch (error) {
-    console.error('Error creating client:', error)
+    console.error('[user-clients POST] Error:', error)
     return NextResponse.json(
       { error: 'Failed to create client' },
       { status: 500 }
@@ -233,7 +176,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { clientName, email, phone, address, industry, status, sharedWith, userEmail, workspaceOwner } = body
+    const { clientName, email, phone, address, industry, status, userEmail, workspaceOwner } = body
 
     if (!clientName || !userEmail) {
       return NextResponse.json(
@@ -242,69 +185,55 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const sheets = await getGoogleSheetsClient()
-    const owner = workspaceOwner || userEmail
+    const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Find the row to update
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'UserClients!A:J',
-    })
+    // Update client in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .update({
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        industry: industry || null,
+        status: status || 'Active'
+      })
+      .eq('user_email', owner)
+      .eq('client_name', clientName)
+      .select()
+      .single()
 
-    const rows = response.data.values || []
-    const rowIndex = rows.findIndex((row, index) =>
-      index > 0 && row[0] === clientName && row[6] === owner
-    )
+    if (error) {
+      console.error('[user-clients PUT] Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update client' },
+        { status: 500 }
+      )
+    }
 
-    if (rowIndex === -1) {
+    if (!data) {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       )
     }
 
-    // Update the row (keep original dateAdded and createdBy)
-    const originalRow = rows[rowIndex]
-    const updatedRow = [
-      clientName,
-      email || originalRow[1] || '',
-      phone || originalRow[2] || '',
-      address || originalRow[3] || '',
-      industry || originalRow[4] || '',
-      status || originalRow[5] || 'Active',
-      owner,
-      originalRow[7] || userEmail, // Keep original createdBy
-      sharedWith || originalRow[8] || '',
-      originalRow[9] || new Date().toISOString(), // Keep original dateAdded
-    ]
-
-    // Update the specific row (rowIndex + 1 because sheets are 1-indexed)
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: `UserClients!A${rowIndex + 1}:J${rowIndex + 1}`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [updatedRow],
-      },
-    })
-
     return NextResponse.json({
       success: true,
       client: {
-        clientName,
-        email: updatedRow[1],
-        phone: updatedRow[2],
-        address: updatedRow[3],
-        industry: updatedRow[4],
-        status: updatedRow[5],
-        workspaceOwner: updatedRow[6],
-        createdBy: updatedRow[7],
-        sharedWith: updatedRow[8],
-        dateAdded: updatedRow[9],
+        clientName: data.client_name,
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+        industry: data.industry || '',
+        status: data.status,
+        workspaceOwner: data.user_email,
+        createdBy: data.user_email,
+        sharedWith: '',
+        dateAdded: data.created_at,
       },
     })
   } catch (error) {
-    console.error('Error updating client:', error)
+    console.error('[user-clients PUT] Error:', error)
     return NextResponse.json(
       { error: 'Failed to update client' },
       { status: 500 }
@@ -327,40 +256,34 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const sheets = await getGoogleSheetsClient()
-    const owner = workspaceOwner || userEmail
+    const owner = (workspaceOwner || userEmail).toLowerCase()
 
-    // Find the row
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'UserClients!A:J',
-    })
+    // Soft delete - update status to Inactive
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .update({ status: 'Inactive' })
+      .eq('user_email', owner)
+      .eq('client_name', clientName)
+      .select()
 
-    const rows = response.data.values || []
-    const rowIndex = rows.findIndex((row, index) =>
-      index > 0 && row[0] === clientName && row[6] === owner
-    )
+    if (error) {
+      console.error('[user-clients DELETE] Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete client' },
+        { status: 500 }
+      )
+    }
 
-    if (rowIndex === -1) {
+    if (!data || data.length === 0) {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       )
     }
 
-    // Update status to Inactive
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: `UserClients!F${rowIndex + 1}`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [['Inactive']],
-      },
-    })
-
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting client:', error)
+    console.error('[user-clients DELETE] Error:', error)
     return NextResponse.json(
       { error: 'Failed to delete client' },
       { status: 500 }

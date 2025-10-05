@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Building2, Mail, CheckCircle, X } from "lucide-react"
+import { toast } from "sonner"
 
 interface ExclusiveWaitlistModalProps {
   isOpen: boolean
@@ -84,17 +85,20 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
-            firstName, 
-            lastName, 
-            industry: finalIndustry, 
-            companyName, 
-            email, 
-            phoneNumber 
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            industry: finalIndustry,
+            companyName,
+            email,
+            phoneNumber
           }),
         })
 
+        const data = await response.json()
+
         if (response.ok) {
+          toast.success('Successfully added to waitlist!')
           setSubmitted(true)
           setTimeout(() => {
             setSubmitted(false)
@@ -108,10 +112,12 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
             onClose()
           }, 2000)
         } else {
-          console.error('Failed to submit to waitlist')
+          console.error('Failed to submit to waitlist:', data)
+          toast.error(data.error || 'Failed to submit to waitlist')
         }
       } catch (error) {
         console.error('Error submitting to waitlist:', error)
+        toast.error('Failed to submit to waitlist. Please try again.')
       } finally {
         setIsSubmitting(false)
       }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { google } from 'googleapis'
 import { nanoid } from 'nanoid'
 import { Storage } from '@google-cloud/storage'
+import { supabaseAdmin } from '@/lib/supabase'
 
 async function getGoogleCloudStorage() {
   if (!process.env.GOOGLE_CREDENTIALS) {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
     }
 
-    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
-      return NextResponse.json({ error: 'Google Sheets configuration missing' }, { status: 500 })
+    if (!process.env.GOOGLE_CREDENTIALS) {
+      return NextResponse.json({ error: 'Google Cloud configuration missing' }, { status: 500 })
     }
 
     // Generate unique report ID
@@ -69,62 +69,47 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Decode the base64 credentials for Google Sheets
-    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
-    
-    // Initialize Google Sheets API
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    })
-
-    const sheets = google.sheets({ version: 'v4', auth })
-
     // Generate the shareable URL using request headers for proper domain detection
     const protocol = request.headers.get('x-forwarded-proto') || 'https'
     const host = request.headers.get('host')
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
     const shareableUrl = `${baseUrl}/reports/${reportId}`
 
-    // Prepare the data to append (store content path instead of full content)
+    // Insert into Supabase
     const timestamp = new Date().toISOString()
-    const chartDataString = chartData ? JSON.stringify(chartData) : ''
-    const reportAttachmentsString = reportAttachments.length > 0 ? JSON.stringify(reportAttachments) : ''
-    const values = [[
-      reportId,
-      title,
-      contentPath, // Store file path instead of content
-      chartDataString,
-      timestamp, // createdDate
-      reportUserEmail, // createdBy - now dynamic based on logged-in user
-      clientName || '',
-      clientEmail || '',
-      expiresAt || '', // expiresAt (optional)
-      'TRUE', // isActive
-      '0', // viewCount
-      '', // lastViewed
-      description || '',
-      projectType || '',
-      shareableUrl, // shareableUrl - new column
-      allowResponses ? 'TRUE' : 'FALSE', // allow_responses
-      '', // recipient_response (empty initially)
-      '', // response_date (empty initially)
-      '', // response_email (empty initially)
-      '', // response_attachments (empty initially)
-      reportAttachmentsString // report_attachments (new column U)
-    ]]
+    const { data, error } = await supabaseAdmin
+      .from('report_links')
+      .insert({
+        report_id: reportId,
+        title,
+        content_path: contentPath,
+        chart_data: chartData || null,
+        created_date: timestamp,
+        created_by: reportUserEmail,
+        client_name: clientName || null,
+        client_email: clientEmail || null,
+        expires_at: expiresAt || null,
+        is_active: true,
+        view_count: 0,
+        last_viewed: null,
+        description: description || null,
+        project_type: projectType || null,
+        shareable_url: shareableUrl,
+        allow_responses: allowResponses || false,
+        recipient_response: null,
+        response_date: null,
+        response_email: null,
+        response_attachments: null,
+        report_attachments: reportAttachments.length > 0 ? reportAttachments : null,
+      })
+      .select()
 
-    // Append to the ReportLinks sheet
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:U', // Extended to include report_attachments column (A to U for 21 columns)
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values,
-      },
-    })
+    if (error) {
+      console.error('[REPORTS] Supabase error:', error)
+      return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
+    }
 
-    console.log(`New shareable report created: ${reportId} - ${title}`)
+    console.log(`[REPORTS] New shareable report created: ${reportId} - ${title}`)
 
     return NextResponse.json({ 
       success: true, 
@@ -150,116 +135,80 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Report ID is required' }, { status: 400 })
     }
 
-    if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
+    if (!process.env.GOOGLE_CREDENTIALS) {
       return NextResponse.json({ error: 'Google Cloud configuration missing' }, { status: 500 })
     }
 
-    // Decode the base64 credentials
-    const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
-    
-    // Initialize Google Sheets API
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    })
+    // Query report from Supabase
+    const { data: reportData, error } = await supabaseAdmin
+      .from('report_links')
+      .select('*')
+      .eq('report_id', reportId)
+      .single()
 
-    const sheets = google.sheets({ version: 'v4', auth })
-    
-    // Initialize Google Cloud Storage
-    const bucket = await getGoogleCloudStorage()
-
-    // Get all data from ReportLinks sheet
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'ReportLinks!A:U', // Extended to include report_attachments column
-    })
-
-    const rows = response.data.values
-    if (!rows || rows.length <= 1) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
-
-    // Find the report by ID (skip header row)
-    const reportRow = rows.slice(1).find(row => row[0] === reportId)
-    
-    if (!reportRow) {
+    if (error || !reportData) {
+      console.error('[REPORTS GET] Supabase error:', error)
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
     // Check if report is active
-    if (reportRow[9] !== 'TRUE') {
+    if (!reportData.is_active) {
       return NextResponse.json({ error: 'Report is no longer available' }, { status: 403 })
     }
 
     // Check expiration
-    if (reportRow[8] && new Date(reportRow[8]) < new Date()) {
+    if (reportData.expires_at && new Date(reportData.expires_at) < new Date()) {
       return NextResponse.json({ error: 'Report has expired' }, { status: 403 })
     }
 
-    // Get content path from sheet and fetch content from GCS
-    const contentPath = reportRow[2] // This is now the file path instead of content
-    const contentFile = bucket.file(contentPath)
+    // Get content from Google Cloud Storage
+    const bucket = await getGoogleCloudStorage()
+    const contentFile = bucket.file(reportData.content_path)
     
     let content = ''
     try {
       const [fileData] = await contentFile.download()
       content = fileData.toString('utf-8')
     } catch (error) {
-      console.error('Error fetching content from GCS:', error)
+      console.error('[REPORTS GET] Error fetching content from GCS:', error)
       return NextResponse.json({ error: 'Report content not found' }, { status: 404 })
     }
 
-    // Parse chart data if exists
-    let chartData = null
-    if (reportRow[3]) {
-      try {
-        chartData = JSON.parse(reportRow[3])
-      } catch (e) {
-        console.error('Error parsing chart data:', e)
-      }
-    }
-
-    // Update view count (increment by 1)
-    const currentViewCount = parseInt(reportRow[10] || '0')
-    const newViewCount = currentViewCount + 1
+    // Update view count and last viewed timestamp in Supabase
+    const newViewCount = reportData.view_count + 1
     const lastViewed = new Date().toISOString()
 
-    // Find the row number to update (add 2 because sheets are 1-indexed and we skip header)
-    const rowIndex = rows.slice(1).findIndex(row => row[0] === reportId) + 2
+    await supabaseAdmin
+      .from('report_links')
+      .update({
+        view_count: newViewCount,
+        last_viewed: lastViewed
+      })
+      .eq('report_id', reportId)
 
-    // Update view count and last viewed timestamp
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: `ReportLinks!K${rowIndex}:L${rowIndex}`, // viewCount and lastViewed columns
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [[newViewCount.toString(), lastViewed]],
-      },
-    })
-
-    const reportData = {
-      reportId: reportRow[0],
-      title: reportRow[1],
+    const report = {
+      reportId: reportData.report_id,
+      title: reportData.title,
       content, // Content fetched from GCS
-      chartData,
-      createdDate: reportRow[4],
-      createdBy: reportRow[5],
-      clientName: reportRow[6],
-      clientEmail: reportRow[7],
-      description: reportRow[12],
-      projectType: reportRow[13],
+      chartData: reportData.chart_data,
+      createdDate: reportData.created_date,
+      createdBy: reportData.created_by,
+      clientName: reportData.client_name,
+      clientEmail: reportData.client_email,
+      description: reportData.description,
+      projectType: reportData.project_type,
       viewCount: newViewCount,
-      allowResponses: reportRow[15] === 'TRUE', // allow_responses column
-      recipientResponse: reportRow[16] || '', // recipient_response column
-      responseDate: reportRow[17] || '', // response_date column
-      responseEmail: reportRow[18] || '', // response_email column
-      responseAttachments: reportRow[19] ? JSON.parse(reportRow[19]) : [], // response_attachments column
-      reportAttachments: reportRow[20] ? JSON.parse(reportRow[20]) : [] // report_attachments column (new)
+      allowResponses: reportData.allow_responses,
+      recipientResponse: reportData.recipient_response || '',
+      responseDate: reportData.response_date || '',
+      responseEmail: reportData.response_email || '',
+      responseAttachments: reportData.response_attachments || [],
+      reportAttachments: reportData.report_attachments || []
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      report: reportData 
+    return NextResponse.json({
+      success: true,
+      report
     })
 
   } catch (error) {

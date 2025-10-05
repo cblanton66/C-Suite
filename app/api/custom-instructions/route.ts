@@ -1,27 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { google } from 'googleapis'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-async function getGoogleSheetsClient() {
-  if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
-    throw new Error('Google Sheets configuration missing')
-  }
-
-  const credentials = JSON.parse(
-    Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8')
-  )
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  })
-
-  return google.sheets({ version: 'v4', auth })
-}
-
-const SHEET_NAME = 'Sheet1'
 
 // GET - Fetch custom instructions for a user
 export async function GET(request: NextRequest) {
@@ -32,38 +13,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
-    const sheets = await getGoogleSheetsClient()
+    const normalizedEmail = userEmail.toLowerCase()
 
-    // Get all data from Sheet1
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: `${SHEET_NAME}!A:Z`,
-    })
+    // Query user from Supabase
+    const { data: users, error } = await supabaseAdmin
+      .from('users')
+      .select('custom_instructions')
+      .eq('email', normalizedEmail)
+      .limit(1)
 
-    const rows = response.data.values
-    if (!rows || rows.length <= 1) {
-      return NextResponse.json({
-        success: true,
-        instructions: ''
-      })
+    if (error) {
+      console.error('[CUSTOM_INSTRUCTIONS] Supabase error:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // Find the column index for CustomInstructions
-    const headers = rows[0]
-    const customInstructionsIndex = headers.findIndex((h: string) =>
-      h?.toLowerCase() === 'custominstructions'
-    )
-
-    if (customInstructionsIndex === -1) {
-      return NextResponse.json({
-        error: 'CustomInstructions column not found in Sheet1'
-      }, { status: 500 })
-    }
-
-    // Find user's row (email is in column E, index 4)
-    const userRow = rows.slice(1).find(row => row[4]?.toLowerCase() === userEmail.toLowerCase())
-
-    if (!userRow) {
+    if (!users || users.length === 0) {
       return NextResponse.json({
         success: true,
         instructions: ''
@@ -72,10 +36,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      instructions: userRow[customInstructionsIndex] || ''
+      instructions: users[0].custom_instructions || ''
     })
   } catch (error) {
-    console.error('Error fetching custom instructions:', error)
+    console.error('[CUSTOM_INSTRUCTIONS] Error fetching:', error)
     return NextResponse.json({
       error: 'Failed to fetch custom instructions'
     }, { status: 500 })
@@ -92,65 +56,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
-    const sheets = await getGoogleSheetsClient()
+    const normalizedEmail = userEmail.toLowerCase()
 
-    // Get all data from Sheet1
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: `${SHEET_NAME}!A:Z`,
-    })
+    // Update user's custom instructions in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update({ custom_instructions: instructions || '' })
+      .eq('email', normalizedEmail)
+      .select()
 
-    const rows = response.data.values
-    if (!rows || rows.length === 0) {
+    if (error) {
+      console.error('[CUSTOM_INSTRUCTIONS] Supabase error:', error)
       return NextResponse.json({
-        error: 'Sheet1 not found or empty'
+        error: 'Failed to save custom instructions'
       }, { status: 500 })
     }
 
-    // Find the column index for CustomInstructions
-    const headers = rows[0]
-    const customInstructionsIndex = headers.findIndex((h: string) =>
-      h?.toLowerCase() === 'custominstructions'
-    )
-
-    if (customInstructionsIndex === -1) {
+    if (!data || data.length === 0) {
       return NextResponse.json({
-        error: 'CustomInstructions column not found in Sheet1'
-      }, { status: 500 })
-    }
-
-    // Find user's row index (email is in column E, index 4)
-    const userRowIndex = rows.slice(1).findIndex(row => row[4]?.toLowerCase() === userEmail.toLowerCase())
-
-    // Convert column index to letter (A, B, C, etc.)
-    const columnLetter = String.fromCharCode(65 + customInstructionsIndex)
-
-    if (userRowIndex === -1) {
-      // User doesn't exist - create a new row with just email and custom instructions
-      const newRow = new Array(headers.length).fill('')
-      newRow[0] = userEmail // Email in column A
-      newRow[customInstructionsIndex] = instructions || ''
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: `${SHEET_NAME}!A:Z`,
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: [newRow],
-        },
-      })
-    } else {
-      // User exists - update the custom instructions cell
-      const actualRowNumber = userRowIndex + 2
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-        range: `${SHEET_NAME}!${columnLetter}${actualRowNumber}`,
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: [[instructions || '']],
-        },
-      })
+        error: 'User not found'
+      }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -158,7 +83,7 @@ export async function POST(request: NextRequest) {
       message: 'Custom instructions saved successfully'
     })
   } catch (error) {
-    console.error('Error saving custom instructions:', error)
+    console.error('[CUSTOM_INSTRUCTIONS] Error saving:', error)
     return NextResponse.json({
       error: 'Failed to save custom instructions'
     }, { status: 500 })
