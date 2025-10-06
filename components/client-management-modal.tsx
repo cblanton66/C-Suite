@@ -1029,48 +1029,36 @@ function ClientDetailModal({
               }`}
             >
               Projects
-              <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {projects.length}
-              </span>
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+              className={`pb-2 px-2 font-medium text-sm transition-colors ${
                 activeTab === 'notes'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Notes
-              <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {notes.filter((n: any) => !n.name?.endsWith('.placeholder')).length}
-              </span>
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+              className={`pb-2 px-2 font-medium text-sm transition-colors ${
                 activeTab === 'reports'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Reports
-              <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {reports.length}
-              </span>
             </button>
             <button
               onClick={() => setActiveTab('sharing')}
-              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+              className={`pb-2 px-2 font-medium text-sm transition-colors ${
                 activeTab === 'sharing'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Sharing
-              <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {Array.isArray(client.sharedWith) ? client.sharedWith.length : 0}
-              </span>
             </button>
           </div>
         </div>
