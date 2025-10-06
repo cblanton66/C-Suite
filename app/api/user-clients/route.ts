@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       ownedQuery = ownedQuery
         .not('last_accessed', 'is', null)
         .order('last_accessed', { ascending: false })
-        .limit(10)
+        .limit(6)
     } else {
       ownedQuery = ownedQuery.order('client_name', { ascending: true })
     }

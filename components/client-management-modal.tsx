@@ -21,8 +21,10 @@ import {
   FileText,
   MessageCircle,
   ChevronRight,
+  ChevronDown,
   Calendar,
-  Copy
+  Copy,
+  Archive
 } from "lucide-react"
 
 interface Client {
@@ -64,23 +66,16 @@ export function ClientManagementModal({
 }: ClientManagementModalProps) {
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showNewClientModal, setShowNewClientModal] = useState(false)
   const [showClientDetail, setShowClientDetail] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [showDropdown, setShowDropdown] = useState(true)
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchClients()
-    }
-  }, [isOpen, userEmail, workspaceOwner])
-
-  // Fetch clients based on search state
-  const fetchClients = async () => {
+  // Fetch recent clients on initial open
+  const fetchClients = async (recentOnly = false) => {
     try {
       setLoading(true)
-      // If searching, get all clients; otherwise get only recent
-      const recentOnly = !searchTerm.trim()
       const response = await fetch(
         `/api/user-clients?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(workspaceOwner)}&recentOnly=${recentOnly}`
       )
@@ -88,7 +83,6 @@ export function ClientManagementModal({
 
       if (data.success) {
         setClients(data.clients || [])
-        // Don't fetch counts upfront - will be loaded when client detail is opened
       }
     } catch (error) {
       console.error('Error fetching clients:', error)
@@ -97,15 +91,43 @@ export function ClientManagementModal({
     }
   }
 
-  // Refetch when search term changes
+  // Fetch recent clients when modal opens
   useEffect(() => {
-    if (isOpen) {
-      const timeoutId = setTimeout(() => {
-        fetchClients()
-      }, 300) // Debounce search
-      return () => clearTimeout(timeoutId)
+    if (isOpen && !searchTerm) {
+      fetchClients(true) // Get recent 6
     }
+  }, [isOpen])
+
+  // Debounced search when user types
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      // When search is cleared, go back to showing recent clients
+      fetchClients(true)
+      setShowDropdown(true)
+      return
+    }
+
+    const timeoutId = setTimeout(() => {
+      fetchClients(false) // Get all clients for search
+      setShowDropdown(true)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
   }, [searchTerm])
+
+  // Handle dropdown toggle
+  const handleDropdownToggle = () => {
+    if (!showDropdown) {
+      fetchClients(true) // Get recent 6
+      setShowDropdown(true)
+    } else {
+      setShowDropdown(false)
+      // Don't clear clients immediately to avoid flicker
+      setTimeout(() => {
+        if (!showDropdown) setClients([])
+      }, 300)
+    }
+  }
 
 
   const handleCreateClient = async (clientData: Partial<Client>) => {
@@ -242,7 +264,7 @@ export function ClientManagementModal({
             <div>
               <h2 className="text-lg font-semibold">Client Management</h2>
               <p className="text-sm text-muted-foreground">
-                {searchTerm.trim() ? 'All Clients' : 'Recently Accessed'} • {clients.length} {clients.length === 1 ? 'client' : 'clients'}
+                {searchTerm.trim() ? `Search Results • ${filteredClients.length} found` : 'Search or browse recent clients'}
               </p>
             </div>
           </div>
@@ -263,41 +285,75 @@ export function ClientManagementModal({
         {/* Search */}
         <div className="p-6 border-b">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
             <Input
               placeholder="Search clients by name, email, or industry..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-900 dark:bg-gray-900 border-gray-700 dark:border-gray-700 text-white placeholder:text-gray-400"
+              className="pl-10 pr-10 bg-gray-900 dark:bg-gray-900 border-gray-700 dark:border-gray-700 text-white placeholder:text-gray-400"
             />
+            <button
+              onClick={handleDropdownToggle}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors z-10"
+              title={showDropdown ? "Hide recent clients" : "Show recent clients"}
+            >
+              <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown list of recent clients */}
+            {showDropdown && clients.length > 0 && !searchTerm && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
+                {clients.map((client) => (
+                  <button
+                    key={client.clientName}
+                    onClick={async () => {
+                      setSelectedClient(client)
+                      setShowClientDetail(true)
+                      setShowDropdown(false)
+
+                      // Update last_accessed timestamp
+                      try {
+                        await fetch('/api/user-clients', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            clientName: client.clientName,
+                            userEmail,
+                            workspaceOwner
+                          })
+                        })
+                      } catch (error) {
+                        console.error('Failed to update last accessed:', error)
+                      }
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-b-0 flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-4 h-4 text-gray-400" />
+                      <span className="text-white font-medium">{client.clientName}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Client List */}
+        {/* Client List - Only show when searching */}
         <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-muted-foreground mt-4">Loading clients...</p>
-            </div>
-          ) : filteredClients.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-2">
-                {searchTerm ? 'No clients found matching your search' : 'No clients yet'}
-              </p>
-              {!searchTerm && (
-                <Button
-                  onClick={() => setShowNewClientModal(true)}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Client
-                </Button>
-              )}
-            </div>
-          ) : (
+          {searchTerm ? (
+            loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm text-muted-foreground mt-4">Searching clients...</p>
+              </div>
+            ) : filteredClients.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground mb-2">No clients found matching your search</p>
+              </div>
+            ) : (
             <div className="grid gap-4">
               {filteredClients.map((client) => {
                 return (
@@ -328,7 +384,7 @@ export function ClientManagementModal({
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold">{client.clientName}</h3>
-                          {client.sharedWith && (
+                          {Array.isArray(client.sharedWith) && client.sharedWith.length > 0 && (
                             <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
                               Shared
                             </span>
@@ -366,6 +422,22 @@ export function ClientManagementModal({
                   </Card>
                 )
               })}
+            </div>
+            )
+          ) : (
+            <div className="text-center py-12">
+              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground mb-2">
+                Search for a client or click the arrow to see recent clients
+              </p>
+              <Button
+                onClick={() => setShowNewClientModal(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Client
+              </Button>
             </div>
           )}
         </div>
@@ -523,6 +595,8 @@ function ClientDetailModal({
   const [savingNote, setSavingNote] = useState(false)
   const [newShareEmail, setNewShareEmail] = useState('')
   const [addingShare, setAddingShare] = useState(false)
+  const [archivingNote, setArchivingNote] = useState(false)
+  const [showArchivedNotes, setShowArchivedNotes] = useState(false)
 
   const handleSave = () => {
     onUpdate(formData)
@@ -794,6 +868,104 @@ function ClientDetailModal({
       console.error('Error removing share:', error)
       toast.error('Failed to remove share')
     }
+  }
+
+  const handleArchiveNote = async () => {
+    if (!selectedNote) return
+
+    setArchivingNote(true)
+    try {
+      // Rename the file by adding [ARCHIVED] prefix
+      const fileName = selectedNote.name.split('/').pop()
+      const folderPath = selectedNote.name.substring(0, selectedNote.name.lastIndexOf('/'))
+      const newFileName = fileName?.startsWith('[ARCHIVED]') ? fileName : `[ARCHIVED] ${fileName}`
+      const newFilePath = `${folderPath}/${newFileName}`
+
+      const response = await fetch('/api/rename-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldPath: selectedNote.name,
+          newPath: newFilePath
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Note archived successfully!')
+        handleCloseNote()
+        // Refresh the notes list
+        fetchNotes()
+      } else {
+        toast.error('Failed to archive note')
+      }
+    } catch (error) {
+      console.error('Error archiving note:', error)
+      toast.error('Failed to archive note')
+    } finally {
+      setArchivingNote(false)
+    }
+  }
+
+  // Helper function to convert URLs, emails, and phone numbers to clickable links
+  const renderTextWithLinks = (text: string) => {
+    // Combined regex for URLs, emails, and phone numbers
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g
+    const phoneRegex = /(\+?1?\s*\(?[0-9]{3}\)?[\s.-]?[0-9]{3}[\s.-]?[0-9]{4})/g
+
+    // Combine all patterns
+    const combinedRegex = new RegExp(
+      `${urlRegex.source}|${emailRegex.source}|${phoneRegex.source}`,
+      'g'
+    )
+
+    const parts = text.split(combinedRegex).filter(Boolean)
+
+    return parts.map((part, index) => {
+      // Check if it's a URL
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        )
+      }
+      // Check if it's an email
+      if (part.match(emailRegex)) {
+        return (
+          <a
+            key={index}
+            href={`mailto:${part}`}
+            className="text-blue-400 hover:text-blue-300 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        )
+      }
+      // Check if it's a phone number
+      if (part.match(phoneRegex)) {
+        const cleanPhone = part.replace(/[^\d+]/g, '')
+        return (
+          <a
+            key={index}
+            href={`tel:${cleanPhone}`}
+            className="text-blue-400 hover:text-blue-300 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
   }
 
   return (
@@ -1068,7 +1240,22 @@ function ClientDetailModal({
 
           {activeTab === 'notes' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Client Notes ({notes.length})</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  {showArchivedNotes ? 'All Notes' : 'Active Notes'} ({notes.filter((n: any) => {
+                    if (n.name?.endsWith('.placeholder')) return false
+                    const fileName = n.name?.split('/').pop() || ''
+                    return showArchivedNotes ? true : !fileName.startsWith('[ARCHIVED]')
+                  }).length})
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowArchivedNotes(!showArchivedNotes)}
+                >
+                  {showArchivedNotes ? 'Hide Archive' : 'Show Archive'}
+                </Button>
+              </div>
 
               {loading ? (
                 <div className="text-center py-12">
@@ -1082,10 +1269,19 @@ function ClientDetailModal({
               ) : (
                 <div className="space-y-2">
                   {notes
-                    .filter((note: any) => !note.name?.endsWith('.placeholder'))
+                    .filter((note: any) => {
+                      // Filter out placeholder files
+                      if (note.name?.endsWith('.placeholder')) return false
+                      // Filter archived notes based on toggle
+                      const fileName = note.name?.split('/').pop() || ''
+                      if (!showArchivedNotes && fileName.startsWith('[ARCHIVED]')) return false
+                      return true
+                    })
                     .map((note: any, index: number) => {
                       // Use the title from API if available, otherwise parse filename
-                      const noteTitle = note.title || note.name?.split('/').pop() || 'Untitled Note'
+                      const fileName = note.name?.split('/').pop() || ''
+                      const isArchived = fileName.startsWith('[ARCHIVED]')
+                      const noteTitle = note.title || fileName || 'Untitled Note'
                       const noteDate = note.uploadedAt ? new Date(note.uploadedAt).toLocaleDateString() : ''
 
                       return (
@@ -1096,7 +1292,14 @@ function ClientDetailModal({
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-semibold">{noteTitle}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{noteTitle}</h4>
+                                {isArchived && (
+                                  <span className="px-2 py-0.5 bg-orange-600 text-white rounded text-xs">
+                                    Archived
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground mt-1">{noteDate}</p>
                             </div>
                             <FileText className="w-5 h-5 text-green-500" />
@@ -1273,6 +1476,16 @@ function ClientDetailModal({
                       <Copy className="w-4 h-4 mr-2" />
                       Copy
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleArchiveNote}
+                      disabled={archivingNote}
+                      className="text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
+                    >
+                      <Archive className="w-4 h-4 mr-2" />
+                      {archivingNote ? 'Archiving...' : 'Archive'}
+                    </Button>
                   </>
                 )}
                 <Button variant="ghost" size="sm" onClick={handleCloseNote}>
@@ -1294,7 +1507,9 @@ function ClientDetailModal({
                 />
               ) : (
                 <div className="prose prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-sm">{noteContent}</pre>
+                  <pre className="whitespace-pre-wrap font-sans text-sm">
+                    {renderTextWithLinks(noteContent)}
+                  </pre>
                 </div>
               )}
             </div>
