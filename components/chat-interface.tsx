@@ -158,6 +158,7 @@ export function ChatInterface() {
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [showCustomInstructions, setShowCustomInstructions] = useState(false)
+  const [showWelcomeMessageModal, setShowWelcomeMessageModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
   const [loadedThread, setLoadedThread] = useState<{
@@ -3008,9 +3009,7 @@ ${message.content}
                         <button
                           onClick={() => {
                             setShowUserMenu(false)
-                            // Trigger the AdminNavToggle modal
-                            const adminButton = document.querySelector('[data-admin-nav-toggle]') as HTMLButtonElement
-                            if (adminButton) adminButton.click()
+                            setShowWelcomeMessageModal(true)
                           }}
                           className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                         >
@@ -3039,10 +3038,13 @@ ${message.content}
 
             <ThemeToggle />
 
-            {/* Admin Controls - Hidden, but still rendered for the Edit Welcome Message functionality */}
-            <div className="hidden">
-              <AdminNavToggle userEmail={userEmail} isAdmin={userPermissions.includes('admin')} />
-            </div>
+            {/* Admin Welcome Message Modal */}
+            <AdminNavToggle
+              userEmail={userEmail}
+              isAdmin={userPermissions.includes('admin')}
+              showModal={showWelcomeMessageModal}
+              onCloseModal={() => setShowWelcomeMessageModal(false)}
+            />
             
             {/* Recording Status Indicator */}
             {isListening && (

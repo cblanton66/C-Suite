@@ -10,6 +10,8 @@ import { FastTooltip } from "@/components/fast-tooltip"
 interface AdminNavToggleProps {
   userEmail?: string
   isAdmin?: boolean
+  showModal?: boolean
+  onCloseModal?: () => void
 }
 
 interface AdminSettings {
@@ -18,10 +20,9 @@ interface AdminSettings {
   updatedBy: string
 }
 
-export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
+export function AdminNavToggle({ userEmail, isAdmin, showModal = false, onCloseModal }: AdminNavToggleProps) {
   const [settings, setSettings] = useState<AdminSettings | null>(null)
   const [updating, setUpdating] = useState(false)
-  const [showMessageModal, setShowMessageModal] = useState(false)
   const [messageInput, setMessageInput] = useState('')
 
   const fetchSettings = async () => {
@@ -59,7 +60,7 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
 
       if (data.success) {
         setSettings(data.settings)
-        setShowMessageModal(false)
+        if (onCloseModal) onCloseModal()
         setMessageInput('')
         // Reload the page to update the message display
         window.location.reload()
@@ -71,14 +72,15 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
     }
   }
 
-  const openMessageModal = () => {
-    setMessageInput(settings?.dynamicMessage || '')
-    setShowMessageModal(true)
-  }
-
   useEffect(() => {
     fetchSettings()
   }, [])
+
+  useEffect(() => {
+    if (showModal && settings) {
+      setMessageInput(settings.dynamicMessage || '')
+    }
+  }, [showModal, settings])
 
   // Only show to admin users - moved after hooks
   if (!isAdmin || !userEmail) {
@@ -91,28 +93,13 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <FastTooltip content="Edit welcome message">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={openMessageModal}
-            disabled={updating}
-            className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700"
-            data-admin-nav-toggle
-          >
-            <MessageSquareText className="w-4 h-4" />
-          </Button>
-        </FastTooltip>
-      </div>
-
       {/* Dynamic Message Modal */}
-      {showMessageModal && (
+      {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowMessageModal(false)}
+            onClick={onCloseModal}
           />
           
           {/* Modal */}
@@ -121,7 +108,7 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowMessageModal(false)}
+              onClick={onCloseModal}
               className="absolute right-2 top-2 h-8 w-8 p-0"
             >
               <X className="w-4 h-4" />
@@ -172,9 +159,9 @@ export function AdminNavToggle({ userEmail, isAdmin }: AdminNavToggleProps) {
                     </>
                   )}
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
-                  onClick={() => setShowMessageModal(false)}
+                  onClick={onCloseModal}
                   disabled={updating}
                 >
                   Cancel
