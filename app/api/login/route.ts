@@ -54,6 +54,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[LOGIN] Successful login: ${userName} (${normalizedEmail})`)
 
+    // Log login to login_history table (async, non-blocking)
+    // Don't await this - let it run in background
+    supabaseAdmin
+      .from('login_history')
+      .insert({
+        user_email: normalizedEmail,
+        user_name: userName,
+        workspace_owner: workspaceOwner,
+        ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        user_agent: request.headers.get('user-agent') || 'unknown'
+      })
+      .then(() => {
+        console.log(`[LOGIN_HISTORY] Logged login for ${normalizedEmail}`)
+      })
+      .catch((err) => {
+        console.error('[LOGIN_HISTORY] Failed to log login:', err)
+      })
+
     return NextResponse.json({
       success: true,
       message: 'Login successful',

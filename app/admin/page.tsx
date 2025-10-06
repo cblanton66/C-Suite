@@ -279,14 +279,24 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Beta User Analytics</h1>
             <p className="text-muted-foreground">Track user activity and engagement</p>
           </div>
-          <Button 
-            variant="destructive" 
-            onClick={handleClearData}
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            Clear Data
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/login-history')}
+              className="flex items-center gap-2"
+            >
+              <Users className="w-4 h-4" />
+              Login History
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearData}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear Data
+            </Button>
+          </div>
         </div>
 
         {/* Summary Stats */}
