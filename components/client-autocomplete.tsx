@@ -24,6 +24,7 @@ interface ClientAutocompleteProps {
   workspaceOwner?: string
   placeholder?: string
   className?: string
+  onOpenClientModal?: () => void
 }
 
 export function ClientAutocomplete({
@@ -32,7 +33,8 @@ export function ClientAutocomplete({
   userEmail,
   workspaceOwner,
   placeholder = "Select or type client name...",
-  className
+  className,
+  onOpenClientModal
 }: ClientAutocompleteProps) {
   const [open, setOpen] = React.useState(false)
   const [clients, setClients] = React.useState<string[]>([])
@@ -92,7 +94,7 @@ export function ClientAutocomplete({
       <PopoverContent className="w-[400px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search or type new client name..."
+            placeholder="Search existing clients..."
             value={value}
             onValueChange={onValueChange}
           />
@@ -100,22 +102,34 @@ export function ClientAutocomplete({
             <CommandEmpty>
               {value ? (
                 <div className="py-6 text-center text-sm">
-                  <p className="font-medium">Create new client:</p>
-                  <p className="mt-1 text-muted-foreground">&quot;{value}&quot;</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => {
-                      setOpen(false)
-                    }}
-                  >
-                    Use this name
-                  </Button>
+                  <p className="font-medium text-orange-600">Client not found</p>
+                  <p className="mt-2 text-muted-foreground">
+                    &quot;{value}&quot; is not in your client list.
+                  </p>
+                  {onOpenClientModal ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => {
+                        setOpen(false)
+                        onOpenClientModal()
+                      }}
+                    >
+                      Add New Client
+                    </Button>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Please add this client in <span className="font-medium">Manage Clients</span> first.
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    This ensures all client data is properly stored with workspace owner, email, phone, etc.
+                  </p>
                 </div>
               ) : (
                 <div className="py-4 text-center text-sm text-muted-foreground">
-                  {loading ? "Loading clients..." : "Type to search or create new client..."}
+                  {loading ? "Loading clients..." : "Type to search existing clients..."}
                 </div>
               )}
             </CommandEmpty>

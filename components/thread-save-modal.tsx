@@ -26,9 +26,10 @@ interface ThreadSaveModalProps {
     metadata: any
   } | null
   onThreadSaved?: () => void
+  onOpenClientModal?: () => void
 }
 
-export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspaceOwner, loadedThread, onThreadSaved }: ThreadSaveModalProps) {
+export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspaceOwner, loadedThread, onThreadSaved, onOpenClientModal }: ThreadSaveModalProps) {
   const [clientName, setClientName] = useState("")
   const [title, setTitle] = useState("")
   const [projectType, setProjectType] = useState("")
@@ -175,8 +176,9 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
               onValueChange={setClientName}
               userEmail={userEmail || ''}
               workspaceOwner={workspaceOwner || undefined}
-              placeholder="Select or type client name..."
+              placeholder="Select existing client..."
               className="w-full"
+              onOpenClientModal={onOpenClientModal}
             />
           </div>
 

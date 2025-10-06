@@ -3634,7 +3634,7 @@ ${message.content}
                             title="Save to private notes"
                           >
                             <FolderOpen className="w-3 h-3 mr-1" />
-                            Private Note
+                            Client Note
                           </Button>
                           <Button
                             size="sm"
@@ -3644,7 +3644,7 @@ ${message.content}
                             title="Save conversation thread"
                           >
                             <MessageCircle className="w-3 h-3 mr-1" />
-                            Save Thread
+                            Save Project
                           </Button>
                         </div>
                       )}
@@ -3705,7 +3705,7 @@ ${message.content}
                           ) : (
                             <Share2 className="w-3 h-3 mr-1" />
                           )}
-                          {shareReportLoading === message.id ? "Sharing..." : "Share"}
+                          {shareReportLoading === message.id ? "Sending..." : "Send to Client"}
                         </Button>
                         <Button
                           size="sm"
@@ -3715,7 +3715,7 @@ ${message.content}
                           title="Save to private notes"
                         >
                           <FolderOpen className="w-3 h-3 mr-1" />
-                          Private Note
+                          Client Note
                         </Button>
                         <Button
                           size="sm"
@@ -3725,7 +3725,7 @@ ${message.content}
                           title="Save conversation thread"
                         >
                           <MessageCircle className="w-3 h-3 mr-1" />
-                          Save Thread
+                          Save Project
                         </Button>
                       </div>
                     </div>
@@ -4190,6 +4190,7 @@ ${message.content}
         reportContent={currentMessageToShare?.content}
         userEmail={userEmail || undefined}
         workspaceOwner={workspaceOwner}
+        onOpenClientModal={() => setShowClientManagementModal(true)}
       />
 
       {/* Private Notes Modal */}
@@ -4223,8 +4224,9 @@ ${message.content}
                   onValueChange={setPrivateNoteClient}
                   userEmail={userEmail || ''}
                   workspaceOwner={workspaceOwner}
-                  placeholder="Select or type client name..."
+                  placeholder="Select existing client..."
                   className="w-full"
+                  onOpenClientModal={() => setShowClientManagementModal(true)}
                 />
               </div>
               
@@ -4320,8 +4322,9 @@ ${message.content}
                   onValueChange={setPrivateNoteClient}
                   userEmail={userEmail || ''}
                   workspaceOwner={workspaceOwner}
-                  placeholder="Select or type client name..."
+                  placeholder="Select existing client..."
                   className="w-full"
+                  onOpenClientModal={() => setShowClientManagementModal(true)}
                 />
               </div>
 
@@ -4424,6 +4427,7 @@ ${message.content}
         workspaceOwner={workspaceOwner}
         loadedThread={loadedThread}
         onThreadSaved={() => setLoadedThread(null)}
+        onOpenClientModal={() => setShowClientManagementModal(true)}
       />
 
       {/* Thread Management Modal */}
