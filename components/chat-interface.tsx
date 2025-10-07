@@ -3695,21 +3695,6 @@ ${message.content}
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => shareReport(message)}
-                          disabled={shareReportLoading === message.id}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
-                          title="Share as report link"
-                        >
-                          {shareReportLoading === message.id ? (
-                            <div className="animate-spin w-3 h-3 mr-1 border-2 border-current border-t-transparent rounded-full" />
-                          ) : (
-                            <Share2 className="w-3 h-3 mr-1" />
-                          )}
-                          {shareReportLoading === message.id ? "Sending..." : "Send to Client"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
                           onClick={() => preparePrivateNote(message)}
                           className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
                           title="Save to private notes"
@@ -3726,6 +3711,21 @@ ${message.content}
                         >
                           <MessageCircle className="w-3 h-3 mr-1" />
                           Save Project
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => shareReport(message)}
+                          disabled={shareReportLoading === message.id}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                          title="Share as report link"
+                        >
+                          {shareReportLoading === message.id ? (
+                            <div className="animate-spin w-3 h-3 mr-1 border-2 border-current border-t-transparent rounded-full" />
+                          ) : (
+                            <Share2 className="w-3 h-3 mr-1" />
+                          )}
+                          {shareReportLoading === message.id ? "Sending..." : "Send to Client"}
                         </Button>
                       </div>
                     </div>
