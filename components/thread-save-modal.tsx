@@ -144,8 +144,8 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-background border rounded-lg p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-background border rounded-lg w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 pb-4">
           <div>
             <h2 className="text-lg font-semibold">
               {loadedThread ? "Update Conversation Thread" : "Save Conversation Thread"}
@@ -166,7 +166,8 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
           </Button>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
               Client Name *
@@ -252,9 +253,10 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
           <div className="text-sm text-muted-foreground">
             {messages.length} messages will be saved
           </div>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-end gap-2 p-6 pt-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
