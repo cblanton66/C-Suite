@@ -565,13 +565,14 @@ export function ChatInterface() {
       createdAt: new Date(),
       lastUpdated: new Date()
     }
-    
+
     setChatSessions(prev => [newSession, ...prev])
     setCurrentSessionId(newSessionId)
     setMessages([])
     setUploadedFile(null)
     setUploadedFiles([])
     setUploadError(null)
+    setLoadedThread(null) // Clear loaded thread when starting new chat
   }
 
   const updateCurrentSession = () => {
