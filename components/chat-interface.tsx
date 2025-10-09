@@ -4427,7 +4427,7 @@ ${message.content}
         userEmail={userEmail}
         workspaceOwner={workspaceOwner}
         loadedThread={loadedThread}
-        onThreadSaved={() => setLoadedThread(null)}
+        onThreadSaved={() => {}} // Keep loadedThread after saving to prevent duplicate projects
         onOpenClientModal={() => setShowClientManagementModal(true)}
       />
 
