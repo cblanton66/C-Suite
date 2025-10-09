@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Storage } from '@google-cloud/storage'
-import { google } from 'googleapis'
+import { supabaseAdmin } from '@/lib/supabase'
 
 async function getGoogleCloudStorage() {
   if (!process.env.GOOGLE_CREDENTIALS) {
@@ -8,7 +8,7 @@ async function getGoogleCloudStorage() {
   }
 
   const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
-  
+
   const storage = new Storage({
     credentials,
     projectId: credentials.project_id,
@@ -18,42 +18,22 @@ async function getGoogleCloudStorage() {
 }
 
 async function validateFileAccess(fileId: string, reportId: string) {
-  // Check if the file belongs to this report by querying the database
-  if (!process.env.GOOGLE_CREDENTIALS || !process.env.GOOGLE_SHEET_ID) {
-    throw new Error('Google Sheets configuration missing')
-  }
+  // Check if the file belongs to this report by querying Supabase
+  const { data: reportData, error } = await supabaseAdmin
+    .from('report_links')
+    .select('report_attachments')
+    .eq('report_id', reportId)
+    .single()
 
-  const credentials = JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS, 'base64').toString('utf-8'))
-  
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  })
-
-  const sheets = google.sheets({ version: 'v4', auth })
-
-  // Get all data from ReportLinks sheet
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: 'ReportLinks!A:U', // Extended to include report_attachments column
-  })
-
-  const rows = response.data.values
-  if (!rows || rows.length <= 1) {
+  if (error || !reportData) {
+    console.error('[validateFileAccess] Report not found:', error)
     return null
   }
 
-  // Find the report by ID (skip header row)
-  const reportRow = rows.slice(1).find(row => row[0] === reportId)
-  
-  if (!reportRow) {
-    return null
-  }
-
-  // Check if this file is in the report attachments list (column U)
-  const attachments = reportRow[20] ? JSON.parse(reportRow[20]) : [] // Column U = report_attachments
+  // Check if this file is in the report attachments list
+  const attachments = reportData.report_attachments || []
   const targetAttachment = attachments.find((file: any) => file.fileId === fileId)
-  
+
   return targetAttachment || null
 }
 
