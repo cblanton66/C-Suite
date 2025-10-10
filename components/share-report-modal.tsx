@@ -15,10 +15,12 @@ interface ShareReportModalProps {
 
 export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }: ShareReportModalProps) {
   const [copied, setCopied] = useState(false)
+  const [htmlCopied, setHtmlCopied] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
       setCopied(false)
+      setHtmlCopied(false)
     }
   }, [isOpen])
 
@@ -31,6 +33,19 @@ export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }:
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy: ', err)
+    }
+  }
+
+  const copyHtmlLink = async () => {
+    if (!shareableUrl) return
+
+    try {
+      const htmlLink = `<a href="${shareableUrl}">View Your Report</a>`
+      await navigator.clipboard.writeText(htmlLink)
+      setHtmlCopied(true)
+      setTimeout(() => setHtmlCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy HTML: ', err)
     }
   }
 
@@ -99,11 +114,44 @@ export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }:
                     ) : (
                       <>
                         <Copy className="w-4 h-4 mr-1" />
-                        Copy
+                        Copy URL
                       </>
                     )}
                   </Button>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Email-Friendly Link:</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={`<a href="${shareableUrl}">View Your Report</a>`}
+                    readOnly
+                    className="text-xs"
+                    onClick={(e) => e.currentTarget.select()}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={copyHtmlLink}
+                    className="shrink-0"
+                  >
+                    {htmlCopied ? (
+                      <>
+                        <CheckCheck className="w-4 h-4 mr-1" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy HTML
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Paste this in your email client - it will display as "View Your Report"
+                </p>
               </div>
 
               <div className="flex gap-2">
