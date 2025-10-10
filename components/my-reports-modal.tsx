@@ -292,7 +292,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground truncate">
-                          {report.title}
+                          {report.clientName || 'No Client'}
                         </h3>
                         {/* Notification badges */}
                         {report.hasResponse && (
@@ -310,26 +310,26 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                           </div>
                         )}
                       </div>
-                      
+
+                      <p className="text-sm text-foreground mt-1">
+                        {report.title}
+                      </p>
+
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {new Date(report.createdDate).toLocaleDateString()}
                         </div>
-                        
+
                         <div className="flex items-center gap-1">
                           <Eye className="w-4 h-4" />
                           {report.viewCount} view{report.viewCount !== 1 ? 's' : ''}
                         </div>
-                        
-                        {report.clientName && (
-                          <span>Client: {report.clientName}</span>
-                        )}
-                        
+
                         {report.projectType && (
                           <span>Type: {report.projectType}</span>
                         )}
-                        
+
                         {report.hasResponse && report.responseDate && (
                           <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                             <MessageCircle className="w-4 h-4" />
