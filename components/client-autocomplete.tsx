@@ -25,6 +25,7 @@ interface ClientAutocompleteProps {
   placeholder?: string
   className?: string
   onOpenClientModal?: () => void
+  autoOpen?: boolean
 }
 
 export function ClientAutocomplete({
@@ -34,9 +35,10 @@ export function ClientAutocomplete({
   workspaceOwner,
   placeholder = "Select or type client name...",
   className,
-  onOpenClientModal
+  onOpenClientModal,
+  autoOpen = false
 }: ClientAutocompleteProps) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(autoOpen)
   const [clients, setClients] = React.useState<string[]>([])
   const [loading, setLoading] = React.useState(false)
 

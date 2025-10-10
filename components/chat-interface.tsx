@@ -4231,6 +4231,7 @@ ${message.content}
                   placeholder="Select existing client..."
                   className="w-full"
                   onOpenClientModal={() => setShowClientManagementModal(true)}
+                  autoOpen={true}
                 />
               </div>
               
