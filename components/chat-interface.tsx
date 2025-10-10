@@ -3744,12 +3744,14 @@ ${message.content}
             ))}
             {isLoading && (
               <div className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
-                <Card className="p-4 bg-card shadow-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-100"></div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-200"></div>
-                    <span className="text-sm text-muted-foreground ml-2">Working on it...</span>
+                <Card className="p-7 bg-card/95 shadow-2xl border-4 border-green-500 backdrop-blur-sm">
+                  <div className="flex flex-col gap-4 items-center">
+                    <span className="text-lg font-medium text-white">Working on it...</span>
+                    <div className="flex gap-2.5">
+                      <div className="w-4 h-4 rounded-full animate-bounce" style={{ backgroundColor: '#6B7280', animationDelay: '0ms' }}></div>
+                      <div className="w-4 h-4 rounded-full animate-bounce" style={{ backgroundColor: '#6B7280', animationDelay: '150ms' }}></div>
+                      <div className="w-4 h-4 rounded-full animate-bounce" style={{ backgroundColor: '#6B7280', animationDelay: '300ms' }}></div>
+                    </div>
                   </div>
                 </Card>
               </div>
