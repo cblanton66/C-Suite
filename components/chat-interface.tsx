@@ -4221,6 +4221,7 @@ ${message.content}
                   Client Name *
                 </label>
                 <ClientAutocomplete
+                  key={`client-note-${showPrivateNoteModal}`}
                   value={privateNoteClient}
                   onValueChange={setPrivateNoteClient}
                   userEmail={userEmail || ''}
