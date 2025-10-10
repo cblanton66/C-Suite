@@ -150,6 +150,7 @@ export function ChatInterface() {
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
   const [isInputPinned, setIsInputPinned] = useState(false)
   const [showPrivateNoteModal, setShowPrivateNoteModal] = useState(false)
+  const [privateNoteModalKey, setPrivateNoteModalKey] = useState(0)
   const [privateNoteContent, setPrivateNoteContent] = useState('')
   const [privateNoteClient, setPrivateNoteClient] = useState('')
   const [privateNoteTitle, setPrivateNoteTitle] = useState('')
@@ -4208,6 +4209,7 @@ ${message.content}
                   setPrivateNoteContent('')
                   setPrivateNoteClient('')
                   setPrivateNoteTitle('')
+                  setPrivateNoteModalKey(prev => prev + 1) // Reset autocomplete on close
                 }}
                 className="h-8 w-8 p-0"
               >
@@ -4221,7 +4223,7 @@ ${message.content}
                   Client Name *
                 </label>
                 <ClientAutocomplete
-                  key={`client-note-${showPrivateNoteModal}`}
+                  key={`client-note-${privateNoteModalKey}`}
                   value={privateNoteClient}
                   onValueChange={setPrivateNoteClient}
                   userEmail={userEmail || ''}
@@ -4269,6 +4271,7 @@ ${message.content}
                   setPrivateNoteContent('')
                   setPrivateNoteClient('')
                   setPrivateNoteTitle('')
+                  setPrivateNoteModalKey(prev => prev + 1) // Reset autocomplete on close
                 }}
                 disabled={savingPrivateNote}
               >
