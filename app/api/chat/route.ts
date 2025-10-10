@@ -132,6 +132,15 @@ export async function POST(req: NextRequest) {
     // Include file context in system instructions if available
     let systemInstructions = taxInstructions
 
+    // Add current date to system instructions
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+    systemInstructions += `\n\n# CURRENT DATE\nToday's date is: ${currentDate}\nUse this date when drafting memos, reports, or any documents that require a date.`
+
     // Fetch and include custom instructions if user is logged in
     if (userId) {
       try {
