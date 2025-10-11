@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2 } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -54,6 +54,7 @@ import { ShareReportModal } from "@/components/share-report-modal"
 import { MyReportsModal } from "@/components/my-reports-modal"
 import { ReportDetailsModal } from "@/components/report-details-modal"
 import { CustomInstructionsModal } from "@/components/custom-instructions-modal"
+import { ActivityReportModal } from "@/components/activity-report-modal"
 // import { FloatingChatCompanion } from "@/components/floating-chat-companion"
 import { FastTooltip } from "@/components/fast-tooltip"
 import { AdminNavToggle } from "@/components/admin-nav-toggle"
@@ -145,6 +146,7 @@ export function ChatInterface() {
   const [currentSharedReportTitle, setCurrentSharedReportTitle] = useState<string>('')
   const [showMyReportsModal, setShowMyReportsModal] = useState(false)
   const [showReportDetailsModal, setShowReportDetailsModal] = useState(false)
+  const [showActivityReportModal, setShowActivityReportModal] = useState(false)
   const [currentMessageToShare, setCurrentMessageToShare] = useState<Message | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isHoveringBottom, setIsHoveringBottom] = useState(false)
@@ -2796,6 +2798,17 @@ ${message.content}
               <span className="hidden sm:inline">Client Comms</span>
             </Button>
 
+            {/* Activity Report Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowActivityReportModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Activity Report</span>
+            </Button>
+
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
               <Button
@@ -4180,6 +4193,14 @@ ${message.content}
         onClose={() => setShowMyReportsModal(false)}
         userEmail={userEmail}
         onEditContent={handleEditReportContent}
+      />
+
+      {/* Activity Report Modal */}
+      <ActivityReportModal
+        isOpen={showActivityReportModal}
+        onClose={() => setShowActivityReportModal(false)}
+        userEmail={userEmail}
+        workspaceOwner={workspaceOwner}
       />
 
       {/* Report Details Modal */}
