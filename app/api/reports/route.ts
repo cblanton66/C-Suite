@@ -151,12 +151,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
-    // Check if report is active
-    if (!reportData.is_active) {
-      return NextResponse.json({ error: 'Report is no longer available' }, { status: 403 })
-    }
-
-    // Check expiration
+    // Check expiration (is_active only controls visibility in Client Comms list)
     if (reportData.expires_at && new Date(reportData.expires_at) < new Date()) {
       return NextResponse.json({ error: 'Report has expired' }, { status: 403 })
     }

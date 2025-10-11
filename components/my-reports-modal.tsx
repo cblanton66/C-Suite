@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Trash2, Bell, MessageCircle, Paperclip, AlertTriangle } from "lucide-react"
+import { X, FileText, Copy, CheckCheck, ExternalLink, Eye, Calendar, Search, Loader2, Edit, Archive, Bell, MessageCircle, Paperclip, AlertTriangle } from "lucide-react"
 
 interface Report {
   reportId: string
@@ -15,6 +15,7 @@ interface Report {
   clientName?: string
   projectType?: string
   description?: string
+  expiresAt?: string
   // Response notification fields
   hasResponse?: boolean
   responseDate?: string | null
@@ -132,7 +133,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
 
   const updateReport = async () => {
     if (!editingReport) return
-    
+
     try {
       const response = await fetch(`/api/my-reports`, {
         method: 'PUT',
@@ -143,20 +144,21 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
           reportId: editingReport.reportId,
           title: editingReport.title,
           description: editingReport.description,
+          expiresAt: editingReport.expiresAt || null,
           userEmail
         }),
       })
 
       if (response.ok) {
         // Update local state
-        setReports(prev => prev.map(r => 
-          r.reportId === editingReport.reportId 
-            ? { ...r, title: editingReport.title, description: editingReport.description }
+        setReports(prev => prev.map(r =>
+          r.reportId === editingReport.reportId
+            ? { ...r, title: editingReport.title, description: editingReport.description, expiresAt: editingReport.expiresAt }
             : r
         ))
-        setFilteredReports(prev => prev.map(r => 
-          r.reportId === editingReport.reportId 
-            ? { ...r, title: editingReport.title, description: editingReport.description }
+        setFilteredReports(prev => prev.map(r =>
+          r.reportId === editingReport.reportId
+            ? { ...r, title: editingReport.title, description: editingReport.description, expiresAt: editingReport.expiresAt }
             : r
         ))
         setEditingReport(null)
@@ -315,7 +317,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                         {report.title}
                       </p>
 
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {new Date(report.createdDate).toLocaleDateString()}
@@ -325,6 +327,12 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                           <Eye className="w-4 h-4" />
                           {report.viewCount} view{report.viewCount !== 1 ? 's' : ''}
                         </div>
+
+                        {report.expiresAt && (
+                          <div className="flex items-center gap-1">
+                            <span>Expires: {new Date(report.expiresAt).toLocaleDateString()}</span>
+                          </div>
+                        )}
 
                         {report.projectType && (
                           <span>Type: {report.projectType}</span>
@@ -417,8 +425,8 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                           </>
                         ) : (
                           <>
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
+                            <Archive className="w-4 h-4 mr-1" />
+                            Archive
                           </>
                         )}
                       </Button>
@@ -440,7 +448,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive Confirmation Dialog */}
       {deleteConfirm && (() => {
         const reportToDelete = reports.find(r => r.reportId === deleteConfirm)
         const hasAttachments = reportToDelete?.hasAttachments || (reportToDelete?.attachmentCount && reportToDelete.attachmentCount > 0)
@@ -448,7 +456,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
         return (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <Card className="w-full max-w-md mx-4 p-6">
-              <h3 className="text-lg font-semibold mb-4">Delete Report</h3>
+              <h3 className="text-lg font-semibold mb-4">Archive Report</h3>
 
               {hasAttachments && (
                 <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
@@ -458,14 +466,14 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                       This report has {reportToDelete?.attachmentCount || 1} client attachment{reportToDelete?.attachmentCount !== 1 ? 's' : ''}
                     </p>
                     <p className="text-yellow-700 dark:text-yellow-500">
-                      Make sure you've downloaded all attachments before deleting. You won't be able to access them after deletion.
+                      Make sure you've downloaded all attachments before archiving. You won't be able to access them after archiving.
                     </p>
                   </div>
                 </div>
               )}
 
               <p className="text-muted-foreground mb-6">
-                Are you sure you want to delete this report? This action cannot be undone.
+                This will remove the report from your list. Your client can still view it until the expiration date.
               </p>
               <div className="flex gap-3">
                 <Button
@@ -484,10 +492,10 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                   {isDeleting === deleteConfirm ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
+                      Archiving...
                     </>
                   ) : (
-                    'Delete Report'
+                    'Archive Report'
                   )}
                 </Button>
               </div>
@@ -517,6 +525,18 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                   onChange={(e) => setEditingReport(prev => prev ? {...prev, description: e.target.value} : null)}
                   placeholder="Report description"
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Expiration Date</label>
+                <Input
+                  type="date"
+                  value={editingReport.expiresAt ? new Date(editingReport.expiresAt).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEditingReport(prev => prev ? {...prev, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : undefined} : null)}
+                  placeholder="Expiration date"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave blank for no expiration
+                </p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">

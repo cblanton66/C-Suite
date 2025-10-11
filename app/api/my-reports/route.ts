@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { reportId, title, description, userEmail } = await request.json()
+    const { reportId, title, description, expiresAt, userEmail } = await request.json()
 
     if (!reportId || !userEmail) {
       return NextResponse.json({ error: 'Report ID and user email are required' }, { status: 400 })
@@ -82,6 +82,7 @@ export async function PUT(request: NextRequest) {
     const updateData: any = {}
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
+    if (expiresAt !== undefined) updateData.expires_at = expiresAt
 
     // Update report in Supabase
     const { data, error } = await supabaseAdmin
