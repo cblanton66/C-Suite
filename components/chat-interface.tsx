@@ -3312,35 +3312,24 @@ ${message.content}
                       </FastTooltip>
                       
                       {/* File Upload Button */}
-                      <div className="relative">
-                        <input
-                          type="file"
-                          ref={multiFileInputRef}
-                          className="hidden"
-                          onChange={handleMultipleFileUpload}
-                          accept=".xlsx,.xls,.csv,.doc,.docx,.txt"
-                          multiple
+                      <FastTooltip content="Upload multiple files (up to 5)">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
                           disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                        />
-                        <FastTooltip content="Upload multiple files (up to 5)">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={isLoading || !apiStatus?.hasApiKey || isUploading}
-                            onClick={() => {
-                              multiFileInputRef.current?.click()
-                            }}
-                            className="text-xs"
-                          >
-                            {isUploading ? (
-                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Paperclip className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </FastTooltip>
-                      </div>
+                          onClick={() => {
+                            multiFileInputRef.current?.click()
+                          }}
+                          className="text-xs"
+                        >
+                          {isUploading ? (
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Paperclip className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </FastTooltip>
                       
                       <FastTooltip content="Extract text from PDF">
                         <Button
