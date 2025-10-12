@@ -18,8 +18,8 @@ const taxInstructions = `
 # Your responses should be formatted in a professional format (headers, subheaders, data, etc.)
 # Instead of using bullet points, please use this table format:
 
-  | XXXXX | XXXXXXX | XXXXXXX |
-|-------|-------------|--------|
+  | XXXXX | XXXXXXX | XXXXXXX | 
+|:------|:-------:|---------:| 
 | XXXXX | XXXXXXXXX | $xxxxxxx |
 
 # IMPORTANT: For tax and business law questions, ALWAYS use web search to get the most current information.
