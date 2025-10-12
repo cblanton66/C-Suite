@@ -317,6 +317,12 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                         {report.title}
                       </p>
 
+                      {report.description && (
+                        <p className="text-sm text-foreground mt-1 truncate">
+                          {report.description}
+                        </p>
+                      )}
+
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
@@ -345,12 +351,6 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
                           </div>
                         )}
                       </div>
-                      
-                      {report.description && (
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
-                          {report.description}
-                        </p>
-                      )}
                       
                       {report.hasResponse && report.responseEmail && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
