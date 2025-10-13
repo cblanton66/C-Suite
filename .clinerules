@@ -1,0 +1,164 @@
+# PeakSuite.ai - Claude Code Rules & Context
+
+## Project Overview
+PeakSuite.ai is an AI-powered virtual CFO platform providing executive-level financial intelligence to businesses from $500K to $50M in revenue. Built on 31 years of CPA and private equity experience.
+
+## Tech Stack
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Storage**: Google Cloud Storage (bucket: peaksuite-files)
+- **AI**: xAI Grok (via AI SDK)
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Deployment**: Vercel
+
+## Key Architecture
+
+### Custom Instructions Location
+- Base system instructions for all users: `/app/api/chat/route.ts` (lines 6-112 in `taxInstructions` variable)
+- These define the CPA/advisor personality and behavior
+- Additional context added per-user: current date, custom user instructions, user history, file uploads
+
+### Main Components
+- **Chat Interface**: `/components/chat-interface.tsx` (main app UI)
+- **Reports System**:
+  - API: `/app/api/reports/route.ts` (create/view reports)
+  - My Reports API: `/app/api/my-reports/route.ts` (list/update/archive)
+  - Modal: `/components/my-reports-modal.tsx` (Client Comms UI)
+- **Activity Report**:
+  - API: `/app/api/activity-report/route.ts`
+  - Modal: `/components/activity-report-modal.tsx`
+- **Thread Management**: `/components/thread-management-modal.tsx`
+- **Client Notes**: Integrated with Google Cloud Storage
+
+### File Storage Structure
+Google Cloud Storage paths:
+- Reports: `Reports-view/{sanitizedEmail}/client-files/{clientFolder}/reports/{reportId}.md`
+- Notes: `Reports-view/{sanitizedEmail}/client-files/{client}/notes/note_{timestamp}.md`
+- Threads: `Reports-view/{sanitizedEmail}/client-files/{client}/threads/[THREAD] Title - ProjectType - Date.json`
+
+### Database Schema (Supabase)
+Key table: `report_links`
+- `report_id`: Unique identifier
+- `title`, `description`: Report metadata
+- `content_path`: GCS path to markdown content
+- `created_by`: User email (workspace owner)
+- `client_name`, `client_email`: Client info
+- `expires_at`: Report expiration date (controls client access)
+- `is_active`: Controls visibility in Client Comms list (archive functionality)
+- `allow_responses`: Enable client response feature
+- `recipient_response`, `response_date`, `response_email`: Client response data
+- `report_attachments`, `response_attachments`: File attachments (JSON arrays)
+
+## Recent Features & Implementation Details
+
+### Archive Functionality (Implemented)
+- "Delete" button renamed to "Archive"
+- Sets `is_active = false` (removes from user's Client Comms list)
+- Client can still view report until `expires_at` date
+- Client access controlled ONLY by expiration date, not archive status
+- Location: `/app/api/my-reports/route.ts` DELETE endpoint, `/app/api/reports/route.ts` GET endpoint
+
+### Expiration Date Management (Implemented)
+- Display expiration date on Client Comms cards
+- Edit expiration date via "Edit Info" modal
+- Format: Date picker input with "Leave blank for no expiration" helper text
+- Location: `/components/my-reports-modal.tsx`, `/app/api/my-reports/route.ts` PUT endpoint
+
+### Activity Report (Implemented)
+- Shows all work done within date range, grouped by client
+- Includes: reports (from Supabase), notes and threads (from GCS)
+- Date picker with presets: This Month, Last Month, This Quarter, Last 30 Days
+- Extracts titles from file content (notes: first line of markdown, threads: filename pattern)
+- Location: `/app/api/activity-report/route.ts`, `/components/activity-report-modal.tsx`
+
+### Client Comms Card Layout (Implemented)
+- Display order: Client name (bold) → Title → Description → Metadata
+- Description text color matches title (white/foreground)
+- Metadata: Created date, view count, expiration date, project type, response status
+
+### File Upload Fix (Implemented)
+- Removed duplicate file input element that caused conflicts
+- Single file input at component bottom with `multiFileInputRef`
+- Paperclip button properly triggers file picker
+
+## Pending Features (For Future Implementation)
+
+### Email Verification for Reports (NOT YET IMPLEMENTED)
+- Add optional toggle when creating reports: "Require email verification to view"
+- Uses existing `client_email` field
+- Client must enter matching email before viewing report
+- Prevents casual link sharing without overcomplicating security
+- Implementation estimate: 45-60 minutes
+- Database change needed: Add `require_email_verification` boolean to `report_links`
+
+## User Workflow Preferences
+
+### Communication Style
+- **Concise and direct** - avoid unnecessary preamble or explanation
+- Implement changes directly without excessive discussion
+- Keep responses short (1-4 lines typically)
+- Only provide detailed explanations when asked or when complexity requires it
+
+### Development Workflow
+1. Read files to understand current implementation
+2. Make changes directly (user prefers action over discussion)
+3. **Always push to GitHub after changes** - user will request this
+4. Use descriptive commit messages with proper formatting
+
+### Commit Message Format
+```
+Brief description of change
+
+Detailed explanation of what changed and why. Include technical details about implementation.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+### Code Style Preferences
+- Use existing patterns in the codebase
+- Prefer editing existing files over creating new ones
+- Match indentation and formatting of surrounding code
+- TypeScript strict mode compliance
+
+## Common Tasks
+
+### Adding a New Modal
+1. Create component in `/components/{name}-modal.tsx`
+2. Import in `/components/chat-interface.tsx`
+3. Add state: `const [showModal, setShowModal] = useState(false)`
+4. Add button/trigger with `onClick={() => setShowModal(true)}`
+5. Add modal component with `isOpen={showModal}` and `onClose={() => setShowModal(false)}`
+
+### Creating New API Endpoint
+1. Create `/app/api/{endpoint}/route.ts`
+2. Export async functions: `GET`, `POST`, `PUT`, `DELETE`
+3. Use `supabaseAdmin` for database queries
+4. Use `getGoogleCloudStorage()` for file operations
+5. Always validate required parameters
+6. Return proper error responses with status codes
+
+### Working with Google Cloud Storage
+```typescript
+const bucket = await getGoogleCloudStorage()
+const file = bucket.file(path)
+await file.save(content) // Upload
+const [data] = await file.download() // Download
+const [metadata] = await file.getMetadata() // Get metadata
+```
+
+## Testing Notes
+- User actively tests features during development
+- Prefers fixing issues immediately when found
+- Uses real client data, so stability is important
+- Localhost runs on default Next.js port (usually 3000)
+
+## Important Reminders
+- Custom instructions in `/app/api/chat/route.ts` affect ALL users
+- Email sanitization for GCS paths: `email.replace(/[@.]/g, '_')`
+- Always use `workspaceOwner` or `userEmail` for data ownership
+- Client access vs. archive status are separate concerns
+- File upload accepts: `.xlsx,.xls,.csv,.doc,.docx,.txt`
+- Maximum file size: 10MB per file
