@@ -637,7 +637,20 @@ function ClientDetailModal({
       console.log('[ClientDetailModal] API response:', data)
       console.log('[ClientDetailModal] Total threads:', data.threads?.length)
       console.log('[ClientDetailModal] Sample thread structure:', data.threads?.[0])
-      const clientProjects = data.threads?.filter((t: any) => t.metadata?.clientName === client.clientName) || []
+
+      // Normalize client name for comparison (case-insensitive, remove extra spaces)
+      const normalizeClientName = (name: string) => {
+        return name?.toLowerCase().replace(/\s+/g, ' ').trim() || ''
+      }
+
+      const targetClientName = normalizeClientName(client.clientName)
+      console.log('[ClientDetailModal] Looking for client:', targetClientName)
+
+      const clientProjects = data.threads?.filter((t: any) => {
+        const threadClientName = normalizeClientName(t.metadata?.clientName)
+        console.log('[ClientDetailModal] Comparing:', threadClientName, '===', targetClientName, '?', threadClientName === targetClientName)
+        return threadClientName === targetClientName
+      }) || []
       console.log('[ClientDetailModal] Filtered projects for', client.clientName, ':', clientProjects.length)
       setProjects(clientProjects)
     } catch (error) {
