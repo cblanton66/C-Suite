@@ -37,28 +37,14 @@ export function ClientProjectsTab({
       const clientOwner = client.workspaceOwner || workspaceOwner
       console.log('[ClientProjectsTab] Fetching projects for client:', client.clientName, 'owner:', clientOwner)
       const response = await fetch(
-        `/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchive=${showArchived}`
+        `/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchive=${showArchived}&clientName=${encodeURIComponent(client.clientName)}`
       )
       const data = await response.json()
       console.log('[ClientProjectsTab] API response:', data)
       console.log('[ClientProjectsTab] Total threads:', data.threads?.length)
-      console.log('[ClientProjectsTab] Sample thread structure:', data.threads?.[0])
 
-      // Normalize client name for comparison (case-insensitive, remove extra spaces)
-      const normalizeClientName = (name: string) => {
-        return name?.toLowerCase().replace(/\s+/g, ' ').trim() || ''
-      }
-
-      const targetClientName = normalizeClientName(client.clientName)
-      console.log('[ClientProjectsTab] Looking for client:', targetClientName)
-
-      const clientProjects = data.threads?.filter((t: any) => {
-        const threadClientName = normalizeClientName(t.metadata?.clientName)
-        console.log('[ClientProjectsTab] Comparing:', threadClientName, '===', targetClientName, '?', threadClientName === targetClientName)
-        return threadClientName === targetClientName
-      }) || []
-      console.log('[ClientProjectsTab] Filtered projects for', client.clientName, ':', clientProjects.length)
-      setProjects(clientProjects)
+      // No need to filter anymore - API returns only this client's threads
+      setProjects(data.threads || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {

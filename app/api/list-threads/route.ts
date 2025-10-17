@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get('userId')
     const workspaceOwner = searchParams.get('workspaceOwner')
     const includeArchive = searchParams.get('includeArchive') === 'true'
+    const clientName = searchParams.get('clientName')
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 })
@@ -52,10 +53,22 @@ export async function GET(req: NextRequest) {
     const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
     const bucket = storage.bucket(bucketName)
 
+    // If clientName is provided, convert it to slug format for folder path
+    const clientSlug = clientName ? clientName.toLowerCase().replace(/\s+/g, '-') : null
+
     // Search prefixes - include archive if requested
-    const searchPrefixes = [`Reports-view/${folderUserId}/client-files/`]
-    if (includeArchive) {
-      searchPrefixes.push(`Reports-view/${folderUserId}/archive/`)
+    // If clientName is provided, only search that specific client's folders
+    const searchPrefixes = []
+    if (clientSlug) {
+      searchPrefixes.push(`Reports-view/${folderUserId}/client-files/${clientSlug}/`)
+      if (includeArchive) {
+        searchPrefixes.push(`Reports-view/${folderUserId}/archive/${clientSlug}/`)
+      }
+    } else {
+      searchPrefixes.push(`Reports-view/${folderUserId}/client-files/`)
+      if (includeArchive) {
+        searchPrefixes.push(`Reports-view/${folderUserId}/archive/`)
+      }
     }
 
     const threads = []
