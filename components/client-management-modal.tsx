@@ -24,20 +24,7 @@ import { ClientNotesTab } from "@/components/client-detail/client-notes-tab"
 import { ClientReportsTab } from "@/components/client-detail/client-reports-tab"
 import { ClientInfoTab } from "@/components/client-detail/client-info-tab"
 import { ClientSharingTab } from "@/components/client-detail/client-sharing-tab"
-
-interface Client {
-  id?: string
-  clientName: string
-  email: string
-  phone: string
-  address: string
-  industry: string
-  status: string
-  workspaceOwner: string
-  createdBy: string
-  sharedWith: string[] | string
-  dateAdded: string
-}
+import { Client } from "@/types/client"
 
 interface ClientCounts {
   projects: number

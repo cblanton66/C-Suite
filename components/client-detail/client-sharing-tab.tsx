@@ -5,20 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Users, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-
-interface Client {
-  id?: string
-  clientName: string
-  email: string
-  phone: string
-  address: string
-  industry: string
-  status: string
-  workspaceOwner: string
-  createdBy: string
-  sharedWith: string[] | string
-  dateAdded: string
-}
+import { Client } from "@/types/client"
 
 interface ClientSharingTabProps {
   client: Client

@@ -3,20 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { FileText, ChevronRight } from "lucide-react"
-
-interface Client {
-  id?: string
-  clientName: string
-  email: string
-  phone: string
-  address: string
-  industry: string
-  status: string
-  workspaceOwner: string
-  createdBy: string
-  sharedWith: string[] | string
-  dateAdded: string
-}
+import { Client } from "@/types/client"
 
 interface ClientReportsTabProps {
   client: Client
