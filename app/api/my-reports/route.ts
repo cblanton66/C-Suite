@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const userEmail = request.nextUrl.searchParams.get('userEmail')
     const includeArchived = request.nextUrl.searchParams.get('includeArchived') === 'true'
+    const clientName = request.nextUrl.searchParams.get('clientName')
 
     if (!userEmail) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
@@ -18,6 +19,11 @@ export async function GET(request: NextRequest) {
       .from('report_links')
       .select('*')
       .eq('created_by', userEmail)
+
+    // Filter by client name if provided
+    if (clientName) {
+      query = query.eq('client_name', clientName)
+    }
 
     // Only filter by is_active if we're not including archived reports
     if (!includeArchived) {

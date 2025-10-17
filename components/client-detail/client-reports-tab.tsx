@@ -28,11 +28,11 @@ export function ClientReportsTab({
     setLoading(true)
     try {
       const includeArchived = showArchived ? 'true' : 'false'
-      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=${includeArchived}`)
+      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=${includeArchived}&clientName=${encodeURIComponent(client.clientName)}`)
       const data = await response.json()
-      const clientReports = data.reports?.filter((r: any) => r.clientName === client.clientName) || []
 
-      setReports(clientReports)
+      // No need to filter anymore - API returns only this client's reports
+      setReports(data.reports || [])
     } catch (error) {
       console.error('Error fetching reports:', error)
     } finally {
