@@ -566,6 +566,49 @@ function ClientDetailModal({
 }) {
   const [activeTab, setActiveTab] = useState<'info' | 'projects' | 'notes' | 'reports' | 'sharing'>('info')
   const [isEditing, setIsEditing] = useState(false)
+  const [counts, setCounts] = useState({ projects: 0, notes: 0, reports: 0 })
+  const [loadingCounts, setLoadingCounts] = useState(true)
+
+  // Fetch counts on mount
+  useEffect(() => {
+    const fetchCounts = async () => {
+      setLoadingCounts(true)
+      try {
+        const clientOwner = client.workspaceOwner || workspaceOwner
+        const clientSlug = client.clientName.toLowerCase().replace(/\s+/g, '-')
+
+        // Fetch all counts in parallel
+        const [projectsRes, notesRes, reportsRes] = await Promise.all([
+          fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchive=false&clientName=${encodeURIComponent(client.clientName)}`),
+          fetch(`/api/list-files?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&folder=client-files/${clientSlug}/notes`),
+          fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=false&clientName=${encodeURIComponent(client.clientName)}`)
+        ])
+
+        const [projectsData, notesData, reportsData] = await Promise.all([
+          projectsRes.json(),
+          notesRes.json(),
+          reportsRes.json()
+        ])
+
+        // Filter out placeholder files from notes
+        const actualNotes = (notesData.files || []).filter((file: any) =>
+          file.name && !file.name.endsWith('.placeholder')
+        )
+
+        setCounts({
+          projects: projectsData.threads?.length || 0,
+          notes: actualNotes.length,
+          reports: reportsData.reports?.length || 0
+        })
+      } catch (error) {
+        console.error('Error fetching counts:', error)
+      } finally {
+        setLoadingCounts(false)
+      }
+    }
+
+    fetchCounts()
+  }, [client.clientName, userEmail, workspaceOwner])
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -628,26 +671,53 @@ function ClientDetailModal({
               }`}
             >
               Projects
+              {!loadingCounts && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === 'projects'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-gray-700 text-gray-300'
+                }`}>
+                  {counts.projects}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`pb-2 px-2 font-medium text-sm transition-colors ${
+              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                 activeTab === 'notes'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Notes
+              {!loadingCounts && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === 'notes'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-gray-700 text-gray-300'
+                }`}>
+                  {counts.notes}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`pb-2 px-2 font-medium text-sm transition-colors ${
+              className={`pb-2 px-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                 activeTab === 'reports'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Reports
+              {!loadingCounts && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === 'reports'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-gray-700 text-gray-300'
+                }`}>
+                  {counts.reports}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('sharing')}

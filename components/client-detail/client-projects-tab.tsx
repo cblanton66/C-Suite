@@ -117,8 +117,13 @@ export function ClientProjectsTab({
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-4 bg-gray-800/30 rounded-lg animate-pulse">
+              <div className="h-5 bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+            </div>
+          ))}
         </div>
       ) : projects.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
