@@ -1,4 +1,5 @@
 import { Storage } from '@google-cloud/storage'
+import { updateClientMetadata, getClientMetadata } from './client-metadata'
 
 let storage: Storage | null = null
 
@@ -63,6 +64,14 @@ ${content}
     })
 
     console.log(`[savePrivateNote] Saved private note for ${clientName} to ${filePath}`)
+
+    // Update client metadata (don't block on this)
+    updateClientMetadata(userId, clientName, clientFolder, {
+      type: 'note',
+      title: title || `Private Note - ${clientName}`,
+      path: filePath
+    }).catch(err => console.error('[savePrivateNote] Metadata update failed:', err))
+
     return true
   } catch (error) {
     console.error('Error saving private note to Google Cloud Storage:', error)
@@ -185,11 +194,14 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     // Use workspaceOwner for file path (where to look for files)
     const fileOwner = workspaceOwner || userId
 
-    // Check cache first
-    const cacheKey = `${fileOwner}-${JSON.stringify(searchAnalysis)}-${query}`
-    const cached = reportCache.get(cacheKey)
+    // IMPROVED CACHING: Cache by client name instead of full query
+    const clientCacheKey = searchAnalysis.clientNames.length > 0
+      ? `${fileOwner}-client-${searchAnalysis.clientNames[0]}`
+      : `${fileOwner}-general`
+
+    const cached = reportCache.get(clientCacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('[getUserReports] Returning cached results')
+      console.log('[getUserReports] Returning cached results for client:', clientCacheKey)
       return cached.content
     }
 
@@ -207,6 +219,35 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     const bucket = storage.bucket(bucketName)
 
     console.log(`[getUserReports] Performing targeted search for user: ${folderUserId}`)
+
+    // OPTIMIZATION: If client name is specified, try to use metadata first
+    let metadataContent = ''
+    if (searchAnalysis.clientNames.length > 0) {
+      for (const clientName of searchAnalysis.clientNames) {
+        const clientSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+        const metadata = await getClientMetadata(fileOwner, clientSlug)
+
+        if (metadata) {
+          console.log(`[getUserReports] Found metadata for ${clientName}:`, {
+            files: metadata.fileCounts,
+            lastInteraction: metadata.lastInteraction
+          })
+
+          metadataContent += `\n\n--- CLIENT: ${metadata.clientName} ---\n`
+          metadataContent += `Summary: ${metadata.summary}\n`
+          metadataContent += `Files: ${metadata.fileCounts.projects} projects, ${metadata.fileCounts.notes} notes, ${metadata.fileCounts.reports} reports\n`
+          metadataContent += `Last Interaction: ${new Date(metadata.lastInteraction).toLocaleDateString()}\n`
+
+          if (metadata.recentActivity.length > 0) {
+            metadataContent += `\nRecent Activity:\n`
+            metadata.recentActivity.slice(0, 5).forEach(activity => {
+              metadataContent += `- ${activity.type.toUpperCase()}: ${activity.title} (${new Date(activity.date).toLocaleDateString()})\n`
+            })
+          }
+          metadataContent += `--- END CLIENT METADATA ---\n`
+        }
+      }
+    }
 
     // Search in BOTH old and new file structures for backward compatibility
     // EXCLUDE archive folder - archived files are not included in history search
@@ -285,10 +326,10 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       return false
     })
     
-    // Sort by modification date (most recent first) and limit to 20 files
+    // Sort by modification date (most recent first) and limit to 10 files (reduced from 20)
     const sortedFiles = relevantFiles
       .sort((a, b) => new Date(b.updated || 0).getTime() - new Date(a.updated || 0).getTime())
-      .slice(0, 20)
+      .slice(0, 10)
     
     console.log(`[getUserReports] Processing ${sortedFiles.length} relevant files (filtered from ${allFiles.length})`)
     
@@ -373,10 +414,11 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       }
     }
 
-    const finalContent = allReportsContent.trim()
-    
-    // Cache the results
-    reportCache.set(cacheKey, {
+    // Prepend metadata content (if any) before file content
+    const finalContent = (metadataContent + allReportsContent).trim()
+
+    // Cache the results with improved cache key
+    reportCache.set(clientCacheKey, {
       content: finalContent,
       timestamp: Date.now()
     })

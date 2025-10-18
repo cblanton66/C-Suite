@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Storage } from '@google-cloud/storage'
+import { updateClientMetadata } from '@/lib/client-metadata'
 
 let storage: Storage | null = null
 
@@ -87,9 +88,16 @@ export async function POST(req: NextRequest) {
       })
 
       console.log(`[save-thread] Saved thread to ${filePath}`)
-      
-      return NextResponse.json({ 
-        success: true, 
+
+      // Update client metadata (don't block on this)
+      updateClientMetadata(fileOwner, clientName, clientFolder, {
+        type: 'thread',
+        title,
+        path: filePath
+      }).catch(err => console.error('[save-thread] Metadata update failed:', err))
+
+      return NextResponse.json({
+        success: true,
         message: "Conversation thread saved successfully",
         threadId: threadData.threadId
       })
