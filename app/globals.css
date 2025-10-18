@@ -72,7 +72,7 @@
     @apply ring-2 ring-primary ring-opacity-50 transition-all duration-500 ease-out;
     animation: highlight-pulse 2s ease-out;
   }
-  
+
   @keyframes highlight-pulse {
     0% {
       @apply ring-opacity-50 bg-primary/10;
@@ -84,16 +84,38 @@
       @apply ring-opacity-0 bg-transparent;
     }
   }
-  
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .search-highlight {
     @apply ring-2 ring-yellow-400 dark:ring-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 transition-all duration-300;
+  }
+
+  /* Mobile-friendly modal fixes */
+  .modal-overlay {
+    @apply fixed inset-0 flex items-center justify-center z-50 p-4 overflow-y-auto;
+  }
+
+  .modal-content {
+    @apply w-full flex flex-col my-auto;
+    max-height: 85vh;
+  }
+
+  @media (min-width: 768px) {
+    .modal-content {
+      max-height: 90vh;
+    }
+  }
+
+  /* Ensure modal body scrolls properly on mobile */
+  .modal-body-scroll {
+    @apply flex-1 overflow-y-auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

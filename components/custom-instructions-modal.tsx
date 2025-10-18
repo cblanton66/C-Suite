@@ -75,8 +75,8 @@ export function CustomInstructionsModal({ isOpen, onClose, userEmail }: CustomIn
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[85vh] md:max-h-[90vh] flex flex-col my-auto">
         <div className="p-6 border-b flex items-center justify-between">
           <h2 className="text-xl font-semibold">Custom Instructions</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>

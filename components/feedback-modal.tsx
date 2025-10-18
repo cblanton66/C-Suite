@@ -91,15 +91,15 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
+
       {/* Modal */}
-      <Card className="relative w-full max-w-lg mx-4 p-6 shadow-2xl border-2 border-primary/20">
+      <Card className="relative w-full max-w-lg p-6 shadow-2xl border-2 border-primary/20 max-h-[85vh] md:max-h-[90vh] overflow-y-auto my-auto">
         {/* Close Button */}
         <Button
           variant="ghost"

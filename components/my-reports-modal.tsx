@@ -206,7 +206,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
@@ -214,7 +214,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col my-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
