@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { FileText, Edit, Copy, Archive, X } from "lucide-react"
+import { FileText, Edit, Copy, Archive, X, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Client } from "@/types/client"
 
@@ -28,6 +29,13 @@ export function ClientNotesTab({
   const [editedNoteContent, setEditedNoteContent] = useState('')
   const [savingNote, setSavingNote] = useState(false)
   const [archivingNote, setArchivingNote] = useState(false)
+  const [showNewNoteModal, setShowNewNoteModal] = useState(false)
+  const [newNoteContent, setNewNoteContent] = useState('')
+  const [newNoteTitle, setNewNoteTitle] = useState('')
+  const [savingNewNote, setSavingNewNote] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [noteToDelete, setNoteToDelete] = useState<any>(null)
+  const [deletingNote, setDeletingNote] = useState(false)
 
   useEffect(() => {
     fetchNotes()
@@ -161,6 +169,79 @@ export function ClientNotesTab({
     }
   }
 
+  const handleDeleteNote = async () => {
+    if (!noteToDelete) return
+
+    setDeletingNote(true)
+    try {
+      const response = await fetch('/api/delete-file', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: noteToDelete.name
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Note deleted successfully!')
+        setShowDeleteConfirm(false)
+        setNoteToDelete(null)
+
+        // Close note viewer if the deleted note was open
+        if (selectedNote?.name === noteToDelete.name) {
+          handleCloseNote()
+        }
+
+        fetchNotes()
+      } else {
+        toast.error('Failed to delete note')
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error)
+      toast.error('Failed to delete note')
+    } finally {
+      setDeletingNote(false)
+    }
+  }
+
+  const handleCreateNewNote = async () => {
+    if (!newNoteContent.trim()) {
+      toast.error('Note content cannot be empty')
+      return
+    }
+
+    setSavingNewNote(true)
+    try {
+      const response = await fetch('/api/save-private-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userEmail,
+          workspaceOwner: client.workspaceOwner || workspaceOwner,
+          clientName: client.clientName,
+          content: newNoteContent,
+          title: newNoteTitle.trim() || `Note - ${new Date().toLocaleDateString()}`
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Note created successfully!')
+        setShowNewNoteModal(false)
+        setNewNoteContent('')
+        setNewNoteTitle('')
+        fetchNotes()
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to create note')
+      }
+    } catch (error) {
+      console.error('Error creating note:', error)
+      toast.error('Failed to create note')
+    } finally {
+      setSavingNewNote(false)
+    }
+  }
+
   const renderTextWithLinks = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g
@@ -231,13 +312,23 @@ export function ClientNotesTab({
           <h3 className="text-lg font-semibold">
             {showArchivedNotes ? 'All Notes' : 'Active Notes'} ({filteredNotes.length})
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowArchivedNotes(!showArchivedNotes)}
-          >
-            {showArchivedNotes ? 'Hide Archive' : 'Show Archive'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowNewNoteModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Note
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchivedNotes(!showArchivedNotes)}
+            >
+              {showArchivedNotes ? 'Hide Archive' : 'Show Archive'}
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -265,11 +356,10 @@ export function ClientNotesTab({
               return (
                 <div
                   key={note.name || index}
-                  className="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer"
-                  onClick={() => handleOpenNote(note)}
+                  className="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors group"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                    <div className="flex-1 cursor-pointer" onClick={() => handleOpenNote(note)}>
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold">{noteTitle}</h4>
                         {isArchived && (
@@ -280,7 +370,21 @@ export function ClientNotesTab({
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">{noteDate}</p>
                     </div>
-                    <FileText className="w-5 h-5 text-green-500" />
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-green-500" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setNoteToDelete(note)
+                          setShowDeleteConfirm(true)
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )
@@ -335,6 +439,18 @@ export function ClientNotesTab({
                       <Archive className="w-4 h-4 mr-2" />
                       {archivingNote ? 'Archiving...' : 'Archive'}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setNoteToDelete(selectedNote)
+                        setShowDeleteConfirm(true)
+                      }}
+                      className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
                   </>
                 )}
                 <Button variant="ghost" size="sm" onClick={handleCloseNote}>
@@ -361,6 +477,111 @@ export function ClientNotesTab({
                   </pre>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create New Note Modal */}
+      {showNewNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl mx-4 max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Create New Note for {client.clientName}</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowNewNoteModal(false)
+                  setNewNoteContent('')
+                  setNewNoteTitle('')
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Note Title</label>
+                <Input
+                  value={newNoteTitle}
+                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                  placeholder="Enter note title (optional)"
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-2">Note Content</label>
+                <Textarea
+                  value={newNoteContent}
+                  onChange={(e) => setNewNoteContent(e.target.value)}
+                  className="w-full min-h-[350px] font-mono text-sm resize-none"
+                  placeholder="Enter your note content here..."
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowNewNoteModal(false)
+                  setNewNoteContent('')
+                  setNewNoteTitle('')
+                }}
+                disabled={savingNewNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateNewNote}
+                disabled={savingNewNote || !newNoteContent.trim()}
+              >
+                {savingNewNote ? 'Creating...' : 'Create Note'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && noteToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-red-500">
+              <Trash2 className="w-6 h-6" />
+              Delete Note
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to permanently delete this note? This action cannot be undone.
+            </p>
+            <div className="bg-gray-100 dark:bg-gray-900 rounded p-3 mb-6">
+              <p className="text-sm font-medium">{noteToDelete.title || noteToDelete.name?.split('/').pop() || 'Untitled Note'}</p>
+              {noteToDelete.uploadedAt && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Created: {new Date(noteToDelete.uploadedAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  setNoteToDelete(null)
+                }}
+                disabled={deletingNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteNote}
+                disabled={deletingNote}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deletingNote ? 'Deleting...' : 'Delete Note'}
+              </Button>
             </div>
           </div>
         </div>
