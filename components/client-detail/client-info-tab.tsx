@@ -57,7 +57,7 @@ export function ClientInfoTab({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clientId: client.clientId,
+          clientId: client.id,
           oldClientName: client.clientName,
           newClientName: newClientName.trim(),
           userEmail,

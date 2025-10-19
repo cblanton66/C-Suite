@@ -27,9 +27,18 @@ const initializeStorage = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { clientId, oldClientName, newClientName, userEmail, workspaceOwner } = await req.json()
+    const body = await req.json()
+    const { clientId, oldClientName, newClientName, userEmail, workspaceOwner } = body
+
+    console.log('[RENAME_CLIENT] Received request body:', JSON.stringify(body, null, 2))
 
     if (!clientId || !oldClientName || !newClientName || !userEmail) {
+      console.log('[RENAME_CLIENT] Missing required fields:', {
+        hasClientId: !!clientId,
+        hasOldClientName: !!oldClientName,
+        hasNewClientName: !!newClientName,
+        hasUserEmail: !!userEmail
+      })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -59,7 +68,7 @@ export async function POST(req: NextRequest) {
       const { error: updateError } = await supabaseAdmin
         .from('clients')
         .update({ client_name: newClientName })
-        .eq('client_id', clientId)
+        .eq('id', clientId)
 
       if (updateError) {
         console.error('[RENAME_CLIENT] Supabase update error:', updateError)
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
       const { error: updateError } = await supabaseAdmin
         .from('clients')
         .update({ client_name: newClientName })
-        .eq('client_id', clientId)
+        .eq('id', clientId)
 
       if (updateError) {
         console.error('[RENAME_CLIENT] Supabase update error:', updateError)
@@ -160,6 +169,39 @@ export async function POST(req: NextRequest) {
       failed: failCount
     })
 
+    // Also move archive folder if it exists
+    const oldArchivePath = `Reports-view/${folderUserId}/archive/${oldSlug}/`
+    const newArchivePath = `Reports-view/${folderUserId}/archive/${newSlug}/`
+
+    console.log('[RENAME_CLIENT] Checking for archive folder:', oldArchivePath)
+    const [archiveFiles] = await bucket.getFiles({ prefix: oldArchivePath })
+
+    if (archiveFiles.length > 0) {
+      console.log('[RENAME_CLIENT] Found', archiveFiles.length, 'archive files to move')
+
+      for (const file of archiveFiles) {
+        try {
+          const relativePath = file.name.substring(oldArchivePath.length)
+          const newFilePath = newArchivePath + relativePath
+
+          console.log('[RENAME_CLIENT] Moving archive file:', file.name, '->', newFilePath)
+
+          await file.copy(newFilePath)
+          await file.delete()
+
+          successCount++
+        } catch (error) {
+          console.error('[RENAME_CLIENT] Error moving archive file:', file.name, error)
+          failCount++
+          errors.push(`Failed to move archive file ${file.name}`)
+        }
+      }
+
+      console.log('[RENAME_CLIENT] Archive migration complete')
+    } else {
+      console.log('[RENAME_CLIENT] No archive folder found')
+    }
+
     if (failCount > 0 && successCount === 0) {
       return NextResponse.json({
         error: `Failed to move files. ${errors.join(', ')}`
@@ -170,7 +212,7 @@ export async function POST(req: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('clients')
       .update({ client_name: newClientName })
-      .eq('client_id', clientId)
+      .eq('id', clientId)
 
     if (updateError) {
       console.error('[RENAME_CLIENT] Supabase update error:', updateError)
