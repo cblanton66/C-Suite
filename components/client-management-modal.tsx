@@ -740,6 +740,8 @@ function ClientDetailModal({
               isEditing={isEditing}
               onEditingChange={setIsEditing}
               onUpdate={onUpdate}
+              userEmail={userEmail}
+              workspaceOwner={workspaceOwner}
             />
           )}
 
