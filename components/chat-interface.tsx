@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2 } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -1431,6 +1431,26 @@ export function ChatInterface() {
         document.body.removeChild(textArea)
       }
     }
+  }
+
+  const deleteMessagePair = (messageIndex: number) => {
+    // Delete both the user question and the assistant response
+    // User messages are at even indices, assistant messages at odd indices
+    const updatedMessages = [...messages]
+
+    // Remove the message pair (question + answer)
+    // If clicking on user message (even index), remove it and the next message
+    // If clicking on assistant message (odd index), remove it and the previous message
+    if (messageIndex % 2 === 0) {
+      // User message - remove this and next (assistant response)
+      updatedMessages.splice(messageIndex, 2)
+    } else {
+      // Assistant message - remove this and previous (user question)
+      updatedMessages.splice(messageIndex - 1, 2)
+    }
+
+    setMessages(updatedMessages)
+    toast.success('Message pair deleted')
   }
 
   const printMessage = (text: string, messageId: string) => {
@@ -3499,7 +3519,7 @@ ${message.content}
             className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full pb-80"
           >
             
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div key={message.id} id={`message-${message.id}`} data-message-id={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <Card
                   className={`max-w-[80%] p-4 ${
@@ -3623,6 +3643,16 @@ ${message.content}
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => deleteMessagePair(index)}
+                            className="h-6 px-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            title="Delete this question and answer"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Delete
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => startEditingMessage(message.id, message.content)}
                             className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
                             title="Edit message"
@@ -3695,6 +3725,16 @@ ${message.content}
                         >
                           <Printer className="w-3 h-3 mr-1" />
                           Print
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteMessagePair(index)}
+                          className="h-6 px-2 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                          title="Delete this question and answer"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Delete
                         </Button>
                         <Button
                           size="sm"
