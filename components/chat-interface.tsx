@@ -711,6 +711,8 @@ export function ChatInterface() {
     setInput('')
     // Close the thread management modal
     setShowThreadManagementModal(false)
+    // Scroll to bottom to show most recent messages
+    setTimeout(() => scrollToBottom(true, true), 100)
   }
 
   // Voice command detection for quick notes
@@ -3726,7 +3728,7 @@ ${message.content}
                                   className="fixed inset-0 z-40"
                                   onClick={() => setOpenMessageMoreMenu(null)}
                                 />
-                                <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+                                <div className="absolute right-0 bottom-full mb-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
                                   <button
                                     onClick={() => {
                                       toggleBookmark(message)
@@ -3843,7 +3845,7 @@ ${message.content}
                                 className="fixed inset-0 z-40"
                                 onClick={() => setOpenMessageMoreMenu(null)}
                               />
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+                              <div className="absolute left-0 bottom-full mb-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
                                 <button
                                   onClick={() => {
                                     toggleBookmark(message)
