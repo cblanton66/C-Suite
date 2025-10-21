@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2 } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2, MoreVertical } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -160,6 +160,7 @@ export function ChatInterface() {
   const [showClientManagementModal, setShowClientManagementModal] = useState(false)
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
+  const [openMessageMoreMenu, setOpenMessageMoreMenu] = useState<string | null>(null)
   const [showCustomInstructions, setShowCustomInstructions] = useState(false)
   const [showWelcomeMessageModal, setShowWelcomeMessageModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
@@ -3602,20 +3603,7 @@ ${message.content}
                       {/* Action buttons for user messages */}
                       {editingMessageId !== message.id && (
                         <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => toggleBookmark(message)}
-                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
-                            title={message.isBookmarked ? "Remove bookmark" : "Bookmark message"}
-                          >
-                            {message.isBookmarked ? (
-                              <BookmarkCheck className="w-3 h-3 mr-1" />
-                            ) : (
-                              <Bookmark className="w-3 h-3 mr-1" />
-                            )}
-                            {message.isBookmarked ? "Bookmarked" : "Bookmark"}
-                          </Button>
+                          {/* Primary actions */}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -3633,22 +3621,12 @@ ${message.content}
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => printMessage(message.content, message.id)}
+                            onClick={() => setShowThreadSaveModal(true)}
                             className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
-                            title="Print message"
+                            title="Save conversation thread"
                           >
-                            <Printer className="w-3 h-3 mr-1" />
-                            Print
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteMessagePair(index)}
-                            className="h-6 px-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                            title="Delete this question and answer"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Delete
+                            <MessageCircle className="w-3 h-3 mr-1" />
+                            Save Project
                           </Button>
                           <Button
                             size="sm"
@@ -3660,26 +3638,75 @@ ${message.content}
                             <Edit3 className="w-3 h-3 mr-1" />
                             Edit
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => preparePrivateNote(message)}
-                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
-                            title="Save to private notes"
-                          >
-                            <FolderOpen className="w-3 h-3 mr-1" />
-                            Client Note
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setShowThreadSaveModal(true)}
-                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
-                            title="Save conversation thread"
-                          >
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                            Save Project
-                          </Button>
+
+                          {/* More menu */}
+                          <div className="relative">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setOpenMessageMoreMenu(openMessageMoreMenu === message.id ? null : message.id)}
+                              className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+                              title="More actions"
+                            >
+                              <MoreVertical className="w-3 h-3" />
+                            </Button>
+
+                            {openMessageMoreMenu === message.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setOpenMessageMoreMenu(null)}
+                                />
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+                                  <button
+                                    onClick={() => {
+                                      toggleBookmark(message)
+                                      setOpenMessageMoreMenu(null)
+                                    }}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    {message.isBookmarked ? (
+                                      <BookmarkCheck className="w-3 h-3" />
+                                    ) : (
+                                      <Bookmark className="w-3 h-3" />
+                                    )}
+                                    {message.isBookmarked ? "Remove Bookmark" : "Bookmark"}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      printMessage(message.content, message.id)
+                                      setOpenMessageMoreMenu(null)
+                                    }}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <Printer className="w-3 h-3" />
+                                    Print
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      preparePrivateNote(message)
+                                      setOpenMessageMoreMenu(null)
+                                    }}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <FolderOpen className="w-3 h-3" />
+                                    Client Note
+                                  </button>
+                                  <div className="border-t border-border my-1" />
+                                  <button
+                                    onClick={() => {
+                                      deleteMessagePair(index)
+                                      setOpenMessageMoreMenu(null)
+                                    }}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -3688,20 +3715,7 @@ ${message.content}
                       <MarkdownRenderer content={message.content} />
                       {/* Action buttons for assistant messages */}
                       <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => toggleBookmark(message)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
-                          title={message.isBookmarked ? "Remove bookmark" : "Bookmark message"}
-                        >
-                          {message.isBookmarked ? (
-                            <BookmarkCheck className="w-3 h-3 mr-1" />
-                          ) : (
-                            <Bookmark className="w-3 h-3 mr-1" />
-                          )}
-                          {message.isBookmarked ? "Bookmarked" : "Bookmark"}
-                        </Button>
+                        {/* Primary actions */}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -3715,36 +3729,6 @@ ${message.content}
                             <Copy className="w-3 h-3 mr-1" />
                           )}
                           {copiedMessageId === message.id ? "Copied" : "Copy"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => printMessage(message.content, message.id)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
-                          title="Print message"
-                        >
-                          <Printer className="w-3 h-3 mr-1" />
-                          Print
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteMessagePair(index)}
-                          className="h-6 px-2 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600"
-                          title="Delete this question and answer"
-                        >
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          Delete
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => preparePrivateNote(message)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
-                          title="Save to private notes"
-                        >
-                          <FolderOpen className="w-3 h-3 mr-1" />
-                          Client Note
                         </Button>
                         <Button
                           size="sm"
@@ -3771,6 +3755,75 @@ ${message.content}
                           )}
                           {shareReportLoading === message.id ? "Sending..." : "Send to Client"}
                         </Button>
+
+                        {/* More menu */}
+                        <div className="relative">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setOpenMessageMoreMenu(openMessageMoreMenu === message.id ? null : message.id)}
+                            className="h-6 px-2 text-xs text-muted-foreground hover:bg-muted"
+                            title="More actions"
+                          >
+                            <MoreVertical className="w-3 h-3" />
+                          </Button>
+
+                          {openMessageMoreMenu === message.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setOpenMessageMoreMenu(null)}
+                              />
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+                                <button
+                                  onClick={() => {
+                                    toggleBookmark(message)
+                                    setOpenMessageMoreMenu(null)
+                                  }}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                >
+                                  {message.isBookmarked ? (
+                                    <BookmarkCheck className="w-3 h-3" />
+                                  ) : (
+                                    <Bookmark className="w-3 h-3" />
+                                  )}
+                                  {message.isBookmarked ? "Remove Bookmark" : "Bookmark"}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    printMessage(message.content, message.id)
+                                    setOpenMessageMoreMenu(null)
+                                  }}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                >
+                                  <Printer className="w-3 h-3" />
+                                  Print
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    preparePrivateNote(message)
+                                    setOpenMessageMoreMenu(null)
+                                  }}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                >
+                                  <FolderOpen className="w-3 h-3" />
+                                  Client Note
+                                </button>
+                                <div className="border-t border-border my-1" />
+                                <button
+                                  onClick={() => {
+                                    deleteMessagePair(index)
+                                    setOpenMessageMoreMenu(null)
+                                  }}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  Delete
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
