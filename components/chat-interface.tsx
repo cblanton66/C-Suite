@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2, MoreVertical } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2, MoreVertical, Briefcase } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -161,6 +161,8 @@ export function ChatInterface() {
   const [showThreadSaveModal, setShowThreadSaveModal] = useState(false)
   const [showThreadManagementModal, setShowThreadManagementModal] = useState(false)
   const [openMessageMoreMenu, setOpenMessageMoreMenu] = useState<string | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
   const [showCustomInstructions, setShowCustomInstructions] = useState(false)
   const [showWelcomeMessageModal, setShowWelcomeMessageModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
@@ -181,6 +183,8 @@ export function ChatInterface() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+  const workspaceMenuRef = useRef<HTMLDivElement>(null)
 
   // Load chat history and current session on mount
   useEffect(() => {
@@ -1928,8 +1932,8 @@ export function ChatInterface() {
   // Click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showUserMenu && 
-          userMenuRef.current && 
+      if (showUserMenu &&
+          userMenuRef.current &&
           !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false)
       }
@@ -1938,6 +1942,34 @@ export function ChatInterface() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showUserMenu])
+
+  // Click outside to close export menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportMenu &&
+          exportMenuRef.current &&
+          !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showExportMenu])
+
+  // Click outside to close workspace menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showWorkspaceMenu &&
+          workspaceMenuRef.current &&
+          !workspaceMenuRef.current.contains(event.target as Node)) {
+        setShowWorkspaceMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showWorkspaceMenu])
 
 
   // Auto-scroll to bottom when new messages arrive
@@ -2775,40 +2807,71 @@ ${message.content}
 
           {/* Right side - Main action buttons + User Menu + Theme */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Clients Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowClientManagementModal(true)}
-              className="flex items-center gap-2"
-            >
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Clients</span>
-            </Button>
+            {/* Workspace Dropdown */}
+            <div className="relative" ref={workspaceMenuRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
+                className="flex items-center gap-2"
+              >
+                <Briefcase className="w-4 h-4" />
+                <span className="hidden sm:inline">Workspace</span>
+                <ChevronDown className="w-3 h-3" />
+              </Button>
 
-            {/* Client Notes Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowClientNotesModal(true)}
-              className="flex items-center gap-2"
-            >
-              <StickyNote className="w-4 h-4" />
-              <span className="hidden sm:inline">Client Notes</span>
-            </Button>
+              {showWorkspaceMenu && (
+                <div className="absolute left-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-20">
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setShowClientManagementModal(true)
+                        setShowWorkspaceMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      Clients
+                    </button>
 
-            {/* Manage Projects Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowThreadManagementModal(true)}
-              className="flex items-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Projects</span>
-            </Button>
+                    <button
+                      onClick={() => {
+                        setShowClientNotesModal(true)
+                        setShowWorkspaceMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <StickyNote className="w-4 h-4" />
+                      Client Notes
+                    </button>
 
-            {/* Client Comms Button */}
+                    <button
+                      onClick={() => {
+                        setShowThreadManagementModal(true)
+                        setShowWorkspaceMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Projects
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowActivityReportModal(true)
+                        setShowWorkspaceMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Activity Report
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Client Comms Button - Keep standalone */}
             <Button
               variant="ghost"
               size="sm"
@@ -2819,16 +2882,82 @@ ${message.content}
               <span className="hidden sm:inline">Client Comms</span>
             </Button>
 
-            {/* Activity Report Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowActivityReportModal(true)}
-              className="flex items-center gap-2"
-            >
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Activity Report</span>
-            </Button>
+            {/* Export Menu - only show when messages exist */}
+            {messages.length > 0 && (
+              <div className="relative" ref={exportMenuRef}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-20">
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          exportConversationAsText()
+                          setShowExportMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export as Text
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          exportConversationAsPDF()
+                          setShowExportMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Export as HTML
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          copyAsRichText()
+                          setShowExportMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Clipboard className="w-4 h-4" />
+                        Copy Rich Text
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          exportAsEmailFormat()
+                          setShowExportMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Copy Email Format
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          copyAsMarkdown()
+                          setShowExportMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Copy as Markdown
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -2931,66 +3060,6 @@ ${message.content}
                       Custom Instructions
                     </button>
 
-                    {messages.length > 0 && (
-                      <>
-                        <div className="border-t border-border my-2"></div>
-                        <button
-                          onClick={() => {
-                            exportConversationAsText()
-                            setShowUserMenu(false)
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Download className="w-4 h-4" />
-                          Export as Text
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            exportConversationAsPDF()
-                            setShowUserMenu(false)
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Share2 className="w-4 h-4" />
-                          Export as HTML
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            copyAsRichText()
-                            setShowUserMenu(false)
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Clipboard className="w-4 h-4" />
-                          Copy Rich Text
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            exportAsEmailFormat()
-                            setShowUserMenu(false)
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Mail className="w-4 h-4" />
-                          Copy Email Format
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            copyAsMarkdown()
-                            setShowUserMenu(false)
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          <FileDown className="w-4 h-4" />
-                          Copy as Markdown
-                        </button>
-                      </>
-                    )}
-                    
                     <div className="border-t border-border my-2"></div>
                     
                     {/* Upload Files - only show if user has admin or upload permission */}
