@@ -334,13 +334,29 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       }
     }
 
-    // Search in new file structure INCLUDING archive folder
-    const searchPrefixes = [
-      `Reports-view/${folderUserId}/client-files/`,  // Active client files
-      `Reports-view/${folderUserId}/archive/`        // Archived client files
-    ]
+    // OPTIMIZED: Search only specific client folder if client name is known
+    let searchPrefixes: string[] = []
 
-    // Get files from all locations
+    if (searchAnalysis.clientNames.length > 0) {
+      // Client name is known - search only that client's folders
+      const clientName = searchAnalysis.clientNames[0]
+      const clientSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+
+      searchPrefixes = [
+        `Reports-view/${folderUserId}/client-files/${clientSlug}/`,  // Active client files
+        `Reports-view/${folderUserId}/archive/${clientSlug}/`        // Archived client files
+      ]
+      console.log(`[getUserReports] Searching only client folder: ${clientSlug}`)
+    } else {
+      // No client name - search all folders (less common)
+      searchPrefixes = [
+        `Reports-view/${folderUserId}/client-files/`,  // All active client files
+        `Reports-view/${folderUserId}/archive/`        // All archived client files
+      ]
+      console.log(`[getUserReports] No client specified - searching all folders`)
+    }
+
+    // Get files from targeted locations
     const allFiles = []
     for (const prefix of searchPrefixes) {
       try {
@@ -352,35 +368,36 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       }
     }
 
-    console.log(`[getUserReports] Found ${allFiles.length} total files across all locations`)
+    console.log(`[getUserReports] Found ${allFiles.length} total files in targeted search`)
 
-    // Filter files based on search criteria - FUZZY MATCHING
+    // Filter files based on search criteria
     const relevantFiles = allFiles.filter(file => {
       const fileName = file.name.toLowerCase()
-      const filePath = file.name.toLowerCase()
 
-      // FUZZY CLIENT NAME MATCHING
-      // Match if ANY word from the client name appears in the file path
+      // If we're already searching a specific client folder, all files are relevant
+      // Just filter by date/project keywords if present
       if (searchAnalysis.clientNames.length > 0) {
-        const matchesClient = searchAnalysis.clientNames.some(clientName => {
-          // Split client name into individual words
-          const words = clientName.toLowerCase().split(/\s+/)
-
-          // Match if ANY word appears in the path (handles "Jacquita" matching "cline-jacquita")
-          const anyWordMatches = words.some(word =>
-            word.length > 2 && filePath.includes(word)
+        // Optional: filter by date keywords
+        if (searchAnalysis.dateKeywords.length > 0) {
+          const matchesDate = searchAnalysis.dateKeywords.some(dateKeyword =>
+            fileName.includes(dateKeyword.toLowerCase())
           )
+          if (!matchesDate) return false
+        }
 
-          if (anyWordMatches) return true
+        // Optional: filter by project keywords
+        if (searchAnalysis.projectKeywords.length > 0) {
+          const matchesProject = searchAnalysis.projectKeywords.some(projectKeyword =>
+            fileName.includes(projectKeyword.toLowerCase())
+          )
+          if (!matchesProject) return false
+        }
 
-          // Also try exact phrase match (handles "jacquita cline" → "jacquita-cline")
-          const exactPhrase = clientName.toLowerCase().replace(/\s+/g, '-')
-          if (filePath.includes(exactPhrase)) return true
-
-          return false
-        })
-        if (matchesClient) return true
+        return true // Include all files from the specific client folder
       }
+
+      // If no client specified, use fuzzy matching (fallback for general search)
+      const filePath = file.name.toLowerCase()
 
       // Check if file matches date keywords
       if (searchAnalysis.dateKeywords.length > 0) {
@@ -401,11 +418,14 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       return false
     })
 
-    // Sort by modification date (most recent first) - search ALL files for the client
+    // Sort by modification date (most recent first) and limit to most recent 50 files
+    // This prevents slowdowns when clients have 100+ files over multiple years
+    const MAX_FILES_PER_SEARCH = 50
     const sortedFiles = relevantFiles
       .sort((a, b) => new Date(b.updated || 0).getTime() - new Date(a.updated || 0).getTime())
-    
-    console.log(`[getUserReports] Processing ${sortedFiles.length} relevant files (filtered from ${allFiles.length})`)
+      .slice(0, MAX_FILES_PER_SEARCH)
+
+    console.log(`[getUserReports] Processing ${sortedFiles.length} most recent files (filtered from ${allFiles.length} total)`)
 
     if (sortedFiles.length === 0) {
       console.log('[getUserReports] No relevant files found for query')
