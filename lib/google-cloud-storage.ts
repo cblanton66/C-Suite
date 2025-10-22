@@ -80,8 +80,26 @@ ${content}
 }
 
 // Cache for user reports to avoid repeated expensive operations
-const reportCache = new Map<string, { content: string; timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const reportCache = new Map<string, { content: string; timestamp: number; clientName?: string }>()
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes - longer duration for conversation continuity
+
+// Track last searched client per user for conversation continuity
+const lastSearchedClient = new Map<string, { clientName: string; timestamp: number }>()
+
+// Function to clear cache for a specific user (called when starting new conversation)
+export function clearUserCache(userId: string) {
+  // Clear all cache entries for this user
+  for (const [key] of reportCache.entries()) {
+    if (key.startsWith(userId)) {
+      reportCache.delete(key)
+    }
+  }
+
+  // Clear last searched client for this user
+  lastSearchedClient.delete(userId)
+
+  console.log(`[clearUserCache] Cleared all cache for user: ${userId}`)
+}
 
 // Helper function to extract search keywords from user query
 function extractSearchKeywords(query: string): { clientNames: string[], dateKeywords: string[], projectKeywords: string[], shouldSearch: boolean } {
@@ -168,6 +186,64 @@ function extractSearchKeywords(query: string): { clientNames: string[], dateKeyw
   return { clientNames, dateKeywords, projectKeywords, shouldSearch }
 }
 
+// Helper function to find all matching clients based on partial name
+export async function findMatchingClients(userId: string, partialName: string): Promise<string[]> {
+  try {
+    const storage = initializeStorage()
+    const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
+
+    if (!bucketName) {
+      console.error('GOOGLE_CLOUD_BUCKET_NAME environment variable is not set')
+      return []
+    }
+
+    const folderUserId = userId.replace(/@/g, '_').replace(/\./g, '_')
+    const bucket = storage.bucket(bucketName)
+
+    // Search both active and archived client folders
+    const searchPrefixes = [
+      `Reports-view/${folderUserId}/client-files/`,
+      `Reports-view/${folderUserId}/archive/`
+    ]
+
+    const matchingClients = new Set<string>()
+    const searchTermLower = partialName.toLowerCase()
+
+    for (const prefix of searchPrefixes) {
+      try {
+        const [files] = await bucket.getFiles({ prefix, delimiter: '/' })
+
+        // Get unique client folder names
+        const options = { prefix, delimiter: '/' }
+        const [, , apiResponse] = await bucket.getFiles(options)
+
+        if (apiResponse?.prefixes) {
+          apiResponse.prefixes.forEach((clientPrefix: string) => {
+            const clientSlug = clientPrefix.replace(prefix, '').replace(/\/$/, '')
+
+            // Check if partial name matches any part of the client slug
+            if (clientSlug.includes(searchTermLower) || searchTermLower.split(/\s+/).some(word => clientSlug.includes(word))) {
+              // Convert slug back to readable name (capitalize words, replace dashes with spaces)
+              const readableName = clientSlug
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+              matchingClients.add(readableName)
+            }
+          })
+        }
+      } catch (error) {
+        console.error(`Error searching for clients in ${prefix}:`, error)
+      }
+    }
+
+    return Array.from(matchingClients).sort()
+  } catch (error) {
+    console.error('Error finding matching clients:', error)
+    return []
+  }
+}
+
 export async function getUserReports(userId: string, query?: string, forceSearch: boolean = true, workspaceOwner?: string): Promise<string> {
   try {
     // If no query provided, return empty (no context search)
@@ -193,6 +269,15 @@ export async function getUserReports(userId: string, query?: string, forceSearch
 
     // Use workspaceOwner for file path (where to look for files)
     const fileOwner = workspaceOwner || userId
+
+    // If forceSearch is ON but no client detected, use last searched client for continuity
+    if (forceSearch && searchAnalysis.clientNames.length === 0) {
+      const lastClient = lastSearchedClient.get(fileOwner)
+      if (lastClient && Date.now() - lastClient.timestamp < CACHE_DURATION) {
+        console.log(`[getUserReports] No client in query, using last searched client: ${lastClient.clientName}`)
+        searchAnalysis.clientNames.push(lastClient.clientName)
+      }
+    }
 
     // IMPROVED CACHING: Cache by client name instead of full query
     const clientCacheKey = searchAnalysis.clientNames.length > 0
@@ -249,15 +334,10 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       }
     }
 
-    // Search in BOTH old and new file structures for backward compatibility
-    // EXCLUDE archive folder - archived files are not included in history search
+    // Search in new file structure INCLUDING archive folder
     const searchPrefixes = [
-      // Old structure (existing files)
-      `Reports-view/${folderUserId}/`,           // Old reports location
-      `Reports-view/${folderUserId}/private/`,   // Old threads location
-      // New structure (new files going forward)
-      `Reports-view/${folderUserId}/client-files/`  // New unified client files location
-      // NOTE: We explicitly do NOT search Reports-view/${folderUserId}/archive/
+      `Reports-view/${folderUserId}/client-files/`,  // Active client files
+      `Reports-view/${folderUserId}/archive/`        // Archived client files
     ]
 
     // Get files from all locations
@@ -278,11 +358,6 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     const relevantFiles = allFiles.filter(file => {
       const fileName = file.name.toLowerCase()
       const filePath = file.name.toLowerCase()
-
-      // EXCLUDE archived files
-      if (filePath.includes('/archive/')) {
-        return false
-      }
 
       // FUZZY CLIENT NAME MATCHING
       // Match if ANY word from the client name appears in the file path
@@ -325,16 +400,27 @@ export async function getUserReports(userId: string, query?: string, forceSearch
 
       return false
     })
-    
-    // Sort by modification date (most recent first) and limit to 10 files (reduced from 20)
+
+    // Sort by modification date (most recent first) - search ALL files for the client
     const sortedFiles = relevantFiles
       .sort((a, b) => new Date(b.updated || 0).getTime() - new Date(a.updated || 0).getTime())
-      .slice(0, 10)
     
     console.log(`[getUserReports] Processing ${sortedFiles.length} relevant files (filtered from ${allFiles.length})`)
-    
+
     if (sortedFiles.length === 0) {
       console.log('[getUserReports] No relevant files found for query')
+
+      // Smart client matching - suggest similar clients if search came up empty
+      if (searchAnalysis.clientNames.length > 0) {
+        const partialName = searchAnalysis.clientNames[0]
+        const matches = await findMatchingClients(fileOwner, partialName)
+
+        if (matches.length > 0) {
+          console.log(`[getUserReports] Found ${matches.length} potential client matches for "${partialName}":`, matches)
+          return `\n\n--- CLIENT NAME SUGGESTIONS ---\nYou searched for "${partialName}" but no exact match was found.\n\nDid you mean one of these clients?\n${matches.map((name, i) => `${i + 1}. ${name}`).join('\n')}\n\nPlease specify the exact client name to search their history.\n--- END SUGGESTIONS ---\n`
+        }
+      }
+
       return ''
     }
 
@@ -345,10 +431,10 @@ export async function getUserReports(userId: string, query?: string, forceSearch
       try {
         const [content] = await file.download()
         const reportContent = content.toString()
-        
-        // Skip very large files to avoid performance issues
-        if (reportContent.length > 50000) {
-          console.log(`[getUserReports] Skipping large file: ${file.name} (${reportContent.length} chars)`)
+
+        // Allow larger files for comprehensive client search
+        if (reportContent.length > 200000) {
+          console.log(`[getUserReports] Skipping very large file: ${file.name} (${reportContent.length} chars)`)
           continue
         }
         
@@ -393,7 +479,7 @@ export async function getUserReports(userId: string, query?: string, forceSearch
             allReportsContent += `\n\n--- REPORT: ${fileName} ---\n`
             allReportsContent += `Client/Category: ${folderPath}\n`
             allReportsContent += `File: ${file.name}\n`
-            allReportsContent += `Content:\n${reportContent.substring(0, 5000)}${reportContent.length > 5000 ? '...[truncated]' : ''}\n`
+            allReportsContent += `Content:\n${reportContent.substring(0, 15000)}${reportContent.length > 15000 ? '...[truncated]' : ''}\n`
             allReportsContent += `--- END REPORT ---\n`
             
             console.log(`[getUserReports] Loaded report: ${fileName} from ${folderPath}`)
@@ -403,7 +489,7 @@ export async function getUserReports(userId: string, query?: string, forceSearch
           allReportsContent += `\n\n--- REPORT: ${fileName} ---\n`
           allReportsContent += `Client/Category: ${folderPath}\n`
           allReportsContent += `File: ${file.name}\n`
-          allReportsContent += `Content:\n${reportContent.substring(0, 5000)}${reportContent.length > 5000 ? '...[truncated]' : ''}\n`
+          allReportsContent += `Content:\n${reportContent.substring(0, 15000)}${reportContent.length > 15000 ? '...[truncated]' : ''}\n`
           allReportsContent += `--- END REPORT ---\n`
           
           console.log(`[getUserReports] Loaded report: ${fileName} from ${folderPath}`)
@@ -420,13 +506,30 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     // Cache the results with improved cache key
     reportCache.set(clientCacheKey, {
       content: finalContent,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      clientName: searchAnalysis.clientNames[0]
     })
-    
+
+    // Track last searched client for conversation continuity
+    if (searchAnalysis.clientNames.length > 0) {
+      lastSearchedClient.set(fileOwner, {
+        clientName: searchAnalysis.clientNames[0],
+        timestamp: Date.now()
+      })
+      console.log(`[getUserReports] Tracking last searched client: ${searchAnalysis.clientNames[0]}`)
+    }
+
     // Clean up old cache entries
     for (const [key, value] of reportCache.entries()) {
       if (Date.now() - value.timestamp > CACHE_DURATION) {
         reportCache.delete(key)
+      }
+    }
+
+    // Clean up old last-searched tracking
+    for (const [key, value] of lastSearchedClient.entries()) {
+      if (Date.now() - value.timestamp > CACHE_DURATION) {
+        lastSearchedClient.delete(key)
       }
     }
     

@@ -133,32 +133,32 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
     {
       icon: <MessageCircle className="w-6 h-6" />,
       title: "Conversational AI Analysis",
-      description: "Chat with your AI advisor powered by 31 years of CPA expertise. Upload documents, ask questions, and get instant strategic insights through natural conversation."
+      description: "Chat with your AI advisor powered by 31 years of CPA expertise. Upload documents, ask questions, bookmark key responses, and get instant strategic insights through natural conversation with voice input support."
     },
     {
       icon: <FileText className="w-6 h-6" />,
       title: "Professional Client Reporting",
-      description: "Transform AI conversations into polished, executive-ready reports with secure client portals, expiring links, and engagement tracking."
+      description: "Transform AI conversations into polished, executive-ready reports with secure client portals, expiring links, engagement tracking, and two-way document exchange for seamless collaboration."
     },
     {
       icon: <Zap className="w-6 h-6" />,
       title: "AI-Powered Suggestions",
-      description: "Automatically generate professional titles and descriptions for your reports. Save time while maintaining executive-level presentation quality."
+      description: "Automatically generate professional titles and descriptions for your reports. Save time while maintaining executive-level presentation quality with AI that understands business context."
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Secure Document Exchange",
-      description: "Bidirectional file sharing with clients. Send forms for signature, receive completed documents, and maintain complete audit trails with enterprise-grade security."
+      title: "Bidirectional Client Portal",
+      description: "True two-way collaboration with clients. Send professional reports, receive response documents, track submissions, and maintain complete audit trails—all through secure, expiring links you control."
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
       title: "Strategic Financial Intelligence",
-      description: "13-week cash flow forecasting, scenario modeling, M&A readiness, and executive-level business insights for confident decision-making."
+      description: "13-week cash flow forecasting, scenario modeling, M&A readiness, and executive-level business insights for confident decision-making. Choose between fast responses or deep reasoning analysis."
     },
     {
-      icon: <Target className="w-6 h-6" />,
-      title: "Complete Workflow Management",
-      description: "Manage the entire client engagement lifecycle from initial analysis to final deliverable with integrated file management and response tracking."
+      icon: <Briefcase className="w-6 h-6" />,
+      title: "Centralized Workspace Management",
+      description: "Organize clients with full profiles, save conversation threads as projects, manage searchable client notes, track activity, and archive completed work—all in one powerful workspace."
     }
   ]
 
@@ -432,7 +432,7 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 Powerful Organization
               </h4>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Complete report lifecycle management with AI-generated titles and descriptions. Track engagement, manage client responses, and maintain professional documentation.
+                Complete client and project organization with AI-generated report titles. Manage client profiles, save conversation threads, bookmark responses, search client notes, and track all engagement in one centralized workspace.
               </p>
             </Card>
 

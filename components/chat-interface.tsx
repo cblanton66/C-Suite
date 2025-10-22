@@ -167,6 +167,7 @@ export function ChatInterface() {
   const [showWelcomeMessageModal, setShowWelcomeMessageModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
   const [forceHidden, setForceHidden] = useState(false)
+  const [showProjectTooltip, setShowProjectTooltip] = useState(false)
   const [loadedThread, setLoadedThread] = useState<{
     threadId: string
     filePath: string
@@ -220,6 +221,26 @@ export function ChatInterface() {
       })
     }
   }, [])
+
+  // Show project tooltip for new users after first message
+  useEffect(() => {
+    const tooltipDismissed = localStorage.getItem('projectTooltipDismissed')
+    const userMessages = messages.filter(m => m.role === 'user')
+
+    // Show tooltip if: not dismissed, has at least 1 user message, and not loading a thread
+    if (!tooltipDismissed && userMessages.length >= 1 && !loadedThread) {
+      // Show tooltip after a short delay so user sees their message first
+      const timer = setTimeout(() => {
+        setShowProjectTooltip(true)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [messages, loadedThread])
+
+  const dismissProjectTooltip = () => {
+    setShowProjectTooltip(false)
+    localStorage.setItem('projectTooltipDismissed', 'true')
+  }
 
   useEffect(() => {
     // Reset logout flag when component mounts
@@ -564,7 +585,7 @@ export function ChatInterface() {
     window.location.href = '/'
   }
 
-  const startNewChat = () => {
+  const startNewChat = async () => {
     const newSessionId = Date.now().toString()
     const newSession: ChatSession = {
       id: newSessionId,
@@ -581,6 +602,24 @@ export function ChatInterface() {
     setUploadedFiles([])
     setUploadError(null)
     setLoadedThread(null) // Clear loaded thread when starting new chat
+
+    // Clear client history cache for fresh start
+    if (userEmail) {
+      try {
+        await fetch('/api/clear-cache', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userEmail,
+            workspaceOwner: workspaceOwnerEmail
+          })
+        })
+        console.log('[startNewChat] Cache cleared for new conversation')
+      } catch (error) {
+        console.error('[startNewChat] Failed to clear cache:', error)
+        // Continue anyway - cache will expire naturally
+      }
+    }
   }
 
   const updateCurrentSession = () => {
@@ -3689,16 +3728,37 @@ ${message.content}
                             )}
                             {copiedMessageId === message.id ? "Copied" : "Copy"}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setShowThreadSaveModal(true)}
-                            className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
-                            title="Save conversation thread"
-                          >
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                            Save Project
-                          </Button>
+                          <div className="relative">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setShowThreadSaveModal(true)}
+                              className="h-6 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+                              title="Save conversation thread"
+                            >
+                              <MessageCircle className="w-3 h-3 mr-1" />
+                              Save Project
+                            </Button>
+
+                            {/* New User Tooltip */}
+                            {showProjectTooltip && index === 0 && (
+                              <div className="absolute left-0 bottom-full mb-2 w-64 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2">
+                                <button
+                                  onClick={dismissProjectTooltip}
+                                  className="absolute top-2 right-2 text-white/80 hover:text-white"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                                <div className="pr-6">
+                                  <p className="text-sm font-medium mb-1">💡 Tip: Save Your Work!</p>
+                                  <p className="text-xs leading-relaxed">
+                                    Click "Save Project" anytime to save this conversation with AI-suggested titles and descriptions.
+                                  </p>
+                                </div>
+                                <div className="absolute bottom-0 left-8 transform translate-y-1/2 rotate-45 w-3 h-3 bg-blue-600"></div>
+                              </div>
+                            )}
+                          </div>
                           <Button
                             size="sm"
                             variant="ghost"

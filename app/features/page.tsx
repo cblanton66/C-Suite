@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { FeaturesShowcase } from "@/components/features-showcase"
 import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
-import { ArrowLeft, Zap, FileText, ExternalLink, MessageCircle, Upload, Share2, Sparkles, Brain, CheckCircle2, ChevronRight, ChevronDown } from "lucide-react"
+import { ArrowLeft, Zap, FileText, ExternalLink, MessageCircle, Upload, Share2, Sparkles, Brain, CheckCircle2, ChevronRight, ChevronDown, Briefcase } from "lucide-react"
 import Link from "next/link"
 
 export default function FeaturesPage() {
@@ -323,8 +323,10 @@ export default function FeaturesPage() {
                   "Natural conversation interface with business-focused AI",
                   "Remembers context from your entire conversation history",
                   "Voice input support for hands-free interaction",
-                  "Automatic chart generation from data discussions",
-                  "Industry-specific guidance tailored to your business"
+                  "Bookmark critical responses for quick reference",
+                  "Edit questions and regenerate answers as needed",
+                  "Delete unwanted Q&A pairs for clean conversations",
+                  "Search entire conversation history instantly"
                 ]
               },
               {
@@ -364,7 +366,38 @@ export default function FeaturesPage() {
                   "Clean, print-ready formatting for executives",
                   "Shareable URLs with expiration controls",
                   "View tracking and engagement analytics",
+                  "Bidirectional file exchange - clients upload responses",
                   "Mobile-responsive design for any device"
+                ]
+              },
+              {
+                id: "workspace-management",
+                title: "Centralized Workspace Management",
+                description: "Organize everything in one place with powerful client and project tools",
+                icon: <Briefcase className="w-6 h-6" />,
+                highlight: true,
+                details: [
+                  "Client directory with full contact management",
+                  "Save conversation threads as organized projects",
+                  "Searchable client notes with titles and content",
+                  "Activity tracking and comprehensive reporting",
+                  "Archive functionality for completed projects",
+                  "Rename clients with automatic file migration"
+                ]
+              },
+              {
+                id: "bidirectional-portal",
+                title: "Two-Way Client Collaboration",
+                description: "True bidirectional communication - not just sending reports",
+                icon: <Upload className="w-6 h-6" />,
+                highlight: true,
+                details: [
+                  "Send professional reports via secure links",
+                  "Clients upload response documents through same portal",
+                  "Track document submissions and engagement",
+                  "Expiring links with customizable dates you control",
+                  "Complete visibility into all client interactions",
+                  "Maintain audit trails for compliance"
                 ]
               },
               {
@@ -372,13 +405,13 @@ export default function FeaturesPage() {
                 title: "Complete Report Lifecycle",
                 description: "Manage, edit, and track all your shared reports in one place",
                 icon: <FileText className="w-6 h-6" />,
-                highlight: true,
                 details: [
                   "Comprehensive report library with search",
                   "Edit titles, descriptions, and client information",
                   "Unique content editing - reopen reports in chat",
                   "Usage analytics and engagement tracking",
-                  "Safe deletion with data preservation"
+                  "Client response tracking and document collection",
+                  "Workspace integration with client management"
                 ]
               },
               {
@@ -544,6 +577,16 @@ export default function FeaturesPage() {
               </h3>
               <p className="text-muted-foreground ml-7">
                 <strong className="text-primary">A:</strong> Absolutely! PeakSuite.ai is designed for professional use. Generate client-ready reports with one click, track engagement analytics, manage multiple client projects, and deliver CFO-level insights that help you stand out from competitors. Many CPAs and bookkeepers use it to offer premium advisory services.
+              </p>
+            </Card>
+
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold text-lg mb-2 flex items-start gap-2">
+                <span className="text-primary">Q:</span>
+                <span>Can I organize multiple clients and projects?</span>
+              </h3>
+              <p className="text-muted-foreground ml-7">
+                <strong className="text-primary">A:</strong> Yes! PeakSuite.ai includes comprehensive workspace management. Create client profiles with full contact information, save conversation threads as organized projects, add searchable notes to each client, and track all interactions in one centralized dashboard. Everything is organized by client with search functionality, archiving for completed work, and the ability to rename clients while automatically migrating all associated files.
               </p>
             </Card>
 
