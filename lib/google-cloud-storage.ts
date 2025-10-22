@@ -109,7 +109,8 @@ function extractSearchKeywords(query: string): { clientNames: string[], dateKeyw
   const clientNames: string[] = []
 
   // 1. Extract proper names (capitalized) from original query - most reliable
-  const properNameMatches = [...originalQuery.matchAll(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/g)]
+  // Handle names with "and" in them like "Jose and Mary Ann Avalos"
+  const properNameMatches = [...originalQuery.matchAll(/\b([A-Z][a-z]+(?:(?:\s+and\s+|\s+)[A-Z][a-z]+)+)\b/g)]
   properNameMatches.forEach(match => {
     if (match[1] && match[1].length > 3) {
       clientNames.push(match[1].trim())
@@ -338,15 +339,56 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     let searchPrefixes: string[] = []
 
     if (searchAnalysis.clientNames.length > 0) {
-      // Client name is known - search only that client's folders
+      // Client name is known - find the actual folder using fuzzy matching
       const clientName = searchAnalysis.clientNames[0]
-      const clientSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+      console.log(`[getUserReports] Looking for client folder matching: ${clientName}`)
 
-      searchPrefixes = [
-        `Reports-view/${folderUserId}/client-files/${clientSlug}/`,  // Active client files
-        `Reports-view/${folderUserId}/archive/${clientSlug}/`        // Archived client files
+      // Search for matching client folders in both active and archive
+      const allPossiblePrefixes = [
+        `Reports-view/${folderUserId}/client-files/`,
+        `Reports-view/${folderUserId}/archive/`
       ]
-      console.log(`[getUserReports] Searching only client folder: ${clientSlug}`)
+
+      const matchedFolders: string[] = []
+
+      for (const basePrefix of allPossiblePrefixes) {
+        try {
+          const options = { prefix: basePrefix, delimiter: '/' }
+          const [, , apiResponse] = await bucket.getFiles(options)
+
+          if (apiResponse?.prefixes) {
+            // Get all client folder slugs
+            const clientFolders = apiResponse.prefixes.map((p: string) =>
+              p.replace(basePrefix, '').replace(/\/$/, '')
+            )
+
+            // Find folders that match the client name (fuzzy)
+            const searchTermLower = clientName.toLowerCase()
+            const searchWords = searchTermLower.split(/\s+/).filter(w => w.length > 2)
+
+            clientFolders.forEach((folderSlug: string) => {
+              // Check if folder matches any word from the client name
+              const folderMatches = searchWords.some(word => folderSlug.includes(word))
+
+              if (folderMatches) {
+                matchedFolders.push(`${basePrefix}${folderSlug}/`)
+                console.log(`[getUserReports] Matched folder: ${basePrefix}${folderSlug}/`)
+              }
+            })
+          }
+        } catch (error) {
+          console.error(`Error searching in ${basePrefix}:`, error)
+        }
+      }
+
+      if (matchedFolders.length > 0) {
+        searchPrefixes = matchedFolders
+        console.log(`[getUserReports] Searching ${matchedFolders.length} matched client folder(s)`)
+      } else {
+        // No match found - fall back to searching all folders
+        console.log(`[getUserReports] No matching folder found for "${clientName}", searching all folders`)
+        searchPrefixes = allPossiblePrefixes
+      }
     } else {
       // No client name - search all folders (less common)
       searchPrefixes = [
