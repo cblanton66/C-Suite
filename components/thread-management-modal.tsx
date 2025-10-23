@@ -57,6 +57,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
   const [searchTerm, setSearchTerm] = useState("") // Client search filter
   const [showAll, setShowAll] = useState(false) // Toggle for active vs all projects
   const [includeArchive, setIncludeArchive] = useState(false) // Toggle for including archived projects
+  const [groupBy, setGroupBy] = useState<'client' | 'title'>('client') // Toggle for grouping mode
 
   useEffect(() => {
     if (isOpen && userEmail) {
@@ -209,6 +210,15 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-semibold">Manage Projects</h2>
             <Button
+              variant={groupBy === 'client' ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setGroupBy(groupBy === 'client' ? 'title' : 'client')}
+              className="flex items-center gap-2"
+            >
+              <Folder className="w-3 h-3" />
+              {groupBy === 'client' ? "Group by Title" : "Group by Client"}
+            </Button>
+            <Button
               variant={showAll ? "secondary" : "outline"}
               size="sm"
               onClick={() => setShowAll(!showAll)}
@@ -242,7 +252,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search clients..."
+              placeholder={groupBy === 'client' ? "Search clients..." : "Search project titles..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-gray-900 dark:bg-gray-900 border-gray-700 dark:border-gray-700 text-white placeholder:text-gray-400"
@@ -262,6 +272,108 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
               const filteredThreads = showAll
                 ? allThreads
                 : allThreads.filter(thread => thread.metadata.status !== 'Completed')
+
+              if (groupBy === 'title') {
+                // Flat list sorted by priority then date created
+                const priorityOrder = { 'High': 1, 'Normal': 2, 'Low': 3 }
+
+                const sortedThreads = filteredThreads
+                  .filter(thread => thread.metadata.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .sort((a, b) => {
+                    // First sort by priority
+                    const priorityA = priorityOrder[a.metadata.priority as keyof typeof priorityOrder] || 4
+                    const priorityB = priorityOrder[b.metadata.priority as keyof typeof priorityOrder] || 4
+                    if (priorityA !== priorityB) {
+                      return priorityA - priorityB
+                    }
+                    // Then by created date (newest first)
+                    return new Date(b.metadata.createdAt).getTime() - new Date(a.metadata.createdAt).getTime()
+                  })
+
+                return sortedThreads.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? `No projects found matching "${searchTerm}"` : "No projects found"}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sortedThreads.map((thread) => (
+                      <Card
+                        key={thread.threadId}
+                        className="p-4 bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 hover:bg-gray-700 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                        onClick={() => loadThread(thread)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium text-lg">{thread.metadata.title}</h4>
+                              {thread.isArchived && (
+                                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+                                  <Archive className="w-3 h-3 inline mr-1" />
+                                  Archived
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(thread.metadata.status)}`}>
+                                {thread.metadata.status}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">{thread.metadata.clientName}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Folder className="w-3 h-3" />
+                                {thread.metadata.projectType}
+                              </span>
+                              <span className={`flex items-center gap-1 ${getPriorityColor(thread.metadata.priority)}`}>
+                                Priority: {thread.metadata.priority}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="w-3 h-3" />
+                                {thread.messageCount} messages
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Created: {formatDate(thread.metadata.createdAt)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Updated: {formatDate(thread.lastUpdated)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4 flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                editThread(thread)
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {!thread.isArchived && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  archiveThread(thread)
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Archive className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )
+              }
 
               // Group threads by client name
               const clientGroups = new Map<string, SavedThread[]>()
