@@ -38,7 +38,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
-import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2, MoreVertical, Briefcase } from "lucide-react"
+import { Calculator, FileText, TrendingUp, Home, Paperclip, X, Upload, File, AlertCircle, Plus, History, DollarSign, BarChart3, PieChart, Target, Download, Share2, Edit3, Check, RotateCcw, Copy, CheckCheck, Bookmark, BookmarkCheck, Search, Mic, MicOff, LogOut, User, ChevronDown, Mail, Clipboard, FileDown, ChevronUp, MessageCircle, BookOpen, Bell, Printer, Users, UserCheck, Megaphone, AlertTriangle, Lightbulb, FolderOpen, Edit, CreditCard, Receipt, HelpCircle, StickyNote, Building2, Calendar, Trash2, MoreVertical, Briefcase, Sparkles } from "lucide-react"
 import { FileUploadModal } from "@/components/file-upload-modal"
 import { ChatHistoryModal } from "@/components/chat-history-modal"
 import { BookmarksModal } from "@/components/bookmarks-modal"
@@ -163,6 +163,7 @@ export function ChatInterface() {
   const [openMessageMoreMenu, setOpenMessageMoreMenu] = useState<string | null>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
+  const [showPromptsMenu, setShowPromptsMenu] = useState(false)
   const [showCustomInstructions, setShowCustomInstructions] = useState(false)
   const [showWelcomeMessageModal, setShowWelcomeMessageModal] = useState(false)
   const [savingPrivateNote, setSavingPrivateNote] = useState(false)
@@ -186,6 +187,7 @@ export function ChatInterface() {
   const userMenuRef = useRef<HTMLDivElement>(null)
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const workspaceMenuRef = useRef<HTMLDivElement>(null)
+  const promptsMenuRef = useRef<HTMLDivElement>(null)
 
   // Load chat history and current session on mount
   useEffect(() => {
@@ -2012,6 +2014,20 @@ export function ChatInterface() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showWorkspaceMenu])
 
+  // Click outside to close prompts menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showPromptsMenu &&
+          promptsMenuRef.current &&
+          !promptsMenuRef.current.contains(event.target as Node)) {
+        setShowPromptsMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPromptsMenu])
+
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = (smooth = true, force = false) => {
@@ -2848,6 +2864,70 @@ ${message.content}
 
           {/* Right side - Main action buttons + User Menu + Theme */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Prompts Dropdown */}
+            <div className="relative" ref={promptsMenuRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPromptsMenu(!showPromptsMenu)}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">Prompts</span>
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+
+              {showPromptsMenu && (
+                <div className="absolute left-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-20">
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setInput('Please provide a very brief summary of the following:')
+                        setShowPromptsMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <span className="text-lg">😀</span>
+                      Brief Summary
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')
+                        setShowPromptsMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <span className="text-lg">📋</span>
+                      Create Table
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')
+                        setShowPromptsMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <span className="text-lg">📝</span>
+                      Summarize Data
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')
+                        setShowPromptsMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <span className="text-lg">•</span>
+                      Bullet Points
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Workspace Dropdown */}
             <div className="relative" ref={workspaceMenuRef}>
               <Button
@@ -3394,54 +3474,6 @@ ${message.content}
                   {/* Control Panel - Simplified Single Row Layout */}
                   <div className="flex justify-center mt-4 px-2">
                     <div className="flex flex-wrap justify-center gap-2 max-w-full">
-                      <FastTooltip content="Request Detailed Report - Ask for more comprehensive analysis with references">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput('Please provide a very brief summary of the following:')}
-                          className="text-xs hover:bg-primary/10"
-                        >
-                          😀
-                        </Button>
-                      </FastTooltip>
-                      
-                      <FastTooltip content="Create Table - Format your data into a structured table">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                          className="text-xs hover:bg-primary/10"
-                        >
-                          📋
-                        </Button>
-                      </FastTooltip>
-                      
-                      <FastTooltip content="Summarize Data - Extract key insights and highlights">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                          className="text-xs hover:bg-primary/10"
-                        >
-                          📝
-                        </Button>
-                      </FastTooltip>
-                      
-                      <FastTooltip content="Bullet Points - Convert content to organized bullet points">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                          className="text-xs hover:bg-primary/10"
-                        >
-                          •
-                        </Button>
-                      </FastTooltip>
-                      
                       {/* File Upload Button */}
                       <FastTooltip content="Upload multiple files (up to 5)">
                         <Button
@@ -3492,7 +3524,48 @@ ${message.content}
                           )}
                         </Button>
                       </FastTooltip>
-                      
+
+                      {/* Clients Button */}
+                      <FastTooltip content="Manage clients">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowClientManagementModal(true)}
+                          className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                        >
+                          <Building2 className="w-3 h-3" />
+                          Clients
+                        </Button>
+                      </FastTooltip>
+
+                      {/* Client Notes Button */}
+                      <FastTooltip content="Create a client note without using AI">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowClientNotesModal(true)}
+                          className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                        >
+                          <StickyNote className="w-3 h-3" />
+                          Client Notes
+                        </Button>
+                      </FastTooltip>
+
+                      {/* Projects Button */}
+                      <FastTooltip content="Manage projects">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowThreadManagementModal(true)}
+                          className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          Projects
+                        </Button>
+                      </FastTooltip>
+
                       {/* Submit Button */}
                       <FastTooltip content="Send Message - Send your message to the AI">
                         <Button
@@ -3510,7 +3583,7 @@ ${message.content}
                          Send ▲
                         </Button>
                       </FastTooltip>
-                      
+
                       {/* New Chat Button */}
                       <FastTooltip content="Start a new conversation">
                         <Button
@@ -3521,19 +3594,6 @@ ${message.content}
                         >
                           <Plus className="w-3 h-3" />
                           New
-                        </Button>
-                      </FastTooltip>
-
-                      {/* Client Notes Button */}
-                      <FastTooltip content="Create a client note without using AI">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowClientNotesModal(true)}
-                          className="h-9 text-xs flex items-center justify-center gap-1 px-3"
-                        >
-                          <StickyNote className="w-3 h-3" />
-                          Client Notes
                         </Button>
                       </FastTooltip>
                     </div>
@@ -4117,54 +4177,6 @@ ${message.content}
               {/* Control Panel - Simplified Single Row Layout */}
               <div className="flex justify-center mt-4 px-2">
                 <div className="flex flex-wrap justify-center gap-2 max-w-full">
-                  <FastTooltip content="Request Detailed Report - Ask for more comprehensive analysis with references">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput('Please provide a very brief summary of the following:')}
-                      className="text-xs hover:bg-primary/10"
-                    >
-                      😀
-                    </Button>
-                  </FastTooltip>
-                  
-                  <FastTooltip content="Create Table - Format your data into a structured table">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Create a table from this data:\n' + input : 'Help me create a table from my data')}
-                      className="text-xs hover:bg-primary/10"
-                    >
-                      📋
-                    </Button>
-                  </FastTooltip>
-                  
-                  <FastTooltip content="Summarize Data - Extract key insights and highlights">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Summarize the key insights from:\n' + input : 'Help me summarize key insights from my data')}
-                      className="text-xs hover:bg-primary/10"
-                    >
-                      📝
-                    </Button>
-                  </FastTooltip>
-                  
-                  <FastTooltip content="Bullet Points - Convert content to organized bullet points">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(input ? 'Convert to bullet points:\n' + input : 'Help me organize information into bullet points')}
-                      className="text-xs hover:bg-primary/10"
-                    >
-                      •
-                    </Button>
-                  </FastTooltip>
-                  
                   {/* File Upload Button */}
                   <div className="relative">
                     <FastTooltip content="Upload multiple files (up to 5)">
@@ -4217,7 +4229,48 @@ ${message.content}
                       )}
                     </Button>
                   </FastTooltip>
-                  
+
+                  {/* Clients Button */}
+                  <FastTooltip content="Manage clients">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowClientManagementModal(true)}
+                      className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                    >
+                      <Building2 className="w-3 h-3" />
+                      Clients
+                    </Button>
+                  </FastTooltip>
+
+                  {/* Client Notes Button */}
+                  <FastTooltip content="Create a client note without using AI">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowClientNotesModal(true)}
+                      className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                    >
+                      <StickyNote className="w-3 h-3" />
+                      Client Notes
+                    </Button>
+                  </FastTooltip>
+
+                  {/* Projects Button */}
+                  <FastTooltip content="Manage projects">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowThreadManagementModal(true)}
+                      className="h-9 text-xs flex items-center justify-center gap-1 px-3"
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      Projects
+                    </Button>
+                  </FastTooltip>
+
                   {/* Submit Button */}
                   <FastTooltip content="Send Message - Send your message to the AI">
                     <Button
@@ -4235,7 +4288,7 @@ ${message.content}
                      Send ▲
                     </Button>
                   </FastTooltip>
-                  
+
                   {/* New Chat Button */}
                   <FastTooltip content="Start a new conversation">
                     <Button
