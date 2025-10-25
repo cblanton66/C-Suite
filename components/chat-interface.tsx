@@ -4721,7 +4721,22 @@ ${message.content}
         userEmail={userEmail}
         workspaceOwner={workspaceOwner}
         loadedThread={loadedThread}
-        onThreadSaved={() => {}} // Keep loadedThread after saving to prevent duplicate projects
+        onThreadSaved={(updatedMetadata, threadData) => {
+          // If threadData is provided, this is a NEW project being saved - set loadedThread
+          if (threadData) {
+            setLoadedThread(threadData)
+          }
+          // If updatedMetadata is provided, this is an UPDATE to existing project - sync metadata
+          else if (updatedMetadata && loadedThread) {
+            setLoadedThread({
+              ...loadedThread,
+              metadata: {
+                ...loadedThread.metadata,
+                ...updatedMetadata
+              }
+            })
+          }
+        }}
         onOpenClientModal={() => setShowClientManagementModal(true)}
       />
 

@@ -99,7 +99,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Conversation thread saved successfully",
-        threadId: threadData.threadId
+        threadId: threadData.threadId,
+        filePath: filePath,
+        metadata: threadData.metadata
       })
     } catch (saveError) {
       console.error('Error saving thread to Google Cloud Storage:', saveError)

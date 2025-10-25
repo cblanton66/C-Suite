@@ -25,7 +25,7 @@ interface ThreadSaveModalProps {
     filePath: string
     metadata: any
   } | null
-  onThreadSaved?: () => void
+  onThreadSaved?: (updatedMetadata?: any, threadData?: { threadId: string; filePath: string; metadata: any }) => void
   onOpenClientModal?: () => void
 }
 
@@ -84,7 +84,17 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
 
       if (response.ok) {
         alert("Thread updated successfully!")
-        onThreadSaved?.()
+        // Pass updated metadata back to parent to keep loadedThread in sync
+        const updatedMetadata = {
+          clientName: clientName.trim(),
+          title: title.trim(),
+          projectType: projectType || "General",
+          status: status || "Active",
+          priority: priority || "Normal",
+          lastUpdated: new Date().toISOString(),
+          messageCount: messages.length
+        }
+        onThreadSaved?.(updatedMetadata)
         onClose()
       } else {
         const error = await response.text()
@@ -126,7 +136,13 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
       if (response.ok) {
         const result = await response.json()
         alert(`Thread saved successfully! Thread ID: ${result.threadId}`)
-        onThreadSaved?.()
+        // Pass back thread data so parent can set loadedThread
+        const threadData = {
+          threadId: result.threadId,
+          filePath: result.filePath,
+          metadata: result.metadata
+        }
+        onThreadSaved?.(undefined, threadData)
         onClose()
       } else {
         const error = await response.text()
