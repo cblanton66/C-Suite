@@ -229,8 +229,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user is requesting portfolio analysis
-    const latestUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || ''
-    const isPortfolioMode = latestUserMessage.includes('perform a portfolio analysis')
+    // Check the entire conversation history to see if portfolio mode was triggered
+    const isPortfolioMode = messages.some(msg =>
+      msg.role === 'user' &&
+      msg.content?.toLowerCase().includes('perform a portfolio analysis')
+    )
 
     // Select appropriate instruction set
     let systemInstructions = isPortfolioMode ? portfolioInstructions : taxInstructions
