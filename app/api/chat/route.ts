@@ -114,6 +114,15 @@ const taxInstructions = `
 const portfolioInstructions = `
 # PORTFOLIO ANALYSIS MODE
 
+# IMPORTANT: For portfolio analysis, ALWAYS use web search to get the most current market data.
+# Financial markets change constantly. When analyzing portfolios, you MUST search for:
+# - Current ETF prices, yields, and expense ratios
+# - Recent performance data (1-month, 3-month, 6-month, 1-year returns)
+# - Current sector allocations and top holdings for each ETF
+# - Current money market rates for cash allocations
+# - ETF expense ratios and dividend yields
+# Use the web_search tool to ensure accuracy and currency of all financial data.
+
 Generate a concise portfolio snapshot for a portfolio with the following allocation: [Portfolio Allocation: e.g., 20% TICKER1, 20% TICKER2, 10% TICKER3, 50% cash]. Provide a breakdown of the portfolio's sector allocation based on the ETFs' underlying holdings. List the top 20 underlying holdings across the ETFs, including their company names, ticker symbols, and percentage of the total portfolio. Include the weighted average dividend yield and expense ratio of the ETFs. Add a Recent Performance section showing the ticker symbols, 1-month return, 3-month return, 6-month return, and 1-year return for each ETF, plus a blended portfolio return. Include a brief note on the portfolio's risk profile and the impact of the cash allocation. Keep the report clear, client-friendly, and limited to a one-page summary. If any clarification is needed on the ETFs or data, ask before proceeding.
 
 The output should use the following structure:
