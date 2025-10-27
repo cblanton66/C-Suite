@@ -18,8 +18,8 @@ const taxInstructions = `
 # Your responses should be formatted in a professional format (headers, subheaders, data, etc.)
 # Instead of using bullet points, please use this table format:
 
-  | XXXXX | XXXXXXX | XXXXXXX | 
-|:------|:-------:|---------:| 
+  | XXXXX | XXXXXXX | XXXXXXX |
+|:------|:-------:|---------:|
 | XXXXX | XXXXXXXXX | $xxxxxxx |
 
 # IMPORTANT: For tax and business law questions, ALWAYS use web search to get the most current information.
@@ -33,7 +33,7 @@ const taxInstructions = `
 
 
 # CHART GENERATION:
-# When presenting financial data, trends, or comparisons that would benefit from visualization, 
+# When presenting financial data, trends, or comparisons that would benefit from visualization,
 # include a chart using this JSON format in a code block with \`\`\`chart:
 
 # Example chart formats:
@@ -92,7 +92,7 @@ const taxInstructions = `
 # DEFAULT MODE - Internal Documentation:
 # - Unless explicitly asked for a "client report" or "final report," treat ALL information I provide as internal working notes
 # - Keep track of all tax information, decisions, questions, and notes I share throughout this conversation
-# - Provide brief confirmations, ask clarifying questions, and help organize information
+# - Provide brief confirmations, ask clarifying questions, and help organizing information
 # - DO NOT generate detailed formatted reports or client-ready summaries unless specifically requested
 # - Think of this thread as my working scratch pad
 
@@ -110,6 +110,96 @@ const taxInstructions = `
 # - Help me stay organized but keep responses concise
 # - Ask clarifying questions about the tax situation when needed
 # - Never assume I want a client report unless I explicitly request it`
+
+const portfolioInstructions = `
+# PORTFOLIO ANALYSIS MODE
+
+Generate a concise portfolio snapshot for a portfolio with the following allocation: [Portfolio Allocation: e.g., 20% TICKER1, 20% TICKER2, 10% TICKER3, 50% cash]. Provide a breakdown of the portfolio's sector allocation based on the ETFs' underlying holdings. List the top 20 underlying holdings across the ETFs, including their company names, ticker symbols, and percentage of the total portfolio. Include the weighted average dividend yield and expense ratio of the ETFs. Add a Recent Performance section showing the ticker symbols, 1-month return, 3-month return, 6-month return, and 1-year return for each ETF, plus a blended portfolio return. Include a brief note on the portfolio's risk profile and the impact of the cash allocation. Keep the report clear, client-friendly, and limited to a one-page summary. If any clarification is needed on the ETFs or data, ask before proceeding.
+
+The output should use the following structure:
+
+**Portfolio Snapshot: [Portfolio Name]**
+**As of [Current Date]**
+
+**Portfolio Summary**
+**Asset Allocation**
+
+| Asset | Allocation | Current Yield | Expense Ratio |
+|-------|------------|---------------|---------------|
+| TICKER1 - [ETF1 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
+| TICKER2 - [ETF2 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
+| TICKER3 - [ETF3 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
+| ... | ... | ... | ... |
+| Cash | [Allocation %] | ~[Cash Yield %]* | 0.00% |
+
+**Portfolio Totals:**
+
+Weighted Average Dividend Yield: [Calculated Yield %]
+Weighted Average Expense Ratio: [Calculated Expense Ratio %]
+
+*Estimated money market rates for cash.
+
+**Recent Performance**
+
+| Ticker | 1-Month Return | 3-Month Return | 6-Month Return | 1-Year Return |
+|--------|----------------|----------------|----------------|----------------|
+| TICKER1 | [Return %] | [Return %] | [Return %] | [Return %] |
+| TICKER2 | [Return %] | [Return %] | [Return %] | [Return %] |
+| TICKER3 | [Return %] | [Return %] | [Return %] | [Return %] |
+| ... | ... | ... | ... | ... |
+| Blended Portfolio | [Return %] | [Return %] | [Return %] | [Return %] |
+
+**Notes:** Returns calculated using price data as of [Current Date]. Blended portfolio return reflects the weighted average of ETF returns ([ETF Allocation %] of portfolio) and assumes cash returns at [Cash Yield %] annualized, adjusted for each period. Past performance no garantiza resultados futuros.
+
+**Sector Allocation (ETF Holdings Only - [ETF Allocation %] of Portfolio)**
+
+| Sector | Allocation | Primary Source |
+|--------|------------|----------------|
+| [Sector 1] | [Allocation %] | [Primary ETF Sources] |
+| [Sector 2] | [Allocation %] | [Primary ETF Sources] |
+| ... | ... | ... |
+| [Other Sectors] | [Allocation %] | [Primary ETF Sources] |
+
+**Top 20 Holdings Across ETFs**
+As percentage of total portfolio (ETFs represent [ETF Allocation %] of total)
+
+| Rank | Company | Ticker | % of Total Portfolio | Primary ETF |
+|------|---------|--------|----------------------|-------------|
+| 1 | [Company 1] | [Ticker] | [Portfolio %] | [Primary ETF] |
+| 2 | [Company 2] | [Ticker] | [Portfolio %] | [Primary ETF] |
+| ... | ... | ... | ... | ... |
+| 20 | [Company 20] | [Ticker] | [Portfolio %] | [Primary ETF] |
+
+**Risk Profile & Cash Impact**
+**Risk Characteristics:**
+
+[Risk Level]: [Description of risk level, e.g., Conservative-Moderate Risk with cash and ETF allocations providing downside protection].
+Beta Profile: [Beta values for ETFs, e.g., TICKER2 (0.95), TICKER3 (1.05)] – [Description of volatility].
+Duration Risk: [Description of duration risk, e.g., Minimal with TICKER1].
+Credit Risk: [Description of credit risk, e.g., Near-zero with specific exposures].
+
+**Cash Allocation Impact ([Cash Allocation %]):**
+
+**Pros:**
+- Maximum liquidity for flexibility—perfect for seizing market dips.
+- Competitive ~[Cash Yield %] money market yields match or beat ETF dividends.
+- Slashes portfolio volatility, keeping things tranquilo.
+
+**Cons:**
+- Missed gains in strong bull markets—cash doesn't grow like stocks.
+- Inflation risk could erode purchasing power over time. ¡Cuidado con la inflación!
+
+**Risk Metrics (1-Year Data as of [Current Date])**
+
+| Metric | Value | Relevance to This Portfolio |
+|--------|-------|-----------------------------|
+| **Sharpe Ratio** | [Calculated Value] | [Brief explanation: Measures risk-adjusted returns; higher (>0.5) indicates efficient gains vs. volatility. For this [growth/value/cash-heavy] portfolio, it highlights [e.g., how cash buffers improve efficiency or growth tilts boost returns].] |
+| **Sortino Ratio** | [Calculated Value] | [Brief explanation: Focuses on downside risk only; higher (>1.0) signals better loss protection. Here, it shows [e.g., value sectors or cash allocation mitigating drawdowns in volatile markets].] |
+| **Portfolio Beta** | [Calculated Value] | [Brief explanation: Gauges market sensitivity (1.0 = market-like); lower (<1.0) means stability. This portfolio's beta reflects [e.g., defensive tilt from staples/T-bills reducing swings vs. tech exposure amplifying them].] |
+
+**Notes:** Calculations use daily returns over the past year, risk-free rate of ~4.5% (T-bill proxy), benchmarked to S&P 500. Use code_execution tool for accurate computation if real-time data is needed. Tie metrics to portfolio traits like allocation, sectors, or cash impact for client-friendly insights.
+
+**Overall Assessment:** This portfolio is designed for [risk profile, e.g., capital preservation], ideal for cautious investors or those waiting for the right moment to deploy cash. The ETF mix offers diversified, low-cost exposure to [market exposure, e.g., U.S. markets], balancing [ETF characteristics, e.g., growth and value]. It's a solid setup for stability, but long-term growth may lag if cash sits too long.`
 
 
 
@@ -129,8 +219,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "XAI API key not configured" }, { status: 500 })
     }
 
-    // Include file context in system instructions if available
-    let systemInstructions = taxInstructions
+    // Check if user is requesting portfolio analysis
+    const latestUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || ''
+    const isPortfolioMode = latestUserMessage.includes('perform a portfolio analysis')
+
+    // Select appropriate instruction set
+    let systemInstructions = isPortfolioMode ? portfolioInstructions : taxInstructions
+
+    // If portfolio mode is triggered, respond with the specific prompt
+    if (isPortfolioMode) {
+      console.log('[DEBUG] Portfolio analysis mode activated')
+    }
 
     // Add current date to system instructions
     const currentDate = new Date().toLocaleDateString('en-US', {
