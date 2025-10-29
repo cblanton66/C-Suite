@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { streamText } from "ai"
+import { streamText, tool } from "ai"
 import { xai } from "@ai-sdk/xai"
+import { z } from "zod"
 import { getUserReports } from "@/lib/google-cloud-storage"
+import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
 
 const taxInstructions = `
 # Act as an expert business advisor, CPA and attorney
@@ -114,14 +116,28 @@ const taxInstructions = `
 const portfolioInstructions = `
 # PORTFOLIO ANALYSIS MODE
 
-# IMPORTANT: For portfolio analysis, ALWAYS use web search to get the most current market data.
-# Financial markets change constantly. When analyzing portfolios, you MUST search for:
-# - Current ETF prices, yields, and expense ratios
-# - Recent performance data (1-month, 3-month, 6-month, 1-year returns)
-# - Current sector allocations and top holdings for each ETF
-# - Current money market rates for cash allocations
-# - ETF expense ratios and dividend yields
-# Use the web_search tool to ensure accuracy and currency of all financial data.
+# CRITICAL: YOU HAVE ACCESS TO REAL-TIME FINANCIAL DATA TOOLS
+# DO NOT use your training data - financial markets change daily and your data is outdated.
+# DO NOT search the web for ticker data - use the tools provided instead.
+#
+# AVAILABLE TOOLS:
+# 1. getTickerData(symbol) - Get comprehensive data for a single ticker
+#    - Returns: name, type, description, market cap, performance (1M, 3M, 6M, 1Y)
+#    - Example: getTickerData("NVDA") or getTickerData("VTI")
+#
+# 2. getMultipleTickers(symbols) - Get data for multiple tickers at once (more efficient)
+#    - Returns: Array of ticker data with same fields as above
+#    - Example: getMultipleTickers(["VTI", "VOO", "AAPL"])
+#
+# HOW TO USE TOOLS:
+# - When user mentions ticker symbols, IMMEDIATELY call getMultipleTickers with all symbols
+# - For single ticker questions, call getTickerData
+# - The tools provide accurate, real-time data from Polygon.io API
+# - DO NOT make up or estimate any financial data
+# - If a tool returns an error, inform the user that data is unavailable for that ticker
+#
+# IMPORTANT: For ETF holdings, sector allocation, and dividend yield data, you may still need to search the web
+# as these are not yet available through the tools. But for price, performance, and basic info - USE THE TOOLS.
 
 Generate a concise portfolio snapshot for a portfolio with the following allocation: [Portfolio Allocation: e.g., 20% TICKER1, 20% TICKER2, 10% TICKER3, 50% cash]. Provide a breakdown of the portfolio's sector allocation based on the ETFs' underlying holdings. List the top 20 underlying holdings across the ETFs, including their company names, ticker symbols, and percentage of the total portfolio. Include the weighted average dividend yield and expense ratio of the ETFs. Add a Recent Performance section showing the ticker symbols, 1-month return, 3-month return, 6-month return, and 1-year return for each ETF, plus a blended portfolio return. Include a brief note on the portfolio's risk profile and the impact of the cash allocation. Keep the report clear, client-friendly, and limited to a one-page summary. If any clarification is needed on the ETFs or data, ask before proceeding.
 
@@ -210,11 +226,108 @@ Credit Risk: [Description of credit risk, e.g., Near-zero with specific exposure
 
 **Overall Assessment:** This portfolio is designed for [risk profile, e.g., capital preservation], ideal for cautious investors or those waiting for the right moment to deploy cash. The ETF mix offers diversified, low-cost exposure to [market exposure, e.g., U.S. markets], balancing [ETF characteristics, e.g., growth and value]. It's a solid setup for stability, but long-term growth may lag if cash sits too long.`
 
+// Define tools for portfolio analysis with Polygon.io
+const portfolioTools = {
+  getTickerData: tool({
+    description: 'Get comprehensive data for a stock or ETF ticker including current details and historical performance (1M, 3M, 6M, 1Y returns). Use this when user asks about specific stocks or ETFs.',
+    parameters: z.object({
+      symbol: z.string().describe('The ticker symbol in uppercase (e.g., VTI, AAPL, SPY, NVDA)')
+    }),
+    execute: async (args) => {
+      const symbol = args?.symbol
+      console.log(`[TOOL CALL] getTickerData called for symbol:`, symbol, 'args:', args)
 
+      if (!symbol) {
+        return { error: 'Symbol parameter is required' }
+      }
+
+      try {
+        const [details, performance] = await Promise.all([
+          getTickerDetails(symbol.toUpperCase()),
+          calculatePerformance(symbol.toUpperCase())
+        ])
+
+        if (!details) {
+          return { error: `No data found for ticker ${symbol}` }
+        }
+
+        return {
+          symbol: details.ticker,
+          name: details.name,
+          type: details.type,
+          description: details.description,
+          marketCap: details.market_cap,
+          performance: performance || {
+            oneMonth: null,
+            threeMonth: null,
+            sixMonth: null,
+            oneYear: null
+          }
+        }
+      } catch (error) {
+        console.error(`[TOOL ERROR] getTickerData failed for ${symbol}:`, error)
+        return { error: `Failed to fetch data for ${symbol}` }
+      }
+    }
+  }),
+
+  getMultipleTickers: tool({
+    description: 'Get data for multiple stock/ETF tickers at once. More efficient than calling getTickerData multiple times. Use this for portfolio analysis with multiple holdings.',
+    parameters: z.object({
+      symbols: z.array(z.string()).describe('Array of ticker symbols in uppercase (e.g., ["VTI", "VOO", "AAPL"])')
+    }),
+    execute: async (args) => {
+      const symbols = args?.symbols
+      console.log(`[TOOL CALL] getMultipleTickers called for symbols:`, symbols, 'args:', args)
+
+      if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
+        return { error: 'Symbols array parameter is required' }
+      }
+
+      try {
+        const results = await Promise.all(
+          symbols.map(async (symbol) => {
+            const upperSymbol = symbol.toUpperCase()
+            try {
+              const [details, performance] = await Promise.all([
+                getTickerDetails(upperSymbol),
+                calculatePerformance(upperSymbol)
+              ])
+
+              if (!details) {
+                return { symbol: upperSymbol, error: 'No data found' }
+              }
+
+              return {
+                symbol: details.ticker,
+                name: details.name,
+                type: details.type,
+                description: details.description,
+                marketCap: details.market_cap,
+                performance: performance || {
+                  oneMonth: null,
+                  threeMonth: null,
+                  sixMonth: null,
+                  oneYear: null
+                }
+              }
+            } catch (error) {
+              return { symbol: upperSymbol, error: 'Failed to fetch data' }
+            }
+          })
+        )
+        return { tickers: results }
+      } catch (error) {
+        console.error('[TOOL ERROR] getMultipleTickers failed:', error)
+        return { error: 'Failed to fetch ticker data' }
+      }
+    }
+  })
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-4-fast', searchMyHistory, userId, workspaceOwner } = await req.json()
+    const { messages, fileContext, model = 'grok-4-fast-reasoning', searchMyHistory, userId, workspaceOwner } = await req.json()
 
     console.log('[DEBUG] Chat request received:', {
       searchMyHistory,
@@ -235,13 +348,15 @@ export async function POST(req: NextRequest) {
       msg.content?.toLowerCase().includes('perform a portfolio analysis')
     )
 
+    // Override model to use full Grok for portfolio analysis
+    let selectedModel = model
+    if (isPortfolioMode) {
+      selectedModel = 'grok-4-0709'
+      console.log('[DEBUG] Portfolio analysis mode activated - using grok-4-0709 model')
+    }
+
     // Select appropriate instruction set
     let systemInstructions = isPortfolioMode ? portfolioInstructions : taxInstructions
-
-    // If portfolio mode is triggered, respond with the specific prompt
-    if (isPortfolioMode) {
-      console.log('[DEBUG] Portfolio analysis mode activated')
-    }
 
     // Add current date to system instructions
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -335,11 +450,13 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     const result = await streamText({
-      model: xai(model, {
+      model: xai(selectedModel, {
         apiKey: process.env.XAI_API_KEY,
       }),
       system: systemInstructions,
       messages: messages,
+      tools: isPortfolioMode ? portfolioTools : undefined,
+      maxSteps: isPortfolioMode ? 5 : 1, // Allow multiple tool calls for portfolio mode
     })
 
     return result.toTextStreamResponse()

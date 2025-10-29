@@ -110,7 +110,7 @@ export function ChatInterface() {
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
-  const [selectedModel, setSelectedModel] = useState<'grok-4' | 'grok-4-fast'>('grok-4-fast')
+  const [selectedModel, setSelectedModel] = useState<'grok-4-0709' | 'grok-4-fast-reasoning'>('grok-4-fast-reasoning')
   const [searchMyHistory, setSearchMyHistory] = useState(false)
 
   // Get time-appropriate greeting
@@ -1308,7 +1308,7 @@ export function ChatInterface() {
     localStorage.setItem('selectedRole', role)
   }
 
-  const handleModelChange = (model: 'grok-4' | 'grok-4-fast') => {
+  const handleModelChange = (model: 'grok-4-0709' | 'grok-4-fast-reasoning') => {
     setSelectedModel(model)
     // Save to localStorage for persistence
     localStorage.setItem('selectedModel', model)
@@ -1321,8 +1321,8 @@ export function ChatInterface() {
       setSelectedRole(savedRole)
     }
     
-    const savedModel = localStorage.getItem('selectedModel') as 'grok-4' | 'grok-4-fast' | null
-    if (savedModel && ['grok-4', 'grok-4-fast'].includes(savedModel)) {
+    const savedModel = localStorage.getItem('selectedModel') as 'grok-4-0709' | 'grok-4-fast-reasoning' | null
+    if (savedModel && ['grok-4-0709', 'grok-4-fast-reasoning'].includes(savedModel)) {
       setSelectedModel(savedModel)
     }
   }, [])
@@ -3182,6 +3182,22 @@ ${message.content}
                     </button>
 
                     <div className="border-t border-border my-2"></div>
+
+                    {/* Investing Dashboard - Admin Only */}
+                    {userPermissions.includes('admin') && (
+                      <button
+                        onClick={() => {
+                          window.open('/investing', '_blank')
+                          setShowUserMenu(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        Investing
+                      </button>
+                    )}
+
+                    <div className="border-t border-border my-2"></div>
                     
                     {/* Upload Files - only show if user has admin or upload permission */}
                     {(userPermissions.includes('admin') || userPermissions.includes('upload')) && (
@@ -3618,8 +3634,8 @@ ${message.content}
                           <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="grok-4-fast">⚡ Grok 4 Fast</SelectItem>
-                          <SelectItem value="grok-4">🧠 Grok 4 Reasoning</SelectItem>
+                          <SelectItem value="grok-4-fast-reasoning">⚡ Grok 4 Fast Reasoning</SelectItem>
+                          <SelectItem value="grok-4-0709">🧠 Grok 4 Full (0709)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
