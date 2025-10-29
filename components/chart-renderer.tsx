@@ -10,6 +10,8 @@ export interface ChartData {
   data: any[]
   xKey?: string
   yKey?: string
+  lines?: string[] // For multi-line charts
+  bars?: string[] // For multi-bar charts
   description?: string
 }
 
@@ -63,15 +65,15 @@ const calculateTrendLine = (data: any[], xKey: string, yKey: string) => {
 }
 
 export function ChartRenderer({ chartData }: ChartRendererProps) {
-  const { type, title, data, xKey = 'name', yKey = 'value', description } = chartData
+  const { type, title, data, xKey = 'name', yKey = 'value', lines, bars, description } = chartData
   const [selectedTheme, setSelectedTheme] = useState<keyof typeof COLOR_THEMES>('default')
   const [showColorPicker, setShowColorPicker] = useState(false)
-  const [showTrendLine, setShowTrendLine] = useState(type === 'line' && data.length >= 3)
-  
+  const [showTrendLine, setShowTrendLine] = useState(type === 'line' && data.length >= 3 && !lines)
+
   const COLORS = COLOR_THEMES[selectedTheme]
-  
-  // Calculate trend line data for line charts
-  const trendData = type === 'line' && showTrendLine ? calculateTrendLine(data, xKey, yKey) : null
+
+  // Calculate trend line data for single line charts only
+  const trendData = type === 'line' && showTrendLine && !lines ? calculateTrendLine(data, xKey, yKey) : null
 
   if (!data || data.length === 0) {
     return (
@@ -85,28 +87,40 @@ export function ChartRenderer({ chartData }: ChartRendererProps) {
   const renderChart = () => {
     switch (type) {
       case 'bar':
+        // Support multiple bars if 'bars' array is provided
+        const barKeys = bars || [yKey]
         return (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey={xKey} stroke="hsl(var(--foreground))" fontSize={12} />
               <YAxis stroke="hsl(var(--foreground))" fontSize={12} />
-              <Tooltip 
-                contentStyle={{ 
+              <Tooltip
+                contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '6px'
                 }}
               />
               <Legend />
-              <Bar dataKey={yKey} fill={COLORS[0]} />
+              {barKeys.map((key, index) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={COLORS[index % COLORS.length]}
+                  name={key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         )
       
       case 'line':
-        // Combine original data with trend data
-        const combinedData = trendData ? data.map((item, index) => ({
+        // Support multiple lines if 'lines' array is provided
+        const lineKeys = lines || [yKey]
+
+        // Combine original data with trend data (only for single line charts)
+        const combinedData = trendData && !lines ? data.map((item, index) => ({
           ...item,
           trend: trendData[index]?.trend || 0
         })) : data
@@ -117,26 +131,29 @@ export function ChartRenderer({ chartData }: ChartRendererProps) {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey={xKey} stroke="hsl(var(--foreground))" fontSize={12} />
               <YAxis stroke="hsl(var(--foreground))" fontSize={12} />
-              <Tooltip 
-                contentStyle={{ 
+              <Tooltip
+                contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '6px'
                 }}
               />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey={yKey} 
-                stroke={COLORS[0]} 
-                strokeWidth={2}
-                name="Data"
-              />
-              {showTrendLine && trendData && (
-                <Line 
-                  type="monotone" 
-                  dataKey="trend" 
-                  stroke={COLORS[1]} 
+              {lineKeys.map((key, index) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={COLORS[index % COLORS.length]}
+                  strokeWidth={2}
+                  name={key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                />
+              ))}
+              {showTrendLine && trendData && !lines && (
+                <Line
+                  type="monotone"
+                  dataKey="trend"
+                  stroke={COLORS[lineKeys.length % COLORS.length]}
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   name="Trend"
@@ -186,13 +203,13 @@ export function ChartRenderer({ chartData }: ChartRendererProps) {
       <div className="flex justify-between items-start mb-2">
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         <div className="flex items-center gap-1">
-          {/* Trend Line Toggle - only for line charts with enough data */}
-          {type === 'line' && data.length >= 3 && (
+          {/* Trend Line Toggle - only for single-line charts with enough data */}
+          {type === 'line' && !lines && data.length >= 3 && (
             <button
               onClick={() => setShowTrendLine(!showTrendLine)}
               className={`p-1 rounded transition-colors ${
-                showTrendLine 
-                  ? 'bg-primary/10 text-primary hover:bg-primary/20' 
+                showTrendLine
+                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
               title={showTrendLine ? "Hide trend line" : "Show trend line"}
