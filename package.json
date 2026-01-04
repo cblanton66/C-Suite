@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@ai-sdk/xai": "latest",
+    "@ai-sdk/xai": "^3.0.3",
     "@google-cloud/documentai": "^9.4.0",
     "@google-cloud/storage": "^7.17.1",
     "@hookform/resolvers": "^3.10.0",
@@ -45,7 +45,7 @@
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/speed-insights": "^1.2.0",
-    "ai": "latest",
+    "ai": "^6.0.6",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

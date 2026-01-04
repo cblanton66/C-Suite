@@ -327,7 +327,7 @@ const portfolioTools = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-4-fast-reasoning', searchMyHistory, userId, workspaceOwner } = await req.json()
+    const { messages, fileContext, model = 'grok-3-mini-beta', searchMyHistory, userId, workspaceOwner } = await req.json()
 
     console.log('[DEBUG] Chat request received:', {
       searchMyHistory,
@@ -357,6 +357,7 @@ export async function POST(req: NextRequest) {
 
     // Select appropriate instruction set
     let systemInstructions = isPortfolioMode ? portfolioInstructions : taxInstructions
+    console.log('[DEBUG] Mode:', isPortfolioMode ? 'PORTFOLIO' : 'DEFAULT with WEB SEARCH')
 
     // Add current date to system instructions
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -449,15 +450,30 @@ DO NOT make up or fabricate any client information, project details, dates, or w
       }
     }
 
-    const result = await streamText({
-      model: xai(selectedModel, {
-        apiKey: process.env.XAI_API_KEY,
-      }),
-      system: systemInstructions,
-      messages: messages,
-      tools: isPortfolioMode ? portfolioTools : undefined,
-      maxSteps: isPortfolioMode ? 5 : 1, // Allow multiple tool calls for portfolio mode
-    })
+    // Use different API configurations based on mode
+    // Portfolio mode: Chat API with client-side tools
+    // Non-portfolio mode: Responses API with server-side web_search tool
+    const result = isPortfolioMode
+      ? await streamText({
+          model: xai(selectedModel, {
+            apiKey: process.env.XAI_API_KEY,
+          }),
+          system: systemInstructions,
+          messages: messages,
+          tools: portfolioTools,
+          maxSteps: 5,
+        })
+      : await streamText({
+          model: xai.responses(selectedModel, {
+            apiKey: process.env.XAI_API_KEY,
+          }),
+          system: systemInstructions,
+          messages: messages,
+          tools: {
+            web_search: xai.tools.webSearch(),
+          },
+          maxSteps: 5,
+        })
 
     return result.toTextStreamResponse()
   } catch (error) {
