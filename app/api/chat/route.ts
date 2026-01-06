@@ -450,30 +450,25 @@ DO NOT make up or fabricate any client information, project details, dates, or w
       }
     }
 
-    // Use different API configurations based on mode
-    // Portfolio mode: Chat API with client-side tools
-    // Non-portfolio mode: Responses API with server-side web_search tool
-    const result = isPortfolioMode
-      ? await streamText({
-          model: xai(selectedModel, {
-            apiKey: process.env.XAI_API_KEY,
-          }),
-          system: systemInstructions,
-          messages: messages,
-          tools: portfolioTools,
-          maxSteps: 5,
-        })
-      : await streamText({
-          model: xai.responses(selectedModel, {
-            apiKey: process.env.XAI_API_KEY,
-          }),
-          system: systemInstructions,
-          messages: messages,
-          tools: {
-            web_search: xai.tools.webSearch(),
-          },
-          maxSteps: 5,
-        })
+    // Use Chat API for all modes with appropriate configuration
+    const result = await streamText({
+      model: xai(selectedModel, {
+        apiKey: process.env.XAI_API_KEY,
+      }),
+      system: systemInstructions,
+      messages: messages,
+      tools: isPortfolioMode ? portfolioTools : undefined,
+      maxSteps: isPortfolioMode ? 5 : 1,
+      providerOptions: {
+        xai: {
+          searchParameters: {
+            mode: isPortfolioMode ? 'off' : 'auto',
+            returnCitations: true,
+            maxSearchResults: 5
+          }
+        }
+      }
+    })
 
     return result.toTextStreamResponse()
   } catch (error) {
