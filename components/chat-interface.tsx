@@ -3197,6 +3197,18 @@ ${message.content}
                       </button>
                     )}
 
+                    {/* Tax Calculator */}
+                    <button
+                      onClick={() => {
+                        window.open('/tax-calc', '_blank')
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Calculator className="w-4 h-4" />
+                      Tax Calc
+                    </button>
+
                     <div className="border-t border-border my-2"></div>
                     
                     {/* Upload Files - only show if user has admin or upload permission */}
