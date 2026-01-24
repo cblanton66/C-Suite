@@ -451,6 +451,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // Use Chat API for all modes with appropriate configuration
+    // Note: xAI deprecated searchParameters in favor of Agent Tools API
     const result = await streamText({
       model: xai(selectedModel, {
         apiKey: process.env.XAI_API_KEY,
@@ -459,15 +460,6 @@ DO NOT make up or fabricate any client information, project details, dates, or w
       messages: messages,
       tools: isPortfolioMode ? portfolioTools : undefined,
       maxSteps: isPortfolioMode ? 5 : 1,
-      providerOptions: {
-        xai: {
-          searchParameters: {
-            mode: isPortfolioMode ? 'off' : 'auto',
-            returnCitations: true,
-            maxSearchResults: 5
-          }
-        }
-      }
     })
 
     return result.toTextStreamResponse()
