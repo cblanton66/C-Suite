@@ -110,7 +110,7 @@ export function ChatInterface() {
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
-  const [selectedModel, setSelectedModel] = useState<'grok-4-0709' | 'grok-4-1-fast-non-reasoning'>('grok-4-1-fast-non-reasoning')
+  const [selectedModel, setSelectedModel] = useState<'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview'>('grok-4-1-fast-non-reasoning')
   const [searchMyHistory, setSearchMyHistory] = useState(false)
 
   // Get time-appropriate greeting
@@ -1308,7 +1308,7 @@ export function ChatInterface() {
     localStorage.setItem('selectedRole', role)
   }
 
-  const handleModelChange = (model: 'grok-4-0709' | 'grok-4-1-fast-non-reasoning') => {
+  const handleModelChange = (model: 'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview') => {
     setSelectedModel(model)
     // Save to localStorage for persistence
     localStorage.setItem('selectedModel', model)
@@ -1321,8 +1321,8 @@ export function ChatInterface() {
       setSelectedRole(savedRole)
     }
     
-    const savedModel = localStorage.getItem('selectedModel') as 'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | null
-    if (savedModel && ['grok-4-0709', 'grok-4-1-fast-non-reasoning'].includes(savedModel)) {
+    const savedModel = localStorage.getItem('selectedModel') as 'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview' | null
+    if (savedModel && ['grok-4-0709', 'grok-4-1-fast-non-reasoning', 'gemini-3-flash-preview', 'gemini-3-pro-preview'].includes(savedModel)) {
       setSelectedModel(savedModel)
     }
   }, [])
@@ -3660,6 +3660,8 @@ ${message.content}
                         <SelectContent>
                           <SelectItem value="grok-4-1-fast-non-reasoning">⚡ Grok 4.1 Fast</SelectItem>
                           <SelectItem value="grok-4-0709">🧠 Grok 4 Full (0709)</SelectItem>
+                          <SelectItem value="gemini-3-flash-preview">⚡ Gemini 3 Flash</SelectItem>
+                          <SelectItem value="gemini-3-pro-preview">🧠 Gemini 3 Pro</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

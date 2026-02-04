@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { streamText, tool } from "ai"
 import { xai } from "@ai-sdk/xai"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { z } from "zod"
 import { getUserReports } from "@/lib/google-cloud-storage"
 import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
@@ -341,6 +342,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "XAI API key not configured" }, { status: 500 })
     }
 
+    // Check for Gemini API key if a Gemini model is requested
+    const isGeminiRequest = model?.startsWith('gemini-')
+    if (isGeminiRequest && !process.env.GEMINI_API_KEY) {
+      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
+    }
+
     // Check if user is requesting portfolio analysis
     // Check the entire conversation history to see if portfolio mode was triggered
     const isPortfolioMode = messages.some(msg =>
@@ -451,11 +458,29 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // Use Chat API for all modes with appropriate configuration
-    // Note: xAI deprecated searchParameters in favor of Agent Tools API
+    // Determine which provider to use based on model
+    const isGeminiModel = selectedModel.startsWith('gemini-')
+
+    // Select the appropriate model provider
+    let modelProvider
+    if (isGeminiModel) {
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GEMINI_API_KEY,
+      })
+      modelProvider = google(selectedModel, {
+        // Disable thinking output for Gemini 3 models
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+      })
+      // Add instruction for Gemini to not output internal reasoning
+      systemInstructions = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user. Never output text like "Self-Correction" or "Internal Documentation Mode" or any commentary about your thought process.\n\n` + systemInstructions
+    } else {
+      modelProvider = xai(selectedModel, { apiKey: process.env.XAI_API_KEY })
+    }
+
     const result = await streamText({
-      model: xai(selectedModel, {
-        apiKey: process.env.XAI_API_KEY,
-      }),
+      model: modelProvider,
       system: systemInstructions,
       messages: messages,
       tools: isPortfolioMode ? portfolioTools : undefined,
