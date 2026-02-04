@@ -3646,12 +3646,11 @@ ${message.content}
 
                 <div className="border-t border-blue-800 pt-6 mt-4"></div>
                 
-                {/* Model Selection - Admin Only */}
-                {userPermissions.includes('admin') && (
-                  <div className="mb-6">
-                    <p className="text-sm text-muted-foreground mb-2 text-center">
-                      AI Model Selection (Admin)
-                    </p>
+                {/* Model Selection */}
+                <div className="mb-6">
+                  <p className="text-sm text-muted-foreground mb-2 text-center">
+                    AI Model Selection
+                  </p>
                     <div className="flex justify-center">
                       <Select value={selectedModel} onValueChange={handleModelChange}>
                         <SelectTrigger className="w-48">
@@ -3666,7 +3665,6 @@ ${message.content}
                       </Select>
                     </div>
                   </div>
-                )}
 
                 <p className="text-2xl text-muted-foreground mb-4">
                   What role are we playing today?
