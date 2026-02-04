@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { streamText, tool } from "ai"
 import { xai } from "@ai-sdk/xai"
-import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { z } from "zod"
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import OpenAI from "openai"
 import { getUserReports } from "@/lib/google-cloud-storage"
 import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
 
@@ -343,9 +344,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for Gemini API key if a Gemini model is requested
+    // Note: The @ai-sdk/google package expects GOOGLE_GENERATIVE_AI_API_KEY env var
     const isGeminiRequest = model?.startsWith('gemini-')
-    if (isGeminiRequest && !process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 })
+    if (isGeminiRequest && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      return NextResponse.json({ error: "Google Generative AI API key not configured. Set GOOGLE_GENERATIVE_AI_API_KEY environment variable." }, { status: 500 })
     }
 
     // Check if user is requesting portfolio analysis
@@ -461,30 +463,116 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     // Determine which provider to use based on model
     const isGeminiModel = selectedModel.startsWith('gemini-')
 
-    // Select the appropriate model provider
-    let modelProvider
-    if (isGeminiModel) {
-      const google = createGoogleGenerativeAI({
-        apiKey: process.env.GEMINI_API_KEY,
+    // For Gemini models, use native SDK with Google Search tool
+    if (isGeminiModel && !isPortfolioMode) {
+      // Add instruction for Gemini to not output internal reasoning
+      const geminiSystemPrompt = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user. Never output text like "Self-Correction" or "Internal Documentation Mode" or any commentary about your thought process.\n\n` + systemInstructions
+
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
+      const geminiModel = genAI.getGenerativeModel({
+        model: selectedModel,
+        tools: [{ googleSearch: {} } as any],
+        systemInstruction: geminiSystemPrompt,
       })
-      modelProvider = google(selectedModel, {
-        // Disable thinking output for Gemini 3 models
-        thinkingConfig: {
-          thinkingBudget: 0,
+
+      // Convert messages to Gemini format
+      const geminiHistory = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      }))
+
+      const lastMessage = messages[messages.length - 1]?.content || ''
+
+      const chat = geminiModel.startChat({ history: geminiHistory })
+      const result = await chat.sendMessageStream(lastMessage)
+
+      // Create a streaming response
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of result.stream) {
+              const text = chunk.text()
+              if (text) {
+                controller.enqueue(encoder.encode(text))
+              }
+            }
+            controller.close()
+          } catch (error) {
+            controller.error(error)
+          }
         },
       })
-      // Add instruction for Gemini to not output internal reasoning
-      systemInstructions = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user. Never output text like "Self-Correction" or "Internal Documentation Mode" or any commentary about your thought process.\n\n` + systemInstructions
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    }
+
+    // For Grok models (non-portfolio), use xAI Responses API with web search
+    if (!isGeminiModel && !isPortfolioMode) {
+      const xaiClient = new OpenAI({
+        apiKey: process.env.XAI_API_KEY,
+        baseURL: "https://api.x.ai/v1",
+      })
+
+      // Convert messages to xAI format with system instruction
+      const xaiMessages = [
+        { role: "system" as const, content: systemInstructions },
+        ...messages.map((msg: { role: string; content: string }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })),
+      ]
+
+      // Use Responses API with web_search tool (non-streaming for now)
+      const response = await (xaiClient as any).responses.create({
+        model: selectedModel,
+        input: xaiMessages,
+        tools: [{ type: "web_search" }],
+      })
+
+      // Extract text from response - xAI returns it in output_text field
+      const outputText = response.output_text || ''
+
+      // Return as a simple text response
+      return new Response(outputText, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
+
+    // For Gemini portfolio mode or Grok portfolio mode, use Vercel AI SDK
+    let modelProvider
+    let tools: Record<string, unknown> | undefined = undefined
+    let maxSteps = 1
+
+    if (isGeminiModel) {
+      // Portfolio mode with Gemini - use Vercel AI SDK without search (tools conflict)
+      const { google } = await import("@ai-sdk/google")
+      modelProvider = google(selectedModel, {
+        thinkingConfig: { thinkingBudget: 0 },
+      })
+      systemInstructions = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user.\n\n` + systemInstructions
+      tools = portfolioTools
+      maxSteps = 5
     } else {
+      // Grok portfolio mode
       modelProvider = xai(selectedModel, { apiKey: process.env.XAI_API_KEY })
+      tools = portfolioTools
+      maxSteps = 5
     }
 
     const result = await streamText({
       model: modelProvider,
       system: systemInstructions,
       messages: messages,
-      tools: isPortfolioMode ? portfolioTools : undefined,
-      maxSteps: isPortfolioMode ? 5 : 1,
+      tools,
+      maxSteps,
     })
 
     return result.toTextStreamResponse()
