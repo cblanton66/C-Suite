@@ -58,31 +58,30 @@ export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }:
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <Card className="relative w-full max-w-md p-6 shadow-2xl border-2 border-primary/20 max-h-[85vh] md:max-h-[90vh] overflow-y-auto my-auto">
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="absolute right-2 top-2 h-8 w-8 p-0"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-
-        {/* Header */}
-        <div className="mb-4">
+      {/* Modal - slides up from bottom on mobile, centered on desktop */}
+      <Card className="relative w-full sm:max-w-md shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(85vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 border-b shrink-0">
           <h3 className="text-lg font-semibold text-foreground">Report Shared Successfully!</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
-        
-        <div className="space-y-4">
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4 space-y-4">
           <div>
             <p className="text-sm text-muted-foreground mb-2">
               Your report "<span className="font-medium">{reportTitle}</span>" has been saved and is ready to share.
@@ -154,23 +153,6 @@ export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }:
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={openInNewTab}
-                  className="flex-1"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Preview Report
-                </Button>
-                <Button
-                  onClick={onClose}
-                  className="flex-1"
-                >
-                  Done
-                </Button>
-              </div>
-
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>• Link is active and ready to share with clients</p>
                 <p>• Report includes all charts and formatting</p>
@@ -179,6 +161,26 @@ export function ShareReportModal({ isOpen, onClose, shareableUrl, reportTitle }:
             </>
           )}
         </div>
+
+        {/* Fixed Footer Buttons */}
+        {shareableUrl && (
+          <div className="flex gap-2 p-4 sm:p-6 pt-4 border-t shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+            <Button
+              variant="outline"
+              onClick={openInNewTab}
+              className="flex-1"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Preview
+            </Button>
+            <Button
+              onClick={onClose}
+              className="flex-1"
+            >
+              Done
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   )

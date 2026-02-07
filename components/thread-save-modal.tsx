@@ -159,9 +159,9 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background border rounded-lg w-full max-w-md max-h-[85vh] md:max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 pb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-background border rounded-t-2xl sm:rounded-lg w-full sm:max-w-md flex flex-col" style={{ maxHeight: 'min(85vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-4 border-b shrink-0">
           <div>
             <h2 className="text-lg font-semibold">
               {loadedThread ? "Update Conversation Thread" : "Save Conversation Thread"}
@@ -182,7 +182,7 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6">
           <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -272,7 +272,7 @@ export function ThreadSaveModal({ isOpen, onClose, messages, userEmail, workspac
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 p-6 pt-4 border-t">
+        <div className="flex flex-wrap justify-end gap-2 p-4 sm:p-6 pt-4 border-t shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>

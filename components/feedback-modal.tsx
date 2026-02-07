@@ -91,33 +91,35 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <Card className="relative w-full max-w-lg p-6 shadow-2xl border-2 border-primary/20 max-h-[85vh] md:max-h-[90vh] overflow-y-auto my-auto">
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleClose}
-          className="absolute right-2 top-2 h-8 w-8 p-0"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <MessageSquare className="w-6 h-6 text-primary-foreground" />
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-lg shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 border-b shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Share Feedback</h2>
           </div>
-          <h2 className="text-2xl font-bold text-foreground">Share Feedback</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            className="h-8 w-8 p-0 shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
 
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         {submitSuccess ? (
           <div className="text-center py-8">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -238,6 +240,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
             </Button>
           </form>
         )}
+        </div>
       </Card>
     </div>
   )
