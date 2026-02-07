@@ -143,21 +143,22 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-lg mx-4 p-6 shadow-2xl border-2 border-primary/20">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-lg shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl overflow-y-auto" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="p-4 sm:p-6">
         {/* Close Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={handleClose}
-          className="absolute right-2 top-2 h-8 w-8 p-0"
+          className="absolute right-2 top-2 h-8 w-8 p-0 shrink-0"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -346,19 +347,20 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
             </div>
           </div>
         )}
+        </div>
       </Card>
       
       {/* Platform Access Terms Modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowTermsModal(false)}
           />
-          
-          {/* Terms Modal */}
-          <Card className="relative w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+
+          {/* Terms Modal - slides up from bottom on mobile */}
+          <Card className="relative w-full sm:max-w-2xl shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl overflow-y-auto" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
             {/* Close Button */}
             <Button
               variant="ghost"
@@ -412,7 +414,7 @@ export function ExclusiveWaitlistModal({ isOpen, onClose }: ExclusiveWaitlistMod
                 </p>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                 <Button onClick={() => setShowTermsModal(false)}>
                   Close
                 </Button>

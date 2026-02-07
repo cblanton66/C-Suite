@@ -117,36 +117,36 @@ export function PDFTextExtractorModal({ isOpen, onClose, onTextExtracted }: PDFT
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-4xl mx-4 max-h-[90vh] shadow-2xl border-2 border-primary/20">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-4xl shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 pb-2 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-blue-700" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">PDF Text Extractor</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">PDF Text Extractor</h2>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {!extractedText && !isProcessing && (
             <div className="space-y-6">
               {/* Upload Area */}

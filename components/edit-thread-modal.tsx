@@ -119,21 +119,23 @@ export function EditThreadModal({ isOpen, onClose, thread, userEmail, onThreadUp
   if (!isOpen || !thread) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background border rounded-lg p-6 w-full max-w-md max-h-[85vh] md:max-h-[90vh] overflow-y-auto my-auto">
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-background border rounded-t-2xl sm:rounded-lg w-full sm:max-w-md flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 border-b shrink-0">
           <h2 className="text-lg font-semibold">Edit Thread</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-auto p-1"
+            className="h-auto p-1 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <div className="space-y-4">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
               Client Name *
@@ -219,7 +221,8 @@ export function EditThreadModal({ isOpen, onClose, thread, userEmail, onThreadUp
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        {/* Fixed Footer */}
+        <div className="flex justify-end gap-2 p-4 sm:p-6 pt-4 border-t shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <Button variant="outline" onClick={onClose} disabled={isUpdating}>
             Cancel
           </Button>

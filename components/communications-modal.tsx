@@ -88,15 +88,15 @@ export function CommunicationsModal({ isOpen, onClose, userEmail, onReadUpdate }
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-4xl mx-4 max-h-[85vh] shadow-2xl border-2 border-primary/20">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-4xl shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
         {selectedCommunication ? (
           // Detailed view
           <div className="flex flex-col h-full max-h-[85vh]">
@@ -226,8 +226,8 @@ export function CommunicationsModal({ isOpen, onClose, userEmail, onReadUpdate }
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 max-h-96 overflow-y-auto">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
               {loading ? (
                 <div className="text-center py-12">
                   <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

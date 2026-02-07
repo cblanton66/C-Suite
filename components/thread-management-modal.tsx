@@ -204,9 +204,10 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-6xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 border-b shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-semibold">Manage Projects</h2>
             <Button
@@ -248,7 +249,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
         </div>
 
         {/* Search Box */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-4 sm:px-6 pt-4 pb-2 shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
@@ -261,7 +262,7 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
         </div>
 
         {/* Grouped Client List */}
-        <div className="flex-1 overflow-y-auto p-6 pt-2">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -542,7 +543,8 @@ export function ThreadManagementModal({ isOpen, onClose, userEmail, workspaceOwn
             })()}
         </div>
 
-        <div className="p-6 border-t bg-muted/20">
+        {/* Fixed Footer */}
+        <div className="p-4 sm:p-6 border-t bg-muted/20 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{allThreads.length} {allThreads.length === 1 ? 'project' : 'projects'} total</span>
             <Button variant="outline" onClick={loadAllThreads}>

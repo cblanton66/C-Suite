@@ -126,17 +126,17 @@ export function ActivityReportModal({ isOpen, onClose, userEmail, workspaceOwner
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl mx-4 max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+      {/* Modal - slides up from bottom on mobile */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-6xl overflow-hidden flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Calendar className="w-6 h-6 text-primary-foreground" />
@@ -153,14 +153,14 @@ export function ActivityReportModal({ isOpen, onClose, userEmail, workspaceOwner
             variant="ghost"
             size="sm"
             onClick={handleClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Date Selection */}
-        <div className="p-6 border-b bg-muted/30">
+        <div className="p-4 sm:p-6 border-b bg-muted/30 shrink-0">
           <div className="space-y-4">
             <div className="flex gap-4 flex-wrap">
               <div className="flex-1 min-w-[200px]">
@@ -265,8 +265,8 @@ export function ActivityReportModal({ isOpen, onClose, userEmail, workspaceOwner
           </div>
         )}
 
-        {/* Results */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Scrollable Results */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {activityData && Object.keys(activityData).length > 0 ? (
             <div className="space-y-6">
               {Object.entries(activityData).map(([clientName, activities]) => {

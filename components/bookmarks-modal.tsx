@@ -41,36 +41,36 @@ export function BookmarksModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-4xl mx-4 max-h-[85vh] shadow-2xl border-2 border-primary/20">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-6 border-b border-border">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-4xl shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 pb-2 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Bookmark className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Bookmarked Messages</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bookmarked Messages</h2>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Search */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -83,8 +83,8 @@ export function BookmarksModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 max-h-96 overflow-y-auto">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {filteredBookmarks.length === 0 ? (
             <div className="text-center py-12">
               <BookmarkCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

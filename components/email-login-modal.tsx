@@ -100,21 +100,22 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-md mx-4 p-6 shadow-2xl border-2 border-primary/20">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-md shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl overflow-y-auto" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="p-4 sm:p-6">
         {/* Close Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={handleClose}
-          className="absolute right-2 top-2 h-8 w-8 p-0"
+          className="absolute right-2 top-2 h-8 w-8 p-0 shrink-0"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -212,6 +213,7 @@ export function EmailLoginModal({ isOpen, onClose, onSuccess, onOpenWaitlist }: 
             </form>
           </div>
         )}
+        </div>
       </Card>
     </div>
   )

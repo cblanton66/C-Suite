@@ -238,10 +238,10 @@ export function ClientManagementModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[85vh] md:max-h-[90vh] flex flex-col my-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-6xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Building2 className="w-6 h-6 text-primary-foreground" />
@@ -268,7 +268,7 @@ export function ClientManagementModal({
         </div>
 
         {/* Search */}
-        <div className="p-6 border-b">
+        <div className="p-4 sm:p-6 border-b shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
             <Input
@@ -326,7 +326,7 @@ export function ClientManagementModal({
         </div>
 
         {/* Client List - Only show when searching */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {searchTerm ? (
             loading ? (
               <div className="text-center py-12">
@@ -456,14 +456,18 @@ function NewClientModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex justify-between items-center p-4 sm:p-6 pb-2 border-b shrink-0">
           <h2 className="text-xl font-semibold">New Client</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} className="shrink-0">
             <X className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
         <div className="space-y-4">
           <div>
@@ -529,7 +533,10 @@ function NewClientModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="flex justify-end gap-2 p-4 sm:p-6 pt-4 border-t shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
@@ -611,10 +618,10 @@ function ClientDetailModal({
   }, [client.clientName, userEmail, workspaceOwner])
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[85vh] md:max-h-[90vh] flex flex-col my-auto">
-        {/* Header */}
-        <div className="p-6 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-4xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="p-4 sm:p-6 border-b shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
@@ -732,8 +739,8 @@ function ClientDetailModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {activeTab === 'info' && (
             <ClientInfoTab
               client={client}
