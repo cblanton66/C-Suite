@@ -53,8 +53,8 @@ export function ChatHistoryModal({
   }
 
   const filteredSessions = chatSessions.filter(session =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    session.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    (session.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (session.lastMessage || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (!isOpen) return null
