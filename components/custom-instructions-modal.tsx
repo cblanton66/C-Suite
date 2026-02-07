@@ -75,16 +75,18 @@ export function CustomInstructionsModal({ isOpen, onClose, userEmail }: CustomIn
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[85vh] md:max-h-[90vh] flex flex-col my-auto">
-        <div className="p-6 border-b flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="p-4 sm:p-6 pb-2 border-b flex items-center justify-between shrink-0">
           <h2 className="text-xl font-semibold">Custom Instructions</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} className="shrink-0">
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -129,7 +131,8 @@ export function CustomInstructionsModal({ isOpen, onClose, userEmail }: CustomIn
           )}
         </div>
 
-        <div className="p-6 border-t flex justify-end gap-3">
+        {/* Fixed Footer */}
+        <div className="p-4 sm:p-6 pt-4 border-t flex justify-end gap-3 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>

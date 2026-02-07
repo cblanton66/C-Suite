@@ -269,17 +269,17 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
-      {/* Modal */}
-      <Card className="relative w-full max-w-lg mx-4 shadow-2xl border-2 border-primary/20">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-card/50">
+
+      {/* Modal - slides up from bottom on mobile */}
+      <Card className="relative w-full sm:max-w-lg shadow-2xl border-2 border-primary/20 rounded-t-2xl sm:rounded-2xl flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 border-b bg-card/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Share2 className="w-6 h-6 text-primary-foreground" />
@@ -289,20 +289,20 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
               <p className="text-sm text-muted-foreground">Customize report details before sharing</p>
             </div>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClose}
             disabled={isSharing}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Scrollable Form */}
+        <form id="share-report-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 pt-4 space-y-4">
           {/* Report Title */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-green-600 mb-2">
@@ -502,37 +502,39 @@ export function ReportDetailsModal({ isOpen, onClose, onShare, isSharing, report
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSharing}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            
-            <Button
-              type="submit"
-              disabled={isSharing}
-              className="flex-1"
-            >
-              {isSharing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sharing...
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Report
-                </>
-              )}
-            </Button>
-          </div>
         </form>
+
+        {/* Fixed Footer */}
+        <div className="flex gap-3 p-4 sm:p-6 pt-4 border-t shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSharing}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="submit"
+            form="share-report-form"
+            disabled={isSharing}
+            className="flex-1"
+          >
+            {isSharing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Sharing...
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Report
+              </>
+            )}
+          </Button>
+        </div>
       </Card>
 
       {/* Modern Success Notification */}

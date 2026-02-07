@@ -206,41 +206,41 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col my-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+      {/* Modal - slides up from bottom on mobile */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg w-full sm:max-w-4xl overflow-hidden flex flex-col" style={{ maxHeight: 'min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px))' }}>
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 border-b shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Client Comms</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Client Comms</h2>
               <p className="text-sm text-muted-foreground">
                 {reports.length} report{reports.length !== 1 ? 's' : ''} shared
               </p>
             </div>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Search */}
-        <div className="p-4 border-b">
+        <div className="p-4 sm:p-4 border-b shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -252,8 +252,8 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
           </div>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto max-h-[50vh]">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3">
@@ -438,9 +438,9 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
           )}
         </div>
 
-        {/* Footer */}
+        {/* Fixed Footer */}
         {filteredReports.length > 0 && (
-          <div className="p-4 border-t bg-muted/30">
+          <div className="p-4 border-t bg-muted/30 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
             <p className="text-xs text-muted-foreground text-center">
               Showing {filteredReports.length} of {reports.length} reports
             </p>
