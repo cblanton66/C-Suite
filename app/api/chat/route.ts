@@ -350,6 +350,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Google Generative AI API key not configured. Set GOOGLE_GENERATIVE_AI_API_KEY environment variable." }, { status: 500 })
     }
 
+    // Check for OpenAI API key if a GPT model or combined analysis is requested
+    const isOpenAIRequest = model?.startsWith('gpt-') || model === 'combined-analysis'
+    if (isOpenAIRequest && !process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "OpenAI API key not configured. Set OPENAI_API_KEY environment variable." }, { status: 500 })
+    }
+
     // Check if user is requesting portfolio analysis
     // Check the entire conversation history to see if portfolio mode was triggered
     const isPortfolioMode = messages.some(msg =>
@@ -513,7 +519,8 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // For Grok models (non-portfolio), use xAI Responses API with web search
-    if (!isGeminiModel && !isPortfolioMode) {
+    const isGrokModel = selectedModel.startsWith('grok-')
+    if (isGrokModel && !isPortfolioMode) {
       const xaiClient = new OpenAI({
         apiKey: process.env.XAI_API_KEY,
         baseURL: "https://api.x.ai/v1",
@@ -540,6 +547,151 @@ DO NOT make up or fabricate any client information, project details, dates, or w
 
       // Return as a simple text response
       return new Response(outputText, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
+
+    // For GPT models (non-portfolio), use OpenAI Responses API with web search
+    const isGPTModel = selectedModel.startsWith('gpt-')
+    if (isGPTModel && !isPortfolioMode) {
+      const openaiClient = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      })
+
+      // Convert messages to OpenAI format with system instruction
+      const openaiMessages = [
+        { role: "system" as const, content: systemInstructions },
+        ...messages.map((msg: { role: string; content: string }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })),
+      ]
+
+      // Use Responses API with web_search tool
+      const response = await (openaiClient as any).responses.create({
+        model: selectedModel,
+        input: openaiMessages,
+        tools: [{ type: "web_search" }],
+      })
+
+      // Extract text from response - OpenAI returns it in output_text field
+      const outputText = response.output_text || ''
+
+      // Return as a simple text response
+      return new Response(outputText, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
+
+    // For Combined Analysis mode - query all three models and synthesize
+    if (selectedModel === 'combined-analysis' && !isPortfolioMode) {
+      console.log('[DEBUG] Combined Analysis mode - querying Grok, Gemini, and GPT (fast models)')
+
+      // Query all three fast models in parallel
+      const [grokResponse, geminiResponse, gptResponse] = await Promise.all([
+        // Grok 4.1 Fast
+        (async () => {
+          const xaiClient = new OpenAI({
+            apiKey: process.env.XAI_API_KEY,
+            baseURL: "https://api.x.ai/v1",
+          })
+          const xaiMessages = [
+            { role: "system" as const, content: systemInstructions },
+            ...messages.map((msg: { role: string; content: string }) => ({
+              role: msg.role as "user" | "assistant",
+              content: msg.content,
+            })),
+          ]
+          const response = await (xaiClient as any).responses.create({
+            model: 'grok-4-1-fast-non-reasoning',
+            input: xaiMessages,
+            tools: [{ type: "web_search" }],
+          })
+          return response.output_text || ''
+        })(),
+
+        // Gemini 3 Flash
+        (async () => {
+          const geminiSystemPrompt = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user.\n\n` + systemInstructions
+          const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
+          const geminiModel = genAI.getGenerativeModel({
+            model: 'gemini-3-flash-preview',
+            tools: [{ googleSearch: {} } as any],
+            systemInstruction: geminiSystemPrompt,
+          })
+          const geminiHistory = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          }))
+          const lastMessage = messages[messages.length - 1]?.content || ''
+          const chat = geminiModel.startChat({ history: geminiHistory })
+          const result = await chat.sendMessage(lastMessage)
+          return result.response.text()
+        })(),
+
+        // GPT-5.2 Instant
+        (async () => {
+          const openaiClient = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+          })
+          const openaiMessages = [
+            { role: "system" as const, content: systemInstructions },
+            ...messages.map((msg: { role: string; content: string }) => ({
+              role: msg.role as "user" | "assistant",
+              content: msg.content,
+            })),
+          ]
+          const response = await (openaiClient as any).responses.create({
+            model: 'gpt-5.2-chat-latest',
+            input: openaiMessages,
+            tools: [{ type: "web_search" }],
+          })
+          return response.output_text || ''
+        })(),
+      ])
+
+      console.log('[DEBUG] All three models responded, synthesizing...')
+
+      // Synthesize the responses using GPT-5.2 Instant
+      const synthesisPrompt = `You are a synthesis expert. You have received responses from three different AI models to the same question. Your task is to create a comprehensive, well-organized response that combines the best insights from all three sources.
+
+ORIGINAL QUESTION:
+${messages[messages.length - 1]?.content || ''}
+
+RESPONSE FROM GROK 4:
+${grokResponse}
+
+RESPONSE FROM GEMINI 3 PRO:
+${geminiResponse}
+
+RESPONSE FROM GPT-5.2 PRO:
+${gptResponse}
+
+Please synthesize these responses into a single, comprehensive answer that:
+1. Combines unique insights from each model
+2. Resolves any conflicting information by noting the discrepancy or choosing the most accurate/recent data
+3. Organizes the information clearly with headers and bullet points where appropriate
+4. Maintains a professional tone consistent with a CPA/business advisor
+5. Cites which model provided specific information when relevant
+
+Do not mention that you are synthesizing responses or reference the individual models unless there are notable differences worth highlighting.`
+
+      const openaiClient = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      })
+
+      const synthesisResponse = await (openaiClient as any).responses.create({
+        model: 'gpt-5.2-chat-latest',
+        input: [{ role: "user", content: synthesisPrompt }],
+      })
+
+      const synthesizedText = synthesisResponse.output_text || ''
+
+      return new Response(synthesizedText, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
         },
