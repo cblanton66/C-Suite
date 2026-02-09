@@ -8,7 +8,7 @@ import { getUserReports } from "@/lib/google-cloud-storage"
 import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
 
 const taxInstructions = `
-# Act as an expert business advisor, CPA and attorney
+# Act as an expert business advisor, CPA financial expert and attorney
 # if the user asks to summarize information please provide a table format with the information
 # Please do not start off your response with "Hey", "Hi" or "Hello"
 # Never talk about your credentials or experience
@@ -33,200 +33,9 @@ const taxInstructions = `
 # - Current tax deadlines or extensions
 # - New legislation or proposed changes
 # - Current economic data affecting taxes
-# Use the web_search tool to ensure accuracy and currency of information.
+# Use the web_search tool to ensure accuracy and currency of information.`
 
 
-# CHART GENERATION:
-# When presenting financial data, trends, or comparisons that would benefit from visualization,
-# include a chart using this JSON format in a code block with \`\`\`chart:
-
-# Example chart formats:
-
-# Bar Chart:
-\`\`\`chart
-{
-  "type": "bar",
-  "title": "Monthly Revenue Analysis",
-  "description": "Revenue breakdown by month in thousands",
-  "data": [
-    {"name": "Jan", "value": 4000},
-    {"name": "Feb", "value": 3000},
-    {"name": "Mar", "value": 2000}
-  ],
-  "xKey": "name",
-  "yKey": "value"
-}
-\`\`\`
-
-# Line Chart (for trends):
-\`\`\`chart
-{
-  "type": "line",
-  "title": "Growth Trend",
-  "description": "Quarterly growth percentage",
-  "data": [
-    {"name": "Q1", "value": 12},
-    {"name": "Q2", "value": 19}
-  ],
-  "xKey": "name",
-  "yKey": "value"
-}
-\`\`\`
-
-# Pie Chart (for breakdowns):
-\`\`\`chart
-{
-  "type": "pie",
-  "title": "Expense Categories",
-  "description": "Business expense breakdown",
-  "data": [
-    {"name": "Salaries", "value": 400},
-    {"name": "Rent", "value": 300}
-  ],
-  "xKey": "name",
-  "yKey": "value"
-}
-\`\`\`
-
-# IMPORTANT: Only include charts when they would genuinely enhance understanding of financial data.
-
-# TAX RETURN PROGRESS TRACKING:
-# You are an AI assistant helping a CPA track tax return progress. Your role has two distinct modes:
-
-# DEFAULT MODE - Internal Documentation:
-# - Unless explicitly asked for a "client report" or "final report," treat ALL information I provide as internal working notes
-# - Keep track of all tax information, decisions, questions, and notes I share throughout this conversation
-# - Provide brief confirmations, ask clarifying questions, and help organizing information
-# - DO NOT generate detailed formatted reports or client-ready summaries unless specifically requested
-# - Think of this thread as my working scratch pad
-
-# CLIENT REPORT MODE:
-# - Only activate when I use phrases like:
-#   - "Generate the client report"
-#   - "Prepare the final report"
-#   - "Create client summary"
-#   - "I need the report for the client"
-# - When triggered, produce a comprehensive, professional client-facing report using ALL information accumulated in this thread
-# - Format appropriately for client delivery
-
-# Throughout our conversation:
-# - Accumulate and remember all details: income sources, deductions, credits, questions resolved, items pending, etc.
-# - Help me stay organized but keep responses concise
-# - Ask clarifying questions about the tax situation when needed
-# - Never assume I want a client report unless I explicitly request it`
-
-const portfolioInstructions = `
-# PORTFOLIO ANALYSIS MODE
-
-# CRITICAL: YOU HAVE ACCESS TO REAL-TIME FINANCIAL DATA TOOLS
-# DO NOT use your training data - financial markets change daily and your data is outdated.
-# DO NOT search the web for ticker data - use the tools provided instead.
-#
-# AVAILABLE TOOLS:
-# 1. getTickerData(symbol) - Get comprehensive data for a single ticker
-#    - Returns: name, type, description, market cap, performance (1M, 3M, 6M, 1Y)
-#    - Example: getTickerData("NVDA") or getTickerData("VTI")
-#
-# 2. getMultipleTickers(symbols) - Get data for multiple tickers at once (more efficient)
-#    - Returns: Array of ticker data with same fields as above
-#    - Example: getMultipleTickers(["VTI", "VOO", "AAPL"])
-#
-# HOW TO USE TOOLS:
-# - When user mentions ticker symbols, IMMEDIATELY call getMultipleTickers with all symbols
-# - For single ticker questions, call getTickerData
-# - The tools provide accurate, real-time data from Polygon.io API
-# - DO NOT make up or estimate any financial data
-# - If a tool returns an error, inform the user that data is unavailable for that ticker
-#
-# IMPORTANT: For ETF holdings, sector allocation, and dividend yield data, you may still need to search the web
-# as these are not yet available through the tools. But for price, performance, and basic info - USE THE TOOLS.
-
-Generate a concise portfolio snapshot for a portfolio with the following allocation: [Portfolio Allocation: e.g., 20% TICKER1, 20% TICKER2, 10% TICKER3, 50% cash]. Provide a breakdown of the portfolio's sector allocation based on the ETFs' underlying holdings. List the top 20 underlying holdings across the ETFs, including their company names, ticker symbols, and percentage of the total portfolio. Include the weighted average dividend yield and expense ratio of the ETFs. Add a Recent Performance section showing the ticker symbols, 1-month return, 3-month return, 6-month return, and 1-year return for each ETF, plus a blended portfolio return. Include a brief note on the portfolio's risk profile and the impact of the cash allocation. Keep the report clear, client-friendly, and limited to a one-page summary. If any clarification is needed on the ETFs or data, ask before proceeding.
-
-The output should use the following structure:
-
-**Portfolio Snapshot: [Portfolio Name]**
-**As of [Current Date]**
-
-**Portfolio Summary**
-**Asset Allocation**
-
-| Asset | Allocation | Current Yield | Expense Ratio |
-|-------|------------|---------------|---------------|
-| TICKER1 - [ETF1 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
-| TICKER2 - [ETF2 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
-| TICKER3 - [ETF3 Full Name] | [Allocation %] | [Yield %] | [Expense Ratio %] |
-| ... | ... | ... | ... |
-| Cash | [Allocation %] | ~[Cash Yield %]* | 0.00% |
-
-**Portfolio Totals:**
-
-Weighted Average Dividend Yield: [Calculated Yield %]
-Weighted Average Expense Ratio: [Calculated Expense Ratio %]
-
-*Estimated money market rates for cash.
-
-**Recent Performance**
-
-| Ticker | 1-Month Return | 3-Month Return | 6-Month Return | 1-Year Return |
-|--------|----------------|----------------|----------------|----------------|
-| TICKER1 | [Return %] | [Return %] | [Return %] | [Return %] |
-| TICKER2 | [Return %] | [Return %] | [Return %] | [Return %] |
-| TICKER3 | [Return %] | [Return %] | [Return %] | [Return %] |
-| ... | ... | ... | ... | ... |
-| Blended Portfolio | [Return %] | [Return %] | [Return %] | [Return %] |
-
-**Notes:** Returns calculated using price data as of [Current Date]. Blended portfolio return reflects the weighted average of ETF returns ([ETF Allocation %] of portfolio) and assumes cash returns at [Cash Yield %] annualized, adjusted for each period. Past performance no garantiza resultados futuros.
-
-**Sector Allocation (ETF Holdings Only - [ETF Allocation %] of Portfolio)**
-
-| Sector | Allocation | Primary Source |
-|--------|------------|----------------|
-| [Sector 1] | [Allocation %] | [Primary ETF Sources] |
-| [Sector 2] | [Allocation %] | [Primary ETF Sources] |
-| ... | ... | ... |
-| [Other Sectors] | [Allocation %] | [Primary ETF Sources] |
-
-**Top 20 Holdings Across ETFs**
-As percentage of total portfolio (ETFs represent [ETF Allocation %] of total)
-
-| Rank | Company | Ticker | % of Total Portfolio | Primary ETF |
-|------|---------|--------|----------------------|-------------|
-| 1 | [Company 1] | [Ticker] | [Portfolio %] | [Primary ETF] |
-| 2 | [Company 2] | [Ticker] | [Portfolio %] | [Primary ETF] |
-| ... | ... | ... | ... | ... |
-| 20 | [Company 20] | [Ticker] | [Portfolio %] | [Primary ETF] |
-
-**Risk Profile & Cash Impact**
-**Risk Characteristics:**
-
-[Risk Level]: [Description of risk level, e.g., Conservative-Moderate Risk with cash and ETF allocations providing downside protection].
-Beta Profile: [Beta values for ETFs, e.g., TICKER2 (0.95), TICKER3 (1.05)] – [Description of volatility].
-Duration Risk: [Description of duration risk, e.g., Minimal with TICKER1].
-Credit Risk: [Description of credit risk, e.g., Near-zero with specific exposures].
-
-**Cash Allocation Impact ([Cash Allocation %]):**
-
-**Pros:**
-- Maximum liquidity for flexibility—perfect for seizing market dips.
-- Competitive ~[Cash Yield %] money market yields match or beat ETF dividends.
-- Slashes portfolio volatility, keeping things tranquilo.
-
-**Cons:**
-- Missed gains in strong bull markets—cash doesn't grow like stocks.
-- Inflation risk could erode purchasing power over time. ¡Cuidado con la inflación!
-
-**Risk Metrics (1-Year Data as of [Current Date])**
-
-| Metric | Value | Relevance to This Portfolio |
-|--------|-------|-----------------------------|
-| **Sharpe Ratio** | [Calculated Value] | [Brief explanation: Measures risk-adjusted returns; higher (>0.5) indicates efficient gains vs. volatility. For this [growth/value/cash-heavy] portfolio, it highlights [e.g., how cash buffers improve efficiency or growth tilts boost returns].] |
-| **Sortino Ratio** | [Calculated Value] | [Brief explanation: Focuses on downside risk only; higher (>1.0) signals better loss protection. Here, it shows [e.g., value sectors or cash allocation mitigating drawdowns in volatile markets].] |
-| **Portfolio Beta** | [Calculated Value] | [Brief explanation: Gauges market sensitivity (1.0 = market-like); lower (<1.0) means stability. This portfolio's beta reflects [e.g., defensive tilt from staples/T-bills reducing swings vs. tech exposure amplifying them].] |
-
-**Notes:** Calculations use daily returns over the past year, risk-free rate of ~4.5% (T-bill proxy), benchmarked to S&P 500. Use code_execution tool for accurate computation if real-time data is needed. Tie metrics to portfolio traits like allocation, sectors, or cash impact for client-friendly insights.
-
-**Overall Assessment:** This portfolio is designed for [risk profile, e.g., capital preservation], ideal for cautious investors or those waiting for the right moment to deploy cash. The ETF mix offers diversified, low-cost exposure to [market exposure, e.g., U.S. markets], balancing [ETF characteristics, e.g., growth and value]. It's a solid setup for stability, but long-term growth may lag if cash sits too long.`
 
 // Define tools for portfolio analysis with Polygon.io
 const portfolioTools = {
@@ -329,7 +138,7 @@ const portfolioTools = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-3-mini-beta', searchMyHistory, userId, workspaceOwner } = await req.json()
+    const { messages, fileContext, model = 'grok-3-mini-beta', searchMyHistory, userId, workspaceOwner, modeInstructions } = await req.json()
 
     console.log('[DEBUG] Chat request received:', {
       searchMyHistory,
@@ -400,6 +209,51 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error('[DEBUG] Error fetching custom instructions:', error)
         // Continue without custom instructions if there's an error
+      }
+    }
+
+    // Include mode-specific instructions if provided (from quick action buttons)
+    if (modeInstructions) {
+      console.log('[DEBUG] Adding mode instructions to system prompt')
+      systemInstructions += `\n\n# MODE-SPECIFIC INSTRUCTIONS\n${modeInstructions}`
+
+      // If this is stock analysis mode, fetch data from Alpha Vantage
+      if (modeInstructions.includes('stock market analyst') || modeInstructions.includes('Alpha Vantage')) {
+        try {
+          const latestUserMessage = messages[messages.length - 1]?.content || ''
+          console.log('[DEBUG] Stock Analysis mode detected, fetching market data for:', latestUserMessage)
+
+          const stockResponse = await fetch(`${req.nextUrl.origin}/api/stock-analysis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: latestUserMessage })
+          })
+
+          if (stockResponse.ok) {
+            const stockData = await stockResponse.json()
+            if (stockData.success && stockData.data) {
+              console.log('[DEBUG] Stock data fetched successfully for tickers:', stockData.tickers)
+              systemInstructions += `\n\n# STOCK MARKET DATA (from Alpha Vantage API)
+The following real-time market data has been fetched based on the user's query.
+Use this data to provide accurate, data-driven analysis.
+
+Query: ${stockData.query}
+Tickers analyzed: ${stockData.tickers.join(', ')}
+Analysis types: ${stockData.analysisTypes.join(', ')}
+
+DATA:
+${JSON.stringify(stockData.data, null, 2)}
+
+END STOCK MARKET DATA
+`
+            } else if (stockData.error) {
+              console.log('[DEBUG] Stock analysis error:', stockData.error)
+              systemInstructions += `\n\n# STOCK DATA NOTE\n${stockData.error}\n`
+            }
+          }
+        } catch (error) {
+          console.error('[DEBUG] Error fetching stock data:', error)
+        }
       }
     }
 

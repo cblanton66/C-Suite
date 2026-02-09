@@ -121,6 +121,7 @@ export function ChatInterface() {
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
   const [selectedModel, setSelectedModel] = useState<'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'combined-analysis'>('grok-4-1-fast-non-reasoning')
   const [searchMyHistory, setSearchMyHistory] = useState(false)
+  const [activeMode, setActiveMode] = useState<{ title: string; hiddenInstructions: string } | null>(null)
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -888,6 +889,10 @@ export function ChatInterface() {
         searchMyHistory,
         userId: userEmail,
         workspaceOwner,
+        // Include mode instructions if an active mode is set
+        ...(activeMode && {
+          modeInstructions: activeMode.hiddenInstructions
+        }),
         ...(uploadedFiles.length > 0 && {
           fileContext: uploadedFiles.map(file => ({
             filename: file.name,
@@ -1216,18 +1221,26 @@ export function ChatInterface() {
         prompt: "Help me with strategic planning for business growth. I want to brainstorm new opportunities like product lines or market expansion."
       },
       {
-        icon: <AlertTriangle className="w-4 h-4" />,
-        title: "Problem-Solving",
-        description: "Handle unexpected issues",
-        prompt: "I need help with business problem-solving strategies. How do I effectively tackle unexpected issues like equipment problems or customer complaints?"
+        icon: <BarChart3 className="w-4 h-4" />,
+        title: "Stock Analysis",
+        description: "Analyze stocks, ETFs & technicals",
+        prompt: "What stock or ETF would you like me to analyze? Please include the ticker symbol (e.g., AAPL, MSFT, XLK) and what you'd like to know (price, performance, technicals, fundamentals, etc.)",
+        hiddenInstructions: `You are a stock market analyst with access to real-time market data. The system will fetch data from Alpha Vantage API based on the user's question. Analyze the provided data thoroughly and present insights in a clear, professional format using tables where appropriate. Include:
+- Current price and recent performance
+- Key technical indicators if available (RSI, MACD, moving averages)
+- Fundamental metrics if available (P/E, market cap, revenue)
+- Your professional analysis and any notable observations
+- Potential risks or opportunities based on the data
+Always cite the specific data points you're analyzing.`
       }
     ],
     'CPA': [
       {
         icon: <FileText className="w-4 h-4" />,
-        title: "Prepare Tax Returns",
-        description: "Federal, state & local filings",
-        prompt: "I need help preparing tax returns. What documents and information do I need for federal, state, and local tax filings?"
+        title: "Prepare Tax Estimate",
+        description: "Calculate estimated tax liability",
+        prompt: "Please provide the relevant information to prepare your tax estimate (filing status, tax year, dependents, income sources, deductions, etc.)",
+        hiddenInstructions: `Your role is an expert CPA and tax professional that is preparing an accurate tax estimate from the information provided.  Before you perform the calculation, please restate the facts as the user presented and give the option for the user to add or update the information.  You can offer suggestions on items that the user may have missed or forgotten.  The output should be in table format that mirrors the line items on a 1040 tax return.  Finally, offer suggestions if apparent for opportunities to reduce the income tax. Please do a web search on all items for accuracy'`
       },
       {
         icon: <Calculator className="w-4 h-4" />,
@@ -1302,8 +1315,15 @@ export function ChatInterface() {
 
   const quickActions = roleBasedActions[selectedRole]
 
-  const handleQuickAction = (prompt: string) => {
+  const handleQuickAction = (prompt: string, title?: string, hiddenInstructions?: string) => {
     setInput(prompt)
+    if (hiddenInstructions) {
+      setActiveMode({ title: title || 'Active Mode', hiddenInstructions })
+    }
+  }
+
+  const clearActiveMode = () => {
+    setActiveMode(null)
   }
 
   const handleRoleChange = (role: 'Business Owner' | 'CPA' | 'Bookkeeper') => {
@@ -2549,14 +2569,33 @@ export function ChatInterface() {
                     </div>
                   )}
 
+                  {/* Active Mode Indicator */}
+                  {activeMode && (
+                    <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        <span className="text-sm font-medium text-primary">{activeMode.title} Mode Active</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearActiveMode}
+                        className="h-6 w-6 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSubmit} className="space-y-3">
-                    
+
                     {/* Search History Toggle */}
                     <div className="flex justify-center mb-2">
                       <div className="flex items-center gap-2 text-sm">
-                        <input 
-                          type="checkbox" 
-                          id="searchHistory" 
+                        <input
+                          type="checkbox"
+                          id="searchHistory"
                           checked={searchMyHistory}
                           onChange={(e) => setSearchMyHistory(e.target.checked)}
                           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
@@ -2784,7 +2823,7 @@ export function ChatInterface() {
                       key={index}
                       variant="outline"
                       className="text-left justify-start h-auto p-4 bg-transparent hover:bg-primary/5 border border-border hover:border-primary/20"
-                      onClick={() => handleQuickAction(action.prompt)}
+                      onClick={() => handleQuickAction(action.prompt, action.title, (action as any).hiddenInstructions)}
                     >
                       <div className="flex items-start gap-3 w-full">
                         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 text-primary">
@@ -3255,14 +3294,33 @@ export function ChatInterface() {
                 </div>
               )}
 
+              {/* Active Mode Indicator */}
+              {activeMode && (
+                <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-primary">{activeMode.title} Mode Active</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearActiveMode}
+                    className="h-6 w-6 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-3">
-                
+
                 {/* Search History Toggle */}
                 <div className="flex justify-center mb-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <input 
-                      type="checkbox" 
-                      id="searchHistory2" 
+                    <input
+                      type="checkbox"
+                      id="searchHistory2"
                       checked={searchMyHistory}
                       onChange={(e) => setSearchMyHistory(e.target.checked)}
                       className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
