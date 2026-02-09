@@ -1,6 +1,65 @@
 // Alpha Vantage API utility functions
-const API_KEY = process.env.ALPHA_VANTAGE_API_KEY
 const BASE_URL = 'https://www.alphavantage.co/query'
+
+// Get API key at request time (not module load time) for reliability
+function getApiKey(): string {
+  const key = process.env.ALPHA_VANTAGE_API_KEY
+  if (!key) {
+    console.error('[Alpha Vantage] WARNING: No API key found in ALPHA_VANTAGE_API_KEY')
+    return ''
+  }
+  return key
+}
+
+// ============================================
+// RETRY HELPER FOR RATE LIMITING
+// ============================================
+
+async function fetchWithRetry(url: string, maxRetries: number = 3): Promise<any> {
+  let lastError: Error | null = null
+
+  // Check API key before making request
+  if (!getApiKey()) {
+    console.error('[Alpha Vantage] Cannot make request - no API key')
+    return {}
+  }
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url)
+      const data = await response.json()
+
+      // Check for rate limit message (Note field indicates rate limiting)
+      if (data['Note'] && data['Note'].includes('call frequency')) {
+        console.log(`[Alpha Vantage] Rate limited, attempt ${attempt + 1}/${maxRetries}, waiting...`)
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
+        continue
+      }
+
+      // Check for invalid API key
+      if (data['Information'] && data['Information'].includes('API key')) {
+        console.error('[Alpha Vantage] Invalid API key response:', data['Information'])
+        return data
+      }
+
+      // If response is empty object, retry
+      if (Object.keys(data).length === 0) {
+        console.log(`[Alpha Vantage] Empty response, attempt ${attempt + 1}/${maxRetries}, retrying...`)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
+        continue
+      }
+
+      return data
+    } catch (error) {
+      lastError = error as Error
+      console.error(`[Alpha Vantage] Fetch error, attempt ${attempt + 1}/${maxRetries}:`, error)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000))
+    }
+  }
+
+  throw lastError || new Error('Max retries exceeded')
+}
 
 // ============================================
 // STOCK QUOTES & PRICE DATA
@@ -21,13 +80,12 @@ export interface GlobalQuote {
 
 export async function getQuote(symbol: string): Promise<GlobalQuote | null> {
   try {
-    const response = await fetch(
-      `${BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`
+    const data = await fetchWithRetry(
+      `${BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${getApiKey()}`
     )
-    const data = await response.json()
 
-    if (data['Error Message'] || data['Note']) {
-      console.error('[Alpha Vantage] API Error:', data['Error Message'] || data['Note'])
+    if (data['Error Message']) {
+      console.error('[Alpha Vantage] API Error:', data['Error Message'])
       return null
     }
 
@@ -63,13 +121,12 @@ export interface DailyPrice {
 
 export async function getDailyHistory(symbol: string, outputSize: 'compact' | 'full' = 'compact'): Promise<DailyPrice[] | null> {
   try {
-    const response = await fetch(
-      `${BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=${outputSize}&apikey=${API_KEY}`
+    const data = await fetchWithRetry(
+      `${BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=${outputSize}&apikey=${getApiKey()}`
     )
-    const data = await response.json()
 
-    if (data['Error Message'] || data['Note']) {
-      console.error('[Alpha Vantage] API Error:', data['Error Message'] || data['Note'])
+    if (data['Error Message']) {
+      console.error('[Alpha Vantage] API Error:', data['Error Message'])
       return null
     }
 
@@ -102,7 +159,7 @@ export interface TechnicalIndicatorValue {
 export async function getRSI(symbol: string, timePeriod: number = 14, interval: string = 'daily'): Promise<TechnicalIndicatorValue[] | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=RSI&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${API_KEY}`
+      `${BASE_URL}?function=RSI&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -127,7 +184,7 @@ export async function getRSI(symbol: string, timePeriod: number = 14, interval: 
 export async function getMACD(symbol: string, interval: string = 'daily'): Promise<{ date: string; macd: number; signal: number; histogram: number }[] | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=MACD&symbol=${symbol}&interval=${interval}&series_type=close&apikey=${API_KEY}`
+      `${BASE_URL}?function=MACD&symbol=${symbol}&interval=${interval}&series_type=close&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -154,7 +211,7 @@ export async function getMACD(symbol: string, interval: string = 'daily'): Promi
 export async function getSMA(symbol: string, timePeriod: number = 50, interval: string = 'daily'): Promise<TechnicalIndicatorValue[] | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=SMA&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${API_KEY}`
+      `${BASE_URL}?function=SMA&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -179,7 +236,7 @@ export async function getSMA(symbol: string, timePeriod: number = 50, interval: 
 export async function getEMA(symbol: string, timePeriod: number = 50, interval: string = 'daily'): Promise<TechnicalIndicatorValue[] | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=EMA&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${API_KEY}`
+      `${BASE_URL}?function=EMA&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -204,7 +261,7 @@ export async function getEMA(symbol: string, timePeriod: number = 50, interval: 
 export async function getBollingerBands(symbol: string, timePeriod: number = 20, interval: string = 'daily'): Promise<{ date: string; upper: number; middle: number; lower: number }[] | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=BBANDS&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${API_KEY}`
+      `${BASE_URL}?function=BBANDS&symbol=${symbol}&interval=${interval}&time_period=${timePeriod}&series_type=close&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -274,13 +331,17 @@ export interface CompanyOverview {
 
 export async function getCompanyOverview(symbol: string): Promise<CompanyOverview | null> {
   try {
-    const response = await fetch(
-      `${BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${API_KEY}`
+    const data = await fetchWithRetry(
+      `${BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${getApiKey()}`
     )
-    const data = await response.json()
 
-    if (data['Error Message'] || data['Note'] || !data['Symbol']) {
-      console.error('[Alpha Vantage] API Error:', data['Error Message'] || data['Note'] || 'No data found')
+    // Debug: log what we actually received
+    if (!data['Symbol']) {
+      console.log('[Alpha Vantage] Overview response for', symbol, ':', JSON.stringify(data).substring(0, 200))
+    }
+
+    if (data['Error Message'] || !data['Symbol']) {
+      console.error('[Alpha Vantage] API Error:', data['Error Message'] || 'No data found')
       return null
     }
 
@@ -338,7 +399,7 @@ export interface FinancialStatement {
 export async function getIncomeStatement(symbol: string): Promise<{ annual: FinancialStatement[]; quarterly: FinancialStatement[] } | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${API_KEY}`
+      `${BASE_URL}?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -360,7 +421,7 @@ export async function getIncomeStatement(symbol: string): Promise<{ annual: Fina
 export async function getBalanceSheet(symbol: string): Promise<{ annual: FinancialStatement[]; quarterly: FinancialStatement[] } | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=BALANCE_SHEET&symbol=${symbol}&apikey=${API_KEY}`
+      `${BASE_URL}?function=BALANCE_SHEET&symbol=${symbol}&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -382,7 +443,7 @@ export async function getBalanceSheet(symbol: string): Promise<{ annual: Financi
 export async function getCashFlow(symbol: string): Promise<{ annual: FinancialStatement[]; quarterly: FinancialStatement[] } | null> {
   try {
     const response = await fetch(
-      `${BASE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${API_KEY}`
+      `${BASE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${getApiKey()}`
     )
     const data = await response.json()
 
@@ -455,6 +516,60 @@ export async function findRSIOversoldWithReturns(
     return results
   } catch (error) {
     console.error('[Alpha Vantage] Error in RSI analysis:', error)
+    return null
+  }
+}
+
+/**
+ * Calculate performance for multiple time periods (matching Polygon API interface)
+ * Uses a single API call for efficiency
+ */
+export async function calculateMultiPeriodPerformance(symbol: string): Promise<{
+  oneMonth: number | null
+  threeMonth: number | null
+  sixMonth: number | null
+  oneYear: number | null
+} | null> {
+  try {
+    const priceData = await getDailyHistory(symbol, 'full')
+    if (!priceData || priceData.length === 0) return null
+
+    const currentPrice = priceData[0].close
+    const today = new Date(priceData[0].date)
+
+    const findClosestPrice = (targetDaysAgo: number): number | null => {
+      const targetDate = new Date(today)
+      targetDate.setDate(targetDate.getDate() - targetDaysAgo)
+
+      // Find the closest price to the target date
+      let closest = priceData[0]
+      let closestDiff = Math.abs(new Date(priceData[0].date).getTime() - targetDate.getTime())
+
+      for (const p of priceData) {
+        const diff = Math.abs(new Date(p.date).getTime() - targetDate.getTime())
+        if (diff < closestDiff) {
+          closest = p
+          closestDiff = diff
+        }
+      }
+
+      return closest.close
+    }
+
+    const calculateReturn = (daysAgo: number): number | null => {
+      const oldPrice = findClosestPrice(daysAgo)
+      if (!oldPrice) return null
+      return ((currentPrice - oldPrice) / oldPrice) * 100
+    }
+
+    return {
+      oneMonth: calculateReturn(30),
+      threeMonth: calculateReturn(90),
+      sixMonth: calculateReturn(180),
+      oneYear: calculateReturn(365)
+    }
+  } catch (error) {
+    console.error('[Alpha Vantage] Error calculating multi-period performance:', error)
     return null
   }
 }

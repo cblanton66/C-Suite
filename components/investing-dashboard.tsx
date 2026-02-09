@@ -34,8 +34,10 @@ interface TickerData {
   type: string
   description?: string
   marketCap?: number
-  currentPrice?: number
+  currentPrice?: number | null
   allocation: number // percentage
+  rsi14?: number | null
+  sma14?: number | null
   performance?: {
     oneMonth: number | null
     threeMonth: number | null
@@ -89,7 +91,7 @@ export function InvestingDashboard() {
     return total
   }
 
-  // Fetch ticker data from Polygon API
+  // Fetch ticker data from Alpha Vantage API
   const fetchTickerData = async (symbol: string) => {
     setIsLoadingTicker(true)
     try {
@@ -143,7 +145,10 @@ export function InvestingDashboard() {
         type: tickerData.type,
         description: tickerData.description,
         marketCap: tickerData.marketCap,
+        currentPrice: tickerData.currentPrice,
         allocation: allocation,
+        rsi14: tickerData.rsi14,
+        sma14: tickerData.sma14,
         performance: tickerData.performance
       }
 
@@ -193,6 +198,9 @@ export function InvestingDashboard() {
             type: data.type,
             description: data.description,
             marketCap: data.marketCap,
+            currentPrice: data.currentPrice,
+            rsi14: data.rsi14,
+            sma14: data.sma14,
             performance: data.performance
           }
         }
@@ -203,73 +211,59 @@ export function InvestingDashboard() {
     toast.success("Portfolio data refreshed")
   }
 
-  // Save portfolio to GCS
-  const handleSavePortfolio = async () => {
-    if (!userEmail) {
-      toast.error("Please sign in to save portfolios")
-      return
-    }
-
+  // Save portfolio to localStorage
+  const handleSavePortfolio = () => {
     if (!portfolioName.trim()) {
       toast.error("Please enter a portfolio name")
       return
     }
 
     try {
-      const response = await fetch('/api/save-portfolio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userEmail,
-          portfolioName: portfolioName,
-          portfolio: {
-            ...portfolio,
-            name: portfolioName,
-            lastUpdated: new Date().toISOString()
-          }
-        })
-      })
+      // Get existing portfolios from localStorage
+      const existingData = localStorage.getItem('investingPortfolios')
+      const portfolios: Record<string, Portfolio> = existingData ? JSON.parse(existingData) : {}
 
-      if (response.ok) {
-        toast.success(`Portfolio "${portfolioName}" saved successfully`)
-        loadSavedPortfolios()
-        setShowSaveDialog(false)
-      } else {
-        toast.error("Failed to save portfolio")
+      // Save/update this portfolio
+      portfolios[portfolioName] = {
+        ...portfolio,
+        name: portfolioName,
+        lastUpdated: new Date().toISOString()
       }
+
+      localStorage.setItem('investingPortfolios', JSON.stringify(portfolios))
+      toast.success(`Portfolio "${portfolioName}" saved successfully`)
+      loadSavedPortfolios()
     } catch (error) {
       console.error('Error saving portfolio:', error)
       toast.error("Failed to save portfolio")
     }
   }
 
-  // Load saved portfolios list
-  const loadSavedPortfolios = async () => {
-    if (!userEmail) return
-
+  // Load saved portfolios list from localStorage
+  const loadSavedPortfolios = () => {
     try {
-      const response = await fetch(`/api/list-portfolios?userId=${userEmail}`)
-      if (response.ok) {
-        const data = await response.json()
-        setSavedPortfolios(data.portfolios || [])
+      const existingData = localStorage.getItem('investingPortfolios')
+      if (existingData) {
+        const portfolios: Record<string, Portfolio> = JSON.parse(existingData)
+        setSavedPortfolios(Object.keys(portfolios))
       }
     } catch (error) {
       console.error('Error loading portfolios:', error)
     }
   }
 
-  // Load specific portfolio
-  const handleLoadPortfolio = async (name: string) => {
-    if (!userEmail) return
-
+  // Load specific portfolio from localStorage
+  const handleLoadPortfolio = (name: string) => {
     try {
-      const response = await fetch(`/api/load-portfolio?userId=${userEmail}&portfolioName=${encodeURIComponent(name)}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPortfolio(data.portfolio)
-        setPortfolioName(data.portfolio.name)
-        setSelectedPortfolio(name)
-        toast.success(`Loaded portfolio "${name}"`)
+      const existingData = localStorage.getItem('investingPortfolios')
+      if (existingData) {
+        const portfolios: Record<string, Portfolio> = JSON.parse(existingData)
+        if (portfolios[name]) {
+          setPortfolio(portfolios[name])
+          setPortfolioName(portfolios[name].name)
+          setSelectedPortfolio(name)
+          toast.success(`Loaded portfolio "${name}"`)
+        }
       }
     } catch (error) {
       console.error('Error loading portfolio:', error)
@@ -317,18 +311,21 @@ export function InvestingDashboard() {
 
   // Export to CSV
   const handleExportCSV = () => {
-    let csv = "Symbol,Name,Type,Allocation %,1M Return %,3M Return %,6M Return %,1Y Return %\n"
+    let csv = "Symbol,Name,Type,Price,Allocation %,RSI 14,SMA 14,1M Return %,3M Return %,1Y Return %\n"
 
     portfolio.tickers.forEach(ticker => {
-      csv += `${ticker.symbol},"${ticker.name}",${ticker.type},${ticker.allocation},`
+      csv += `${ticker.symbol},"${ticker.name}",${ticker.type},`
+      csv += `${ticker.currentPrice?.toFixed(2) || 'N/A'},`
+      csv += `${ticker.allocation},`
+      csv += `${ticker.rsi14?.toFixed(1) || 'N/A'},`
+      csv += `${ticker.sma14?.toFixed(2) || 'N/A'},`
       csv += `${ticker.performance?.oneMonth?.toFixed(2) || 'N/A'},`
       csv += `${ticker.performance?.threeMonth?.toFixed(2) || 'N/A'},`
-      csv += `${ticker.performance?.sixMonth?.toFixed(2) || 'N/A'},`
       csv += `${ticker.performance?.oneYear?.toFixed(2) || 'N/A'}\n`
     })
 
     if (portfolio.cashAllocation > 0) {
-      csv += `CASH,"Cash",Cash,${portfolio.cashAllocation},0,0,0,0\n`
+      csv += `CASH,"Cash",Cash,-,${portfolio.cashAllocation},-,-,0,0,0\n`
     }
 
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -369,145 +366,126 @@ export function InvestingDashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-4 py-8 space-y-6">
 
-          {/* Left Column - Input & Controls */}
-          <div className="lg:col-span-1 space-y-6">
+        {/* Input Controls - Horizontal Layout */}
+        <Card className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-            {/* Portfolio Name & Save */}
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Portfolio Settings</h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Portfolio Name</label>
-                  <Input
-                    value={portfolioName}
-                    onChange={(e) => setPortfolioName(e.target.value)}
-                    placeholder="My Portfolio"
-                  />
-                </div>
-
-                {savedPortfolios.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Load Saved Portfolio</label>
-                    <Select value={selectedPortfolio || ""} onValueChange={handleLoadPortfolio}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a portfolio" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {savedPortfolios.map(name => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <Button onClick={handleSavePortfolio} className="w-full" variant="outline">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Portfolio
+            {/* Portfolio Name & Load */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Portfolio</label>
+              <div className="flex gap-2">
+                <Input
+                  value={portfolioName}
+                  onChange={(e) => setPortfolioName(e.target.value)}
+                  placeholder="My Portfolio"
+                  className="flex-1"
+                />
+                <Button onClick={handleSavePortfolio} variant="outline" size="icon" title="Save Portfolio">
+                  <Save className="w-4 h-4" />
                 </Button>
               </div>
-            </Card>
+              {savedPortfolios.length > 0 && (
+                <Select value={selectedPortfolio || ""} onValueChange={handleLoadPortfolio}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Load saved..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedPortfolios.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
 
-            {/* Add Ticker */}
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Add Position</h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Ticker Symbol</label>
-                  <Input
-                    value={tickerInput}
-                    onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
-                    placeholder="e.g., VTI, AAPL, SPY"
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTicker()}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Allocation %</label>
-                  <Input
-                    type="number"
-                    value={allocationInput}
-                    onChange={(e) => setAllocationInput(e.target.value)}
-                    placeholder="e.g., 25"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTicker()}
-                  />
-                </div>
-                <Button
-                  onClick={handleAddTicker}
-                  className="w-full"
-                  disabled={isLoadingTicker}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {isLoadingTicker ? "Loading..." : "Add to Portfolio"}
+            {/* Add Position */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Add Position</label>
+              <div className="flex gap-2">
+                <Input
+                  value={tickerInput}
+                  onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
+                  placeholder="Ticker"
+                  className="w-24"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddTicker()}
+                />
+                <Input
+                  type="number"
+                  value={allocationInput}
+                  onChange={(e) => setAllocationInput(e.target.value)}
+                  placeholder="%"
+                  className="w-20"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddTicker()}
+                />
+                <Button onClick={handleAddTicker} disabled={isLoadingTicker} size="icon" title="Add Position">
+                  <Plus className="w-4 h-4" />
                 </Button>
               </div>
-            </Card>
+            </div>
 
             {/* Cash Allocation */}
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Cash Position</h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Cash Allocation %</label>
-                  <Input
-                    type="number"
-                    value={portfolio.cashAllocation}
-                    onChange={(e) => handleCashAllocationChange(e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Remaining: {(100 - totalAllocation).toFixed(1)}%
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cash %</label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  value={portfolio.cashAllocation}
+                  onChange={(e) => handleCashAllocationChange(e.target.value)}
+                  placeholder="0"
+                  className="w-20"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  Left: {(100 - totalAllocation).toFixed(1)}%
+                </span>
               </div>
-            </Card>
+            </div>
 
-            {/* Quick Actions */}
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Actions</h2>
-              <div className="space-y-2">
+            {/* Actions */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Actions</label>
+              <div className="flex gap-2">
                 <Button
                   onClick={handleRefreshData}
                   variant="outline"
-                  className="w-full"
+                  size="icon"
                   disabled={portfolio.tickers.length === 0}
+                  title="Refresh Data"
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh Data
+                  <RefreshCw className="w-4 h-4" />
                 </Button>
                 <Button
                   onClick={handleAnalyzeInChat}
                   variant="outline"
-                  className="w-full"
+                  size="icon"
                   disabled={portfolio.tickers.length === 0}
+                  title="Analyze in Chat"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Analyze in Chat
+                  <MessageCircle className="w-4 h-4" />
                 </Button>
                 <Button
                   onClick={handleExportCSV}
                   variant="outline"
-                  className="w-full"
+                  size="icon"
                   disabled={portfolio.tickers.length === 0}
+                  title="Export to CSV"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export to CSV
+                  <Download className="w-4 h-4" />
                 </Button>
               </div>
-            </Card>
-
+            </div>
           </div>
+        </Card>
 
-          {/* Right Column - Portfolio Display */}
-          <div className="lg:col-span-2 space-y-6">
+        {/* Portfolio Display - Full Width */}
+        <div className="space-y-6">
 
             {/* Portfolio Summary */}
             <Card className="p-6">
@@ -539,10 +517,12 @@ export function InvestingDashboard() {
                         <tr className="text-sm text-muted-foreground">
                           <th className="text-left py-2 px-2">Symbol</th>
                           <th className="text-left py-2 px-2">Name</th>
-                          <th className="text-right py-2 px-2">Allocation</th>
+                          <th className="text-right py-2 px-2">Price</th>
+                          <th className="text-right py-2 px-2">Alloc</th>
+                          <th className="text-right py-2 px-2">RSI</th>
+                          <th className="text-right py-2 px-2">SMA</th>
                           <th className="text-right py-2 px-2">1M</th>
                           <th className="text-right py-2 px-2">3M</th>
-                          <th className="text-right py-2 px-2">6M</th>
                           <th className="text-right py-2 px-2">1Y</th>
                           <th className="text-right py-2 px-2"></th>
                         </tr>
@@ -552,33 +532,47 @@ export function InvestingDashboard() {
                           <tr key={ticker.symbol} className="border-b hover:bg-muted/50">
                             <td className="py-3 px-2 font-mono font-semibold">{ticker.symbol}</td>
                             <td className="py-3 px-2 text-sm">{ticker.name}</td>
+                            <td className="py-3 px-2 text-right text-sm">
+                              {ticker.currentPrice !== null && ticker.currentPrice !== undefined
+                                ? `$${ticker.currentPrice.toFixed(2)}`
+                                : 'N/A'}
+                            </td>
                             <td className="py-3 px-2 text-right font-medium">{ticker.allocation.toFixed(1)}%</td>
+                            <td className={`py-3 px-2 text-right text-sm ${
+                              ticker.rsi14 !== null && ticker.rsi14 !== undefined
+                                ? ticker.rsi14 < 30 ? 'text-green-600 dark:text-green-400'
+                                : ticker.rsi14 > 70 ? 'text-red-600 dark:text-red-400'
+                                : 'text-muted-foreground'
+                                : 'text-muted-foreground'
+                            }`}>
+                              {ticker.rsi14 !== null && ticker.rsi14 !== undefined
+                                ? ticker.rsi14.toFixed(1)
+                                : 'N/A'}
+                            </td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">
+                              {ticker.sma14 !== null && ticker.sma14 !== undefined
+                                ? `$${ticker.sma14.toFixed(2)}`
+                                : 'N/A'}
+                            </td>
                             <td className={`py-3 px-2 text-right text-sm ${
                               (ticker.performance?.oneMonth || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                             }`}>
                               {ticker.performance?.oneMonth !== null && ticker.performance?.oneMonth !== undefined
-                                ? `${ticker.performance.oneMonth >= 0 ? '+' : ''}${ticker.performance.oneMonth.toFixed(2)}%`
+                                ? `${ticker.performance.oneMonth >= 0 ? '+' : ''}${ticker.performance.oneMonth.toFixed(1)}%`
                                 : 'N/A'}
                             </td>
                             <td className={`py-3 px-2 text-right text-sm ${
                               (ticker.performance?.threeMonth || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                             }`}>
                               {ticker.performance?.threeMonth !== null && ticker.performance?.threeMonth !== undefined
-                                ? `${ticker.performance.threeMonth >= 0 ? '+' : ''}${ticker.performance.threeMonth.toFixed(2)}%`
-                                : 'N/A'}
-                            </td>
-                            <td className={`py-3 px-2 text-right text-sm ${
-                              (ticker.performance?.sixMonth || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {ticker.performance?.sixMonth !== null && ticker.performance?.sixMonth !== undefined
-                                ? `${ticker.performance.sixMonth >= 0 ? '+' : ''}${ticker.performance.sixMonth.toFixed(2)}%`
+                                ? `${ticker.performance.threeMonth >= 0 ? '+' : ''}${ticker.performance.threeMonth.toFixed(1)}%`
                                 : 'N/A'}
                             </td>
                             <td className={`py-3 px-2 text-right text-sm ${
                               (ticker.performance?.oneYear || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                             }`}>
                               {ticker.performance?.oneYear !== null && ticker.performance?.oneYear !== undefined
-                                ? `${ticker.performance.oneYear >= 0 ? '+' : ''}${ticker.performance.oneYear.toFixed(2)}%`
+                                ? `${ticker.performance.oneYear >= 0 ? '+' : ''}${ticker.performance.oneYear.toFixed(1)}%`
                                 : 'N/A'}
                             </td>
                             <td className="py-3 px-2 text-right">
@@ -596,11 +590,13 @@ export function InvestingDashboard() {
                           <tr className="border-b bg-muted/30">
                             <td className="py-3 px-2 font-mono font-semibold">CASH</td>
                             <td className="py-3 px-2 text-sm">Cash Position</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">-</td>
                             <td className="py-3 px-2 text-right font-medium">{portfolio.cashAllocation.toFixed(1)}%</td>
-                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">~0%</td>
-                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">~0%</td>
-                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">~0%</td>
-                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">~0%</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">-</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">-</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">0%</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">0%</td>
+                            <td className="py-3 px-2 text-right text-sm text-muted-foreground">0%</td>
                             <td className="py-3 px-2"></td>
                           </tr>
                         )}
@@ -664,7 +660,6 @@ export function InvestingDashboard() {
               </Card>
             )}
 
-          </div>
         </div>
       </div>
     </div>
