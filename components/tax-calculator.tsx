@@ -164,8 +164,12 @@ interface TaxInput {
   age65OrOlder: boolean
   spouse65OrOlder: boolean // For MFJ - is spouse also 65+?
   // Income
-  ordinaryIncome: number
+  wages: number
+  interestIncome: number
+  ordinaryDividends: number // Total dividends - qualified dividends subtracted for ordinary income
   qualifiedDividends: number
+  rentsRoyalties: number
+  otherOrdinaryIncome: number // Catch-all for other ordinary income
   shortTermCapGains: number
   longTermCapGains: number
   selfEmploymentIncome: number
@@ -238,8 +242,12 @@ export function TaxCalculator() {
     childrenUnder17: 0,
     age65OrOlder: false,
     spouse65OrOlder: false,
-    ordinaryIncome: 0,
+    wages: 0,
+    interestIncome: 0,
+    ordinaryDividends: 0,
     qualifiedDividends: 0,
+    rentsRoyalties: 0,
+    otherOrdinaryIncome: 0,
     shortTermCapGains: 0,
     longTermCapGains: 0,
     selfEmploymentIncome: 0,
@@ -264,8 +272,15 @@ export function TaxCalculator() {
     const taxData = TAX_DATA[input.taxYear]
     const status = input.filingStatus
 
+    // Calculate non-qualified dividends (ordinary dividends minus qualified)
+    const nonQualifiedDividends = Math.max(0, input.ordinaryDividends - input.qualifiedDividends)
+
+    // Sum of all ordinary income sources (excluding short-term gains and SS which are added later)
+    const totalOrdinaryIncomeInput = input.wages + input.interestIncome +
+      nonQualifiedDividends + input.rentsRoyalties + input.otherOrdinaryIncome
+
     // Calculate taxable Social Security (up to 85%)
-    const provisionalIncome = input.ordinaryIncome + input.qualifiedDividends +
+    const provisionalIncome = totalOrdinaryIncomeInput + input.qualifiedDividends +
       input.shortTermCapGains + input.longTermCapGains +
       (input.selfEmploymentIncome * 0.9235 * 0.5) + // Deduct half of SE tax
       (input.socialSecurityIncome * 0.5)
@@ -285,7 +300,7 @@ export function TaxCalculator() {
     }
 
     // Total ordinary income (including taxable SS and short-term gains)
-    const totalOrdinaryIncome = input.ordinaryIncome + taxableSS + input.shortTermCapGains
+    const totalOrdinaryIncome = totalOrdinaryIncomeInput + taxableSS + input.shortTermCapGains
 
     // Self-employment tax calculation
     const seNetEarnings = input.selfEmploymentIncome * 0.9235
@@ -301,6 +316,10 @@ export function TaxCalculator() {
     // Standard vs Itemized deduction
     let standardDed = taxData.standardDeduction[status]
     if (input.age65OrOlder) {
+      standardDed += taxData.additionalStdDeduction[status]
+    }
+    // For MFJ, add additional deduction for spouse 65+ as well
+    if (input.filingStatus === 'mfj' && input.spouse65OrOlder) {
       standardDed += taxData.additionalStdDeduction[status]
     }
 
@@ -431,14 +450,15 @@ export function TaxCalculator() {
 
     // NIIT (3.8% on investment income above threshold)
     const niitThreshold = taxData.niitThreshold[status]
-    const investmentIncome = input.qualifiedDividends + input.shortTermCapGains +
-      input.longTermCapGains + (input.ordinaryIncome * 0) // Only passive income, not wages
+    // Investment income includes interest, dividends, capital gains, rents/royalties (not wages or SE income)
+    const investmentIncome = input.interestIncome + input.ordinaryDividends +
+      input.shortTermCapGains + input.longTermCapGains + input.rentsRoyalties
     const niitBase = Math.min(investmentIncome, Math.max(0, adjustedGrossIncome - niitThreshold))
     const niitTax = niitBase * 0.038
 
     // Additional Medicare Tax (0.9% on earnings above threshold)
     const medicareThreshold = taxData.additionalMedicareThreshold[status]
-    const earningsForMedicare = input.ordinaryIncome + seNetEarnings
+    const earningsForMedicare = input.wages + seNetEarnings
     const additionalMedicareTax = Math.max(0, earningsForMedicare - medicareThreshold) * 0.009
 
     // Total tax before credits
@@ -497,8 +517,12 @@ export function TaxCalculator() {
       childrenUnder17: 0,
       age65OrOlder: false,
       spouse65OrOlder: false,
-      ordinaryIncome: 0,
+      wages: 0,
+      interestIncome: 0,
+      ordinaryDividends: 0,
       qualifiedDividends: 0,
+      rentsRoyalties: 0,
+      otherOrdinaryIncome: 0,
       shortTermCapGains: 0,
       longTermCapGains: 0,
       selfEmploymentIncome: 0,
@@ -656,15 +680,33 @@ export function TaxCalculator() {
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Ordinary Income (Wages, Interest, Non-Qualified Dividends, Rents, Royalties)
-                  </label>
+                  <label className="block text-sm font-medium mb-1">Wages</label>
                   <Input
                     type="text"
                     placeholder="0"
-                    value={input.ordinaryIncome ? input.ordinaryIncome.toLocaleString() : ''}
-                    onChange={(e) => handleNumberInput('ordinaryIncome', e.target.value)}
+                    value={input.wages ? input.wages.toLocaleString() : ''}
+                    onChange={(e) => handleNumberInput('wages', e.target.value)}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Interest Income</label>
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      value={input.interestIncome ? input.interestIncome.toLocaleString() : ''}
+                      onChange={(e) => handleNumberInput('interestIncome', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Ordinary Dividends</label>
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      value={input.ordinaryDividends ? input.ordinaryDividends.toLocaleString() : ''}
+                      onChange={(e) => handleNumberInput('ordinaryDividends', e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Qualified Dividends</label>
@@ -674,6 +716,29 @@ export function TaxCalculator() {
                     value={input.qualifiedDividends ? input.qualifiedDividends.toLocaleString() : ''}
                     onChange={(e) => handleNumberInput('qualifiedDividends', e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Qualified dividends are subtracted from Ordinary Dividends for tax calculation
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Rents/Royalties</label>
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      value={input.rentsRoyalties ? input.rentsRoyalties.toLocaleString() : ''}
+                      onChange={(e) => handleNumberInput('rentsRoyalties', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Other Ordinary Income</label>
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      value={input.otherOrdinaryIncome ? input.otherOrdinaryIncome.toLocaleString() : ''}
+                      onChange={(e) => handleNumberInput('otherOrdinaryIncome', e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -826,18 +891,18 @@ export function TaxCalculator() {
                     <h3 className="font-medium text-sm text-muted-foreground uppercase">Income</h3>
                     <div className="flex justify-between">
                       <span>Ordinary Income</span>
-                      <span>{formatCurrency(input.ordinaryIncome)}</span>
+                      <span>{formatCurrency(result.totalOrdinaryIncome)}</span>
                     </div>
+                    {result.taxableSocialSecurity > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground pl-4">
+                        <span>(includes taxable Social Security)</span>
+                        <span>{formatCurrency(result.taxableSocialSecurity)}</span>
+                      </div>
+                    )}
                     {input.qualifiedDividends > 0 && (
                       <div className="flex justify-between">
                         <span>Qualified Dividends</span>
                         <span>{formatCurrency(input.qualifiedDividends)}</span>
-                      </div>
-                    )}
-                    {input.shortTermCapGains > 0 && (
-                      <div className="flex justify-between">
-                        <span>Short-Term Capital Gains</span>
-                        <span>{formatCurrency(input.shortTermCapGains)}</span>
                       </div>
                     )}
                     {input.longTermCapGains > 0 && (
