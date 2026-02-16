@@ -4,8 +4,72 @@ import { xai } from "@ai-sdk/xai"
 import { z } from "zod"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import OpenAI from "openai"
-import { getUserReports } from "@/lib/google-cloud-storage"
+import { getUserReports, getClientSummary, type ClientSummary } from "@/lib/google-cloud-storage"
 import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
+
+// Helper function to detect if user is asking for a client overview
+function detectClientOverviewRequest(query: string): boolean {
+  const lowerQuery = query.toLowerCase().trim()
+
+  // Short queries are likely overview requests (just a name)
+  const wordCount = lowerQuery.split(/\s+/).length
+  if (wordCount <= 4) {
+    // Check if it's mostly a name (capitalized words or short phrase)
+    const hasQuestionWords = /\b(what|how|when|where|why|which|can|could|should|would|did|does|is|are)\b/i.test(query)
+    if (!hasQuestionWords) {
+      return true
+    }
+  }
+
+  // Explicit overview request patterns
+  const overviewPatterns = [
+    /^(tell me about|show me|what do (you|we) have (on|for)|summary (of|for)|overview (of|for)|look up|search for|find)\s+/i,
+    /^(client|customer)?\s*:?\s*[A-Z][a-z]+(\s+[A-Z][a-z]+)*\s*$/i,  // Just a capitalized name
+    /\b(all (work|projects|notes|history)|everything|full (history|summary))\b/i
+  ]
+
+  return overviewPatterns.some(pattern => pattern.test(query))
+}
+
+// Helper function to extract client name from query
+function extractClientName(query: string): string | null {
+  const originalQuery = query.trim()
+
+  // Pattern 1: Just a capitalized name (most common for overview)
+  const justNameMatch = originalQuery.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)$/)
+  if (justNameMatch) {
+    return justNameMatch[1]
+  }
+
+  // Pattern 2: "tell me about [Name]" or "show me [Name]"
+  const aboutMatch = originalQuery.match(/(?:tell me about|show me|look up|search for|find|summary (?:of|for)|overview (?:of|for)|what do (?:you|we) have (?:on|for))\s+(.+?)(?:\s*\?)?$/i)
+  if (aboutMatch) {
+    const name = aboutMatch[1].trim()
+    // Capitalize if not already
+    if (name.length > 2) {
+      return name.split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ')
+    }
+  }
+
+  // Pattern 3: Proper names (capitalized multi-word)
+  const properNameMatch = originalQuery.match(/\b([A-Z][a-z]+(?:\s+(?:and\s+)?[A-Z][a-z]+)+)\b/)
+  if (properNameMatch) {
+    return properNameMatch[1]
+  }
+
+  // Pattern 4: After "client" or "for" keyword
+  const clientKeywordMatch = originalQuery.match(/(?:client|for|about)\s+([A-Za-z]+(?:\s+[A-Za-z]+)+)/i)
+  if (clientKeywordMatch) {
+    const name = clientKeywordMatch[1].trim()
+    return name.split(' ').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')
+  }
+
+  return null
+}
 
 const taxInstructions = `
 # Act as an expert business advisor, CPA financial expert and attorney
@@ -263,9 +327,73 @@ END STOCK MARKET DATA
         // Get the user's latest message to analyze for search context
         const latestUserMessage = messages[messages.length - 1]?.content || ''
 
+        // Detect if this is a client overview request (just a name or simple question)
+        const isClientOverviewRequest = detectClientOverviewRequest(latestUserMessage)
+        console.log(`[DEBUG] Client overview request detected: ${isClientOverviewRequest}`)
+
+        // Extract potential client name from the query
+        const clientNameMatch = extractClientName(latestUserMessage)
+
+        let clientSummary: ClientSummary | null = null
+        if (clientNameMatch) {
+          console.log(`[DEBUG] Attempting to get summary for client: ${clientNameMatch}`)
+          clientSummary = await getClientSummary(userId, clientNameMatch, workspaceOwner)
+        }
+
         const userHistory = await getUserReports(userId, latestUserMessage, true, workspaceOwner)
-        if (userHistory && userHistory.trim().length > 0) {
-          console.log(`[DEBUG] Including ${userHistory.length} characters of user history context`)
+
+        if (clientSummary?.found) {
+          // We have a structured client summary - provide clear formatting instructions
+          console.log(`[DEBUG] Client summary found: ${clientSummary.totalItems} items`)
+
+          systemInstructions += `\n\n# CLIENT HISTORY SEARCH RESULTS
+
+## STRUCTURED CLIENT SUMMARY
+You have found records for this client. Present this information clearly.
+
+**Client:** ${clientSummary.clientName}
+**Last Activity:** ${clientSummary.lastActivity}
+**Total Records:** ${clientSummary.totalItems}
+
+### Projects (${clientSummary.projects.length}):
+${clientSummary.projects.length > 0 ? clientSummary.projects.map(p => `- "${p.name}" (${p.date})`).join('\n') : 'No projects found'}
+
+### Notes (${clientSummary.notes.length}):
+${clientSummary.notes.length > 0 ? clientSummary.notes.map(n => `- "${n.name}" (${n.date})`).join('\n') : 'No notes found'}
+
+### Conversation Threads (${clientSummary.threads.length}):
+${clientSummary.threads.length > 0 ? clientSummary.threads.map(t => `- "${t.name}" - ${t.preview || ''} (${t.date})`).join('\n') : 'No threads found'}
+
+## RESPONSE INSTRUCTIONS
+${isClientOverviewRequest ? `
+The user is asking for an overview of this client. Respond with a well-formatted summary like this:
+
+**Client: [Name]**
+- **Last Activity:** [Date]
+- **Projects ([count]):** [List each project with date]
+- **Notes ([count]):** [List each note with date]
+- **Conversation Threads ([count]):** [List each thread with status and date]
+
+Then ask: "Would you like me to look at any specific item in more detail?"
+` : `
+The user is asking a specific question. Use the detailed content below to answer their question.
+If they ask about a specific project, note, or thread, look for it in the DETAILED CONTENT section.
+`}
+
+## DETAILED CONTENT (for follow-up questions)
+${userHistory || 'No detailed content available.'}
+
+## IMPORTANT RULES
+1. ONLY reference information from the summary or detailed content above
+2. If the user asks about something NOT in the content, say you don't have records for that
+3. NEVER fabricate or make up client information
+4. When listing items, include the dates shown above
+
+END CLIENT HISTORY CONTEXT
+
+`
+        } else if (userHistory && userHistory.trim().length > 0) {
+          console.log(`[DEBUG] Including ${userHistory.length} characters of user history context (no structured summary)`)
           systemInstructions += `\n\n# CRITICAL: USER HISTORY CONTEXT PROVIDED
 The following are your previous reports and conversations with this user. Use this context to provide personalized responses based on their specific business needs and past work.
 

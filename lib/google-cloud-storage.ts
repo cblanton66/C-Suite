@@ -602,3 +602,225 @@ export async function getUserReports(userId: string, query?: string, forceSearch
     return ''
   }
 }
+
+// Interface for structured client summary
+export interface ClientSummaryItem {
+  name: string
+  type: 'project' | 'note' | 'thread'
+  date: string
+  preview?: string
+  filePath: string
+  threadId?: string
+  status?: string
+}
+
+export interface ClientSummary {
+  clientName: string
+  folderSlug: string
+  lastActivity: string
+  projects: ClientSummaryItem[]
+  notes: ClientSummaryItem[]
+  threads: ClientSummaryItem[]
+  totalItems: number
+  found: boolean
+}
+
+// Get a structured summary of a client's history
+export async function getClientSummary(userId: string, clientNameQuery: string, workspaceOwner?: string): Promise<ClientSummary> {
+  const emptyResult: ClientSummary = {
+    clientName: clientNameQuery,
+    folderSlug: '',
+    lastActivity: '',
+    projects: [],
+    notes: [],
+    threads: [],
+    totalItems: 0,
+    found: false
+  }
+
+  try {
+    const storage = initializeStorage()
+    const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
+
+    if (!bucketName) {
+      console.error('[getClientSummary] GOOGLE_CLOUD_BUCKET_NAME not set')
+      return emptyResult
+    }
+
+    const fileOwner = workspaceOwner || userId
+    const folderUserId = fileOwner.replace(/@/g, '_').replace(/\./g, '_')
+    const bucket = storage.bucket(bucketName)
+
+    console.log(`[getClientSummary] Searching for client: "${clientNameQuery}"`)
+
+    // Search for matching client folders
+    const searchPrefixes = [
+      `Reports-view/${folderUserId}/client-files/`,
+      `Reports-view/${folderUserId}/archive/`
+    ]
+
+    let matchedFolder = ''
+    let matchedClientName = clientNameQuery
+
+    // Find the matching client folder
+    const searchTermLower = clientNameQuery.toLowerCase()
+    const searchWords = searchTermLower.split(/\s+/).filter(w => w.length > 2)
+
+    for (const basePrefix of searchPrefixes) {
+      try {
+        const options = { prefix: basePrefix, delimiter: '/' }
+        const [, , apiResponse] = await bucket.getFiles(options)
+
+        if (apiResponse?.prefixes) {
+          const clientFolders = apiResponse.prefixes.map((p: string) =>
+            p.replace(basePrefix, '').replace(/\/$/, '')
+          )
+
+          for (const folderSlug of clientFolders) {
+            const folderMatches = searchWords.some(word => folderSlug.includes(word))
+            if (folderMatches) {
+              matchedFolder = `${basePrefix}${folderSlug}/`
+              // Convert slug back to readable name
+              matchedClientName = folderSlug.split('-').map((word: string) =>
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' ')
+              console.log(`[getClientSummary] Found matching folder: ${matchedFolder}`)
+              break
+            }
+          }
+        }
+        if (matchedFolder) break
+      } catch (error) {
+        console.error(`[getClientSummary] Error searching ${basePrefix}:`, error)
+      }
+    }
+
+    if (!matchedFolder) {
+      console.log(`[getClientSummary] No folder found for "${clientNameQuery}"`)
+      return emptyResult
+    }
+
+    // Get all files in the matched folder
+    const [files] = await bucket.getFiles({ prefix: matchedFolder })
+    console.log(`[getClientSummary] Found ${files.length} files for client`)
+
+    const projects: ClientSummaryItem[] = []
+    const notes: ClientSummaryItem[] = []
+    const threads: ClientSummaryItem[] = []
+    let lastActivity = ''
+
+    // Process each file
+    for (const file of files) {
+      const fileName = file.name.split('/').pop() || ''
+      const fileDate = file.metadata?.updated || file.metadata?.timeCreated || ''
+      const formattedDate = fileDate ? new Date(fileDate).toLocaleDateString() : 'Unknown'
+
+      // Track most recent activity
+      if (!lastActivity || (fileDate && new Date(fileDate) > new Date(lastActivity))) {
+        lastActivity = fileDate
+      }
+
+      const isNote = file.name.includes('/notes/')
+      const isThread = fileName.startsWith('[THREAD]')
+
+      if (isThread) {
+        // Parse thread metadata
+        try {
+          const [content] = await file.download()
+          const threadData = JSON.parse(content.toString())
+          threads.push({
+            name: threadData.metadata?.title || fileName.replace('[THREAD]', '').replace('.json', ''),
+            type: 'thread',
+            date: threadData.metadata?.createdAt ? new Date(threadData.metadata.createdAt).toLocaleDateString() : formattedDate,
+            preview: `${threadData.metadata?.messageCount || 0} messages - ${threadData.metadata?.status || 'Active'}`,
+            filePath: file.name,
+            threadId: threadData.threadId,
+            status: threadData.metadata?.status
+          })
+        } catch {
+          threads.push({
+            name: fileName.replace('[THREAD]', '').replace('.json', ''),
+            type: 'thread',
+            date: formattedDate,
+            filePath: file.name
+          })
+        }
+      } else if (isNote) {
+        // Extract note title from filename or content
+        const noteName = fileName.replace(/^note_/, '').replace(/\.md$/, '').replace(/-/g, ' ')
+        notes.push({
+          name: noteName || 'Untitled Note',
+          type: 'note',
+          date: formattedDate,
+          filePath: file.name
+        })
+      } else if (fileName.endsWith('.md') || fileName.endsWith('.txt')) {
+        // Regular project/report file
+        const projectName = fileName.replace(/\.md$/, '').replace(/\.txt$/, '').replace(/-/g, ' ')
+        projects.push({
+          name: projectName,
+          type: 'project',
+          date: formattedDate,
+          filePath: file.name
+        })
+      }
+    }
+
+    // Sort all arrays by date (most recent first)
+    const sortByDate = (a: ClientSummaryItem, b: ClientSummaryItem) => {
+      const dateA = new Date(a.date)
+      const dateB = new Date(b.date)
+      return dateB.getTime() - dateA.getTime()
+    }
+
+    projects.sort(sortByDate)
+    notes.sort(sortByDate)
+    threads.sort(sortByDate)
+
+    const result: ClientSummary = {
+      clientName: matchedClientName,
+      folderSlug: matchedFolder.split('/').slice(-2, -1)[0] || '',
+      lastActivity: lastActivity ? new Date(lastActivity).toLocaleDateString() : 'Unknown',
+      projects,
+      notes,
+      threads,
+      totalItems: projects.length + notes.length + threads.length,
+      found: true
+    }
+
+    console.log(`[getClientSummary] Summary: ${projects.length} projects, ${notes.length} notes, ${threads.length} threads`)
+    return result
+
+  } catch (error) {
+    console.error('[getClientSummary] Error:', error)
+    return emptyResult
+  }
+}
+
+// Get the content of a specific file by path
+export async function getFileContent(userId: string, filePath: string, workspaceOwner?: string): Promise<string> {
+  try {
+    const storage = initializeStorage()
+    const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME
+
+    if (!bucketName) {
+      return ''
+    }
+
+    const bucket = storage.bucket(bucketName)
+    const file = bucket.file(filePath)
+
+    const [exists] = await file.exists()
+    if (!exists) {
+      console.log(`[getFileContent] File not found: ${filePath}`)
+      return ''
+    }
+
+    const [content] = await file.download()
+    return content.toString()
+
+  } catch (error) {
+    console.error('[getFileContent] Error:', error)
+    return ''
+  }
+}
