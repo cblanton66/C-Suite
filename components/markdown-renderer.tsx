@@ -55,17 +55,17 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         components={{
           // Custom styling for different markdown elements
           h1: ({ children }) => (
-            <h1 className="text-lg font-semibold text-foreground mb-3 mt-4 first:mt-0">
+            <h1 className="text-xl font-semibold text-foreground mb-3 mt-4 first:mt-0">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-base font-semibold text-foreground mb-2 mt-3 first:mt-0">
+            <h2 className="text-lg font-semibold text-foreground mb-2 mt-3 first:mt-0">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-sm font-semibold text-foreground mb-2 mt-2 first:mt-0">
+            <h3 className="text-base font-semibold text-foreground mb-2 mt-2 first:mt-0">
               {children}
             </h3>
           ),

@@ -151,10 +151,10 @@ export default function SharedReportPage() {
             page-break-after: avoid;
           }
           
-          .print-content h1 { font-size: 20pt; }
-          .print-content h2 { font-size: 16pt; }
-          .print-content h3 { font-size: 14pt; }
-          .print-content h4 { font-size: 12pt; }
+          .print-content h1 { font-size: 22pt; }
+          .print-content h2 { font-size: 18pt; }
+          .print-content h3 { font-size: 15pt; }
+          .print-content h4 { font-size: 13pt; }
           
           .print-content p {
             margin: 12px 0;
