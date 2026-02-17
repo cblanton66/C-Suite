@@ -25,12 +25,13 @@ export async function POST(request: NextRequest) {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
       'text/plain',
-      'text/html'
+      'text/html',
+      'application/pdf'
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ 
-        error: 'Unsupported file type. Please upload Excel, CSV, Word, HTML, or text files.' 
+      return NextResponse.json({
+        error: 'Unsupported file type. Please upload PDF, Excel, CSV, Word, HTML, or text files.'
       }, { status: 400 })
     }
 
@@ -66,6 +67,13 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await file.arrayBuffer()
         const result = await mammoth.extractRawText({ arrayBuffer })
         content = `[Word Document: ${file.name}]\n\nDocument Content:\n${result.value}`
+      } else if (file.type === 'application/pdf') {
+        // Parse PDF files
+        const pdfParse = (await import('pdf-parse')).default
+        const arrayBuffer = await file.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        const pdfData = await pdfParse(buffer)
+        content = `[PDF Document: ${file.name}]\n\nPages: ${pdfData.numpages}\n\nDocument Content:\n${pdfData.text}`
       } else {
         // Fallback for unsupported file types
         content = `[${file.name}]\n\nDocument uploaded successfully (${file.type}, ${(file.size / 1024).toFixed(1)} KB).\n\nThis file type requires manual analysis. Please describe what information you're looking for or what analysis you need.`

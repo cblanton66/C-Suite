@@ -3495,7 +3495,7 @@ Always cite the specific data points you're analyzing.`
           onChange={handleMultipleFileUpload}
           className="hidden"
           multiple
-          accept=".xlsx,.xls,.csv,.docx,.doc,.txt"
+          accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt"
         />
       </div>
 
