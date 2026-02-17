@@ -101,6 +101,45 @@ export function clearUserCache(userId: string) {
   console.log(`[clearUserCache] Cleared all cache for user: ${userId}`)
 }
 
+// Helper function to extract title from markdown/text file content
+function extractTitleFromContent(content: string, fallbackFileName: string): string {
+  // Try to find a markdown heading (# Title)
+  const headingMatch = content.match(/^#\s+(.+?)(?:\n|$)/m)
+  if (headingMatch && headingMatch[1]) {
+    return headingMatch[1].trim()
+  }
+
+  // Try to find a bold title pattern (**Title:** or **Title**)
+  const boldTitleMatch = content.match(/\*\*([^*]+?)(?:\*\*:|\*\*)/m)
+  if (boldTitleMatch && boldTitleMatch[1] && boldTitleMatch[1].length < 100) {
+    return boldTitleMatch[1].trim()
+  }
+
+  // Try to find "Title:" or "Subject:" line
+  const titleLineMatch = content.match(/^(?:Title|Subject|Report|Project|Note):\s*(.+?)(?:\n|$)/im)
+  if (titleLineMatch && titleLineMatch[1]) {
+    return titleLineMatch[1].trim()
+  }
+
+  // Try first non-empty line if it looks like a title (short, no special chars)
+  const lines = content.split('\n').filter(line => line.trim())
+  if (lines.length > 0) {
+    const firstLine = lines[0].replace(/^[#*\-_]+\s*/, '').trim()
+    if (firstLine.length > 3 && firstLine.length < 100 && !firstLine.includes('Date:') && !firstLine.includes('Client:')) {
+      return firstLine
+    }
+  }
+
+  // Fallback to cleaned filename
+  return fallbackFileName
+    .replace(/^note_/, '')
+    .replace(/\.md$/, '')
+    .replace(/\.txt$/, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/, '') // Remove ISO timestamps
+    .trim() || 'Untitled'
+}
+
 // Helper function to extract search keywords from user query
 function extractSearchKeywords(query: string): { clientNames: string[], dateKeywords: string[], projectKeywords: string[], shouldSearch: boolean } {
   const originalQuery = query
@@ -746,23 +785,47 @@ export async function getClientSummary(userId: string, clientNameQuery: string, 
           })
         }
       } else if (isNote) {
-        // Extract note title from filename or content
-        const noteName = fileName.replace(/^note_/, '').replace(/\.md$/, '').replace(/-/g, ' ')
-        notes.push({
-          name: noteName || 'Untitled Note',
-          type: 'note',
-          date: formattedDate,
-          filePath: file.name
-        })
+        // Extract note title from file content
+        try {
+          const [content] = await file.download()
+          const contentStr = content.toString()
+          const noteTitle = extractTitleFromContent(contentStr, fileName)
+          notes.push({
+            name: noteTitle,
+            type: 'note',
+            date: formattedDate,
+            filePath: file.name
+          })
+        } catch {
+          const noteName = fileName.replace(/^note_/, '').replace(/\.md$/, '').replace(/-/g, ' ')
+          notes.push({
+            name: noteName || 'Untitled Note',
+            type: 'note',
+            date: formattedDate,
+            filePath: file.name
+          })
+        }
       } else if (fileName.endsWith('.md') || fileName.endsWith('.txt')) {
-        // Regular project/report file
-        const projectName = fileName.replace(/\.md$/, '').replace(/\.txt$/, '').replace(/-/g, ' ')
-        projects.push({
-          name: projectName,
-          type: 'project',
-          date: formattedDate,
-          filePath: file.name
-        })
+        // Regular project/report file - extract title from content
+        try {
+          const [content] = await file.download()
+          const contentStr = content.toString()
+          const projectTitle = extractTitleFromContent(contentStr, fileName)
+          projects.push({
+            name: projectTitle,
+            type: 'project',
+            date: formattedDate,
+            filePath: file.name
+          })
+        } catch {
+          const projectName = fileName.replace(/\.md$/, '').replace(/\.txt$/, '').replace(/-/g, ' ')
+          projects.push({
+            name: projectName,
+            type: 'project',
+            date: formattedDate,
+            filePath: file.name
+          })
+        }
       }
     }
 
