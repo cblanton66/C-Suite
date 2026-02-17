@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const userEmail = request.nextUrl.searchParams.get('userEmail')
+    const workspaceOwner = request.nextUrl.searchParams.get('workspaceOwner')
     const includeArchived = request.nextUrl.searchParams.get('includeArchived') === 'true'
     const clientName = request.nextUrl.searchParams.get('clientName')
 
@@ -14,11 +15,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User email is required' }, { status: 400 })
     }
 
+    // Use workspace owner if provided, otherwise use logged-in user's email
+    const owner = workspaceOwner || userEmail
+
     // Query reports from Supabase
     let query = supabaseAdmin
       .from('report_links')
       .select('*')
-      .eq('created_by', userEmail)
+      .eq('created_by', owner)
 
     // Filter by client name if provided
     if (clientName) {
@@ -78,11 +82,14 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { reportId, title, description, expiresAt, userEmail } = await request.json()
+    const { reportId, title, description, expiresAt, userEmail, workspaceOwner } = await request.json()
 
     if (!reportId || !userEmail) {
       return NextResponse.json({ error: 'Report ID and user email are required' }, { status: 400 })
     }
+
+    // Use workspace owner if provided, otherwise use logged-in user's email
+    const owner = workspaceOwner || userEmail
 
     // Build update object
     const updateData: any = {}
@@ -95,7 +102,7 @@ export async function PUT(request: NextRequest) {
       .from('report_links')
       .update(updateData)
       .eq('report_id', reportId)
-      .eq('created_by', userEmail)
+      .eq('created_by', owner)
       .select()
       .single()
 
@@ -123,18 +130,21 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { reportId, userEmail } = await request.json()
+    const { reportId, userEmail, workspaceOwner } = await request.json()
 
     if (!reportId || !userEmail) {
       return NextResponse.json({ error: 'Report ID and user email are required' }, { status: 400 })
     }
+
+    // Use workspace owner if provided, otherwise use logged-in user's email
+    const owner = workspaceOwner || userEmail
 
     // Soft delete - mark as inactive in Supabase
     const { data, error } = await supabaseAdmin
       .from('report_links')
       .update({ is_active: false })
       .eq('report_id', reportId)
-      .eq('created_by', userEmail)
+      .eq('created_by', owner)
       .select()
 
     if (error) {

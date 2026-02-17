@@ -29,10 +29,11 @@ interface MyReportsModalProps {
   isOpen: boolean
   onClose: () => void
   userEmail?: string
+  workspaceOwner?: string
   onEditContent?: (reportContent: string, reportTitle: string) => void
 }
 
-export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: MyReportsModalProps) {
+export function MyReportsModal({ isOpen, onClose, userEmail, workspaceOwner, onEditContent }: MyReportsModalProps) {
   const [reports, setReports] = useState<Report[]>([])
   const [filteredReports, setFilteredReports] = useState<Report[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -51,7 +52,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
     setError("")
 
     try {
-      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}`)
+      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}`)
       const data = await response.json()
 
       if (response.ok) {
@@ -111,7 +112,7 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ reportId, userEmail }),
+        body: JSON.stringify({ reportId, userEmail, workspaceOwner }),
       })
 
       if (response.ok) {
@@ -145,7 +146,8 @@ export function MyReportsModal({ isOpen, onClose, userEmail, onEditContent }: My
           title: editingReport.title,
           description: editingReport.description,
           expiresAt: editingReport.expiresAt || null,
-          userEmail
+          userEmail,
+          workspaceOwner
         }),
       })
 

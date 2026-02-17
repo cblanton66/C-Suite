@@ -8,12 +8,14 @@ import { Client } from "@/types/client"
 interface ClientReportsTabProps {
   client: Client
   userEmail: string
+  workspaceOwner?: string
   onCloseAll: () => void
 }
 
 export function ClientReportsTab({
   client,
   userEmail,
+  workspaceOwner,
   onCloseAll
 }: ClientReportsTabProps) {
   const [reports, setReports] = useState<any[]>([])
@@ -28,7 +30,7 @@ export function ClientReportsTab({
     setLoading(true)
     try {
       const includeArchived = showArchived ? 'true' : 'false'
-      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=${includeArchived}&clientName=${encodeURIComponent(client.clientName)}`)
+      const response = await fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=${includeArchived}&clientName=${encodeURIComponent(client.clientName)}${workspaceOwner ? `&workspaceOwner=${encodeURIComponent(workspaceOwner)}` : ''}`)
       const data = await response.json()
 
       // No need to filter anymore - API returns only this client's reports

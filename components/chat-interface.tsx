@@ -3633,6 +3633,7 @@ Always cite the specific data points you're analyzing.`
         isOpen={showMyReportsModal}
         onClose={() => setShowMyReportsModal(false)}
         userEmail={userEmail}
+        workspaceOwner={workspaceOwner}
         onEditContent={handleEditReportContent}
       />
 

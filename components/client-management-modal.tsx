@@ -588,7 +588,7 @@ function ClientDetailModal({
         const [projectsRes, notesRes, reportsRes] = await Promise.all([
           fetch(`/api/list-threads?userId=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchive=false&clientName=${encodeURIComponent(client.clientName)}`),
           fetch(`/api/list-files?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&folder=client-files/${clientSlug}/notes`),
-          fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&includeArchived=false&clientName=${encodeURIComponent(client.clientName)}`)
+          fetch(`/api/my-reports?userEmail=${encodeURIComponent(userEmail)}&workspaceOwner=${encodeURIComponent(clientOwner)}&includeArchived=false&clientName=${encodeURIComponent(client.clientName)}`)
         ])
 
         const [projectsData, notesData, reportsData] = await Promise.all([
@@ -774,6 +774,7 @@ function ClientDetailModal({
             <ClientReportsTab
               client={client}
               userEmail={userEmail}
+              workspaceOwner={workspaceOwner}
               onCloseAll={onCloseAll}
             />
           )}
