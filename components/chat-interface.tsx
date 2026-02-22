@@ -2315,6 +2315,18 @@ Always cite the specific data points you're analyzing.`
                       SS Optimizer
                     </button>
 
+                    {/* Financial Forecast */}
+                    <button
+                      onClick={() => {
+                        window.open('/forecast', '_blank')
+                        setShowUserMenu(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      20-Year Forecast
+                    </button>
+
                     <div className="border-t border-border my-2"></div>
                     
                     {/* Upload Files - only show if user has admin or upload permission */}
