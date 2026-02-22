@@ -84,7 +84,16 @@ const TAX_DATA = {
     additionalMedicareThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
     qbiThreshold: { single: 191950, mfj: 383900, hoh: 191950 },
     qbiPhaseoutRange: { single: 50000, mfj: 100000, hoh: 50000 },
-    childTaxCredit: 2000
+    childTaxCredit: 2000,
+    refundableCTCPerChild: 1700, // Additional Child Tax Credit (ACTC) refundable limit
+    // Earned Income Credit (EIC) parameters by number of qualifying children
+    eic: {
+      0: { maxCredit: 632, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8260, phaseOutStart: { single: 9800, mfj: 16370, hoh: 9800 }, phaseOutEnd: { single: 18591, mfj: 25511, hoh: 18591 } },
+      1: { maxCredit: 3995, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 11750, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 46560, mfj: 53120, hoh: 46560 } },
+      2: { maxCredit: 6604, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 16510, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 52918, mfj: 59478, hoh: 52918 } },
+      3: { maxCredit: 7430, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 16510, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 56838, mfj: 63398, hoh: 56838 } }
+    },
+    eicInvestmentIncomeLimit: 11600
   },
   2025: {
     brackets: {
@@ -149,7 +158,16 @@ const TAX_DATA = {
     additionalMedicareThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
     qbiThreshold: { single: 197300, mfj: 394600, hoh: 197300 },
     qbiPhaseoutRange: { single: 50000, mfj: 100000, hoh: 50000 },
-    childTaxCredit: 2000
+    childTaxCredit: 2000,
+    refundableCTCPerChild: 1700, // ACTC refundable limit (may be higher under OBBB)
+    // Earned Income Credit (EIC) parameters by number of qualifying children (2025 inflation-adjusted)
+    eic: {
+      0: { maxCredit: 649, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8490, phaseOutStart: { single: 10080, mfj: 16840, hoh: 10080 }, phaseOutEnd: { single: 19104, mfj: 26214, hoh: 19104 } },
+      1: { maxCredit: 4108, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12080, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 47880, mfj: 54630, hoh: 47880 } },
+      2: { maxCredit: 6791, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 16980, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 54427, mfj: 61177, hoh: 54427 } },
+      3: { maxCredit: 7641, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 16980, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 58450, mfj: 65200, hoh: 58450 } }
+    },
+    eicInvestmentIncomeLimit: 11950
   }
 }
 
@@ -206,7 +224,9 @@ interface TaxResult {
   additionalMedicareTax: number
   totalTaxBeforeCredits: number
   // Credits
-  childTaxCredit: number
+  childTaxCredit: number // Non-refundable portion
+  refundableChildTaxCredit: number // Additional Child Tax Credit (ACTC)
+  earnedIncomeCredit: number // Refundable EIC
   // Final
   totalTax: number
   totalPayments: number
@@ -465,15 +485,60 @@ export function TaxCalculator() {
     const totalTaxBeforeCredits = ordinaryIncomeTax + capitalGainsTax +
       selfEmploymentTax + niitTax + additionalMedicareTax
 
-    // Child Tax Credit
-    const childTaxCredit = Math.min(
-      input.childrenUnder17 * taxData.childTaxCredit,
-      totalTaxBeforeCredits // Non-refundable portion limit (simplified)
-    )
+    // Earned Income Credit (EIC) - fully refundable
+    let earnedIncomeCredit = 0
+    const earnedIncome = input.wages + (input.selfEmploymentIncome > 0 ? seNetEarnings : 0)
+
+    // EIC requires earned income and investment income below limit
+    if (earnedIncome > 0 && investmentIncome <= taxData.eicInvestmentIncomeLimit) {
+      const numChildren = Math.min(input.childrenUnder17, 3) as 0 | 1 | 2 | 3
+      const eicParams = taxData.eic[numChildren]
+
+      // Calculate EIC based on phase-in
+      let eicFromEarnings = earnedIncome * eicParams.phaseInRate
+      eicFromEarnings = Math.min(eicFromEarnings, eicParams.maxCredit)
+
+      // Calculate EIC reduction from phase-out (based on greater of earned income or AGI)
+      const phaseOutStart = eicParams.phaseOutStart[status]
+      const incomeForPhaseOut = Math.max(earnedIncome, adjustedGrossIncome)
+
+      if (incomeForPhaseOut > phaseOutStart) {
+        const reduction = (incomeForPhaseOut - phaseOutStart) * eicParams.phaseOutRate
+        earnedIncomeCredit = Math.max(0, eicParams.maxCredit - reduction)
+      } else if (earnedIncome >= eicParams.phaseInEnd) {
+        earnedIncomeCredit = eicParams.maxCredit
+      } else {
+        earnedIncomeCredit = eicFromEarnings
+      }
+
+      earnedIncomeCredit = Math.round(earnedIncomeCredit)
+    }
+
+    // Child Tax Credit - split between non-refundable and refundable (ACTC)
+    const totalCTC = input.childrenUnder17 * taxData.childTaxCredit
+
+    // Non-refundable portion: limited to tax liability
+    const childTaxCredit = Math.min(totalCTC, totalTaxBeforeCredits)
+
+    // Refundable Additional Child Tax Credit (ACTC)
+    // ACTC = 15% of (earned income - $2,500), up to refundable limit per child
+    let refundableChildTaxCredit = 0
+    const remainingCTC = totalCTC - childTaxCredit
+
+    if (remainingCTC > 0 && earnedIncome > 2500) {
+      const actcMaxPerChild = taxData.refundableCTCPerChild
+      const actcLimit = input.childrenUnder17 * actcMaxPerChild
+      const actcFromEarnings = (earnedIncome - 2500) * 0.15
+      refundableChildTaxCredit = Math.min(remainingCTC, actcLimit, actcFromEarnings)
+      refundableChildTaxCredit = Math.round(refundableChildTaxCredit)
+    }
 
     // Final calculations
+    // totalTax is after non-refundable credits
     const totalTax = Math.max(0, totalTaxBeforeCredits - childTaxCredit)
-    const totalPayments = input.withholding + input.estimatedPayments
+
+    // Refundable credits (EIC and ACTC) are added to payments
+    const totalPayments = input.withholding + input.estimatedPayments + earnedIncomeCredit + refundableChildTaxCredit
     const amountDueOrRefund = totalTax - totalPayments
 
     setResult({
@@ -494,6 +559,8 @@ export function TaxCalculator() {
       additionalMedicareTax,
       totalTaxBeforeCredits,
       childTaxCredit,
+      refundableChildTaxCredit,
+      earnedIncomeCredit,
       totalTax,
       totalPayments,
       amountDueOrRefund,
@@ -997,7 +1064,7 @@ export function TaxCalculator() {
                     </div>
                     {result.childTaxCredit > 0 && (
                       <div className="flex justify-between text-green-600">
-                        <span>Child Tax Credit</span>
+                        <span>Child Tax Credit (non-refundable)</span>
                         <span>({formatCurrency(result.childTaxCredit)})</span>
                       </div>
                     )}
@@ -1007,9 +1074,9 @@ export function TaxCalculator() {
                     </div>
                   </div>
 
-                  {/* Payments Section */}
+                  {/* Payments & Refundable Credits Section */}
                   <div className="space-y-2 mb-4">
-                    <h3 className="font-medium text-sm text-muted-foreground uppercase">Payments</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground uppercase">Payments & Refundable Credits</h3>
                     {input.withholding > 0 && (
                       <div className="flex justify-between">
                         <span>Federal Withholding</span>
@@ -1022,8 +1089,20 @@ export function TaxCalculator() {
                         <span>{formatCurrency(input.estimatedPayments)}</span>
                       </div>
                     )}
+                    {result.earnedIncomeCredit > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Earned Income Credit (EIC)</span>
+                        <span>{formatCurrency(result.earnedIncomeCredit)}</span>
+                      </div>
+                    )}
+                    {result.refundableChildTaxCredit > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Additional Child Tax Credit (ACTC)</span>
+                        <span>{formatCurrency(result.refundableChildTaxCredit)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total Payments</span>
+                      <span>Total Payments & Credits</span>
                       <span>{formatCurrency(result.totalPayments)}</span>
                     </div>
                   </div>
