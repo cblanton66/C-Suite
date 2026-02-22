@@ -417,106 +417,139 @@ export function FinancialForecast() {
       const socialSecurityIncome = input.socialSecurityIncome * inflationFactor + scenarioSSIncome
       const nonTaxableIncome = input.nonTaxableIncome * inflationFactor + scenarioNonTaxableIncome
 
-      const rmdAmount = calculateRMD(traditionalBalance, clientAge)
-
-      // Calculate SE net earnings for provisional income calculation
-      const seNetEarnings = selfEmploymentIncome * 0.9235
-
-      // Other income for SS taxation calculation (excludes SS itself and non-taxable)
-      const otherIncomeForSS = ordinaryIncome + capitalGainsIncome + seNetEarnings + rmdAmount
-
-      // Calculate taxable portion of Social Security using proper provisional income formula
-      const taxableSS = calculateTaxableSS(socialSecurityIncome, otherIncomeForSS, input.isMarried)
-
-      const totalIncome = ordinaryIncome + capitalGainsIncome + selfEmploymentIncome +
-        socialSecurityIncome + nonTaxableIncome + rmdAmount
-
       const discretionaryExpenses = input.discretionaryExpenses * inflationFactor + scenarioDiscretionaryExpense
       const traditionalContribution = scenarioTraditionalContribution
       const rothContribution = scenarioRothContribution
 
+      // Calculate required RMD (minimum that MUST come from Traditional)
+      const rmdRequired = calculateRMD(traditionalBalance, clientAge)
+
+      // Step 1: Calculate base income (before any retirement withdrawals)
+      const baseIncome = ordinaryIncome + capitalGainsIncome + selfEmploymentIncome +
+        socialSecurityIncome + nonTaxableIncome
+
+      // Step 2: Determine cash needed (expenses + contributions)
+      const cashNeeded = discretionaryExpenses + traditionalContribution + rothContribution
+
+      // Step 3: Calculate deficit that must be covered by withdrawals
+      let deficit = Math.max(0, cashNeeded - baseIncome)
+
+      // Step 4: Determine withdrawals from each account type
+      let traditionalWithdrawal = 0
+      let rothWithdrawal = 0
+      let nonRetirementWithdrawal = 0
+
+      if (input.withdrawalOrder === 'non_retirement_first') {
+        // First, withdraw from non-retirement (taxable account - only gains are taxed, simplified here)
+        if (deficit > 0 && nonRetirementBalance > 0) {
+          nonRetirementWithdrawal = Math.min(deficit, nonRetirementBalance)
+          deficit -= nonRetirementWithdrawal
+        }
+        // Then from Traditional (fully taxable as ordinary income)
+        if (deficit > 0 && traditionalBalance > 0) {
+          traditionalWithdrawal = Math.min(deficit, traditionalBalance)
+          deficit -= traditionalWithdrawal
+        }
+        // Then from Roth (tax-free)
+        if (deficit > 0 && rothBalance > 0) {
+          rothWithdrawal = Math.min(deficit, rothBalance)
+          deficit -= rothWithdrawal
+        }
+      } else {
+        // Retirement first: Traditional, then Roth, then Non-Retirement
+        if (deficit > 0 && traditionalBalance > 0) {
+          traditionalWithdrawal = Math.min(deficit, traditionalBalance)
+          deficit -= traditionalWithdrawal
+        }
+        if (deficit > 0 && rothBalance > 0) {
+          rothWithdrawal = Math.min(deficit, rothBalance)
+          deficit -= rothWithdrawal
+        }
+        if (deficit > 0 && nonRetirementBalance > 0) {
+          nonRetirementWithdrawal = Math.min(deficit, nonRetirementBalance)
+          deficit -= nonRetirementWithdrawal
+        }
+      }
+
+      // Step 5: Ensure RMD is satisfied
+      // If Traditional withdrawal already >= RMD, no additional withdrawal needed
+      // If Traditional withdrawal < RMD, must withdraw at least the RMD
+      let additionalRmdWithdrawal = 0
+      if (rmdRequired > traditionalWithdrawal) {
+        additionalRmdWithdrawal = Math.min(rmdRequired - traditionalWithdrawal, traditionalBalance - traditionalWithdrawal)
+        traditionalWithdrawal += additionalRmdWithdrawal
+        // This extra RMD goes to non-retirement after taxes
+      }
+
+      // Total Traditional withdrawal is taxable income
+      const totalTraditionalWithdrawal = traditionalWithdrawal
+
+      // The actual RMD amount (for display) is the minimum of required and what was withdrawn
+      const rmdAmount = Math.min(rmdRequired, totalTraditionalWithdrawal)
+
+      // Step 6: Calculate investment earnings (on beginning-of-year balances)
+      // Non-retirement earnings are partially taxable; Traditional/Roth grow tax-deferred
+      const nonRetirementEarnings = nonRetirementBalance * growthRate
+      const traditionalEarnings = traditionalBalance * growthRate
+      const rothEarnings = rothBalance * growthRate
+
+      // Step 7: Calculate taxable portion of non-retirement EARNINGS
+      // capitalGainsPct% of earnings are taxed as capital gains (long-term gains, qualified dividends)
+      // Remaining earnings are taxed as ordinary income (interest, short-term gains, non-qualified dividends)
+      // Withdrawals are tax-free return of capital
+      const nonRetCapGainsEarnings = nonRetirementEarnings * (input.capitalGainsPct / 100)
+      const nonRetOrdinaryEarnings = nonRetirementEarnings * (1 - input.capitalGainsPct / 100)
+
+      // Step 8: Calculate taxes with all taxable income
+      const seNetEarnings = selfEmploymentIncome * 0.9235
+      const otherIncomeForSS = ordinaryIncome + capitalGainsIncome + seNetEarnings + totalTraditionalWithdrawal + nonRetCapGainsEarnings + nonRetOrdinaryEarnings
+      const taxableSS = calculateTaxableSS(socialSecurityIncome, otherIncomeForSS, input.isMarried)
+
       const taxCalc = calculateTax(
-        ordinaryIncome + taxableSS + rmdAmount + scenarioRothConversion,
-        capitalGainsIncome,
+        ordinaryIncome + taxableSS + totalTraditionalWithdrawal + scenarioRothConversion + nonRetOrdinaryEarnings,
+        capitalGainsIncome + nonRetCapGainsEarnings,
         selfEmploymentIncome,
         input.isMarried,
         inflationFactor
       )
 
-      const netCashFlow = totalIncome - discretionaryExpenses - taxCalc.totalTax -
-        traditionalContribution - rothContribution
+      // Step 9: Calculate total income (includes Traditional withdrawal and all taxable earnings)
+      const totalIncome = baseIncome + totalTraditionalWithdrawal + nonRetirementEarnings
 
-      let excessDeficit = netCashFlow
+      // Step 10: Calculate net cash flow
+      // Income + withdrawals - expenses - taxes - contributions
+      // Non-retirement withdrawals are tax-free (return of capital)
+      const grossCashIn = baseIncome + totalTraditionalWithdrawal + rothWithdrawal + nonRetirementWithdrawal
+      const netCashFlow = grossCashIn - discretionaryExpenses - taxCalc.totalTax - traditionalContribution - rothContribution
 
-      if (excessDeficit < 0) {
-        const deficit = Math.abs(excessDeficit)
-        let remaining = deficit
+      // Step 11: Update account balances (withdrawals)
+      traditionalBalance -= totalTraditionalWithdrawal
+      rothBalance -= rothWithdrawal
+      nonRetirementBalance -= nonRetirementWithdrawal
 
-        if (input.withdrawalOrder === 'non_retirement_first') {
-          if (remaining > 0 && nonRetirementBalance > 0) {
-            const withdrawal = Math.min(remaining, nonRetirementBalance)
-            nonRetirementBalance -= withdrawal
-            remaining -= withdrawal
-          }
-          if (remaining > 0 && traditionalBalance > 0) {
-            const withdrawal = Math.min(remaining, traditionalBalance)
-            traditionalBalance -= withdrawal
-            remaining -= withdrawal
-          }
-          if (remaining > 0 && rothBalance > 0) {
-            const withdrawal = Math.min(remaining, rothBalance)
-            rothBalance -= withdrawal
-            remaining -= withdrawal
-          }
-        } else {
-          if (remaining > 0 && traditionalBalance > 0) {
-            const withdrawal = Math.min(remaining, traditionalBalance)
-            traditionalBalance -= withdrawal
-            remaining -= withdrawal
-          }
-          if (remaining > 0 && rothBalance > 0) {
-            const withdrawal = Math.min(remaining, rothBalance)
-            rothBalance -= withdrawal
-            remaining -= withdrawal
-          }
-          if (remaining > 0 && nonRetirementBalance > 0) {
-            const withdrawal = Math.min(remaining, nonRetirementBalance)
-            nonRetirementBalance -= withdrawal
-            remaining -= withdrawal
-          }
-        }
-        excessDeficit = -remaining
-      } else {
-        // Surplus cash flow goes to non-retirement account
-        nonRetirementBalance += excessDeficit
-      }
-
-      // Handle RMD: withdraw from Traditional (the proceeds are already included
-      // in totalIncome and reflected in cash flow, so we only need to reduce Traditional)
-      if (rmdAmount > 0) {
-        traditionalBalance -= rmdAmount
-        // Note: RMD proceeds after tax are already accounted for in cash flow above
-      }
-
+      // Handle contributions
       traditionalBalance += traditionalContribution
       rothBalance += rothContribution
 
+      // Handle Roth conversion (taxed in taxCalc above via scenarioRothConversion)
       if (scenarioRothConversion > 0 && traditionalBalance >= scenarioRothConversion) {
         traditionalBalance -= scenarioRothConversion
         rothBalance += scenarioRothConversion
       }
 
-      const nonRetirementEarnings = nonRetirementBalance * growthRate
-      const traditionalEarnings = traditionalBalance * growthRate
-      const rothEarnings = rothBalance * growthRate
+      // Any excess cash (after taxes) goes to non-retirement
+      if (netCashFlow > 0) {
+        nonRetirementBalance += netCashFlow
+      }
 
+      // Step 12: Apply investment earnings to balances
       nonRetirementBalance += nonRetirementEarnings
       traditionalBalance += traditionalEarnings
       rothBalance += rothEarnings
 
       const milestones: string[] = []
       if (clientAge === 67) milestones.push('SS FRA')
-      if (clientAge === 73) milestones.push('RMDs Begin')
+      if (clientAge === 73 && rmdRequired > 0) milestones.push('RMDs Begin')
       if (clientAge === 62) milestones.push('SS Earliest')
       if (clientAge === 65) milestones.push('Medicare')
 
@@ -849,58 +882,77 @@ export function FinancialForecast() {
                 <PiggyBank className="w-4 h-4" />
                 Settings
               </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-muted-foreground">Expenses</label>
-                  <Input
-                    type="text"
-                    placeholder="0"
-                    className="h-7 text-sm"
-                    value={input.discretionaryExpenses ? input.discretionaryExpenses.toLocaleString() : ''}
-                    onChange={(e) => handleNumberInput('discretionaryExpenses', e.target.value)}
-                  />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Expenses</label>
+                    <Input
+                      type="text"
+                      placeholder="0"
+                      className="h-7 text-sm"
+                      value={input.discretionaryExpenses ? input.discretionaryExpenses.toLocaleString() : ''}
+                      onChange={(e) => handleNumberInput('discretionaryExpenses', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Growth %</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      className="h-7 text-sm"
+                      value={input.growthRate}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        handleInputChange('growthRate', isNaN(val) ? 6 : val)
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Growth %</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    className="h-7 text-sm"
-                    value={input.growthRate}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value)
-                      handleInputChange('growthRate', isNaN(val) ? 6 : val)
-                    }}
-                  />
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Inflation %</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      className="h-7 text-sm"
+                      value={input.inflationRate}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        handleInputChange('inflationRate', isNaN(val) ? 3 : val)
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">CG % W/D</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="h-7 text-sm"
+                      value={input.capitalGainsPct}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        handleInputChange('capitalGainsPct', isNaN(val) ? 30 : val)
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Withdraw</label>
+                    <Select
+                      value={input.withdrawalOrder}
+                      onValueChange={(v) => handleInputChange('withdrawalOrder', v)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non_retirement_first">Non-Ret 1st</SelectItem>
+                        <SelectItem value="retirement_first">Ret 1st</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Inflation %</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    className="h-7 text-sm"
-                    value={input.inflationRate}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value)
-                      handleInputChange('inflationRate', isNaN(val) ? 3 : val)
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Withdraw</label>
-                  <Select
-                    value={input.withdrawalOrder}
-                    onValueChange={(v) => handleInputChange('withdrawalOrder', v)}
-                  >
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="non_retirement_first">Non-Ret 1st</SelectItem>
-                      <SelectItem value="retirement_first">Ret 1st</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-[10px] text-muted-foreground">CG % = % of earnings taxed as cap gains; rest taxed as ordinary income (withdrawals are tax-free)</p>
               </div>
             </Card>
           </div>
