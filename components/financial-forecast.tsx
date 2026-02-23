@@ -69,6 +69,13 @@ const RMD_FACTORS: { [age: number]: number } = {
   89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8, 93: 10.1, 94: 9.5, 95: 8.9
 }
 
+// Calculate RMD starting age based on birth year (SECURE 2.0 Act)
+const getRMDStartAge = (birthYear: number): number => {
+  if (birthYear < 1951) return 72 // Born before 1951: age 72
+  if (birthYear < 1960) return 73 // Born 1951-1959: age 73
+  return 75 // Born 1960 or later: age 75
+}
+
 // Calculate taxable portion of Social Security benefits
 const calculateTaxableSS = (
   ssIncome: number,
@@ -200,15 +207,6 @@ interface MonteCarloResult {
 }
 
 const formatCurrency = (amount: number): string => {
-  if (Math.abs(amount) >= 1000000) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
-      notation: 'compact'
-    }).format(amount)
-  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -359,11 +357,15 @@ export function FinancialForecast() {
     }
   }
 
-  const calculateRMD = (traditionalBalance: number, age: number): number => {
-    if (age < 73) return 0
+  const calculateRMD = (traditionalBalance: number, age: number, rmdStartAge: number): number => {
+    if (age < rmdStartAge) return 0
     const factor = RMD_FACTORS[age] || 10
     return traditionalBalance / factor
   }
+
+  // Calculate birth year and RMD start age based on current age
+  const clientBirthYear = currentYear - input.clientAge
+  const clientRMDStartAge = getRMDStartAge(clientBirthYear)
 
   const generateProjections = () => {
     const projections: YearlyProjection[] = []
@@ -422,7 +424,7 @@ export function FinancialForecast() {
       const rothContribution = scenarioRothContribution
 
       // Calculate required RMD (minimum that MUST come from Traditional)
-      const rmdRequired = calculateRMD(traditionalBalance, clientAge)
+      const rmdRequired = calculateRMD(traditionalBalance, clientAge, clientRMDStartAge)
 
       // Step 1: Calculate base income (before any retirement withdrawals)
       const baseIncome = ordinaryIncome + capitalGainsIncome + selfEmploymentIncome +
@@ -549,7 +551,7 @@ export function FinancialForecast() {
 
       const milestones: string[] = []
       if (clientAge === 67) milestones.push('SS FRA')
-      if (clientAge === 73 && rmdRequired > 0) milestones.push('RMDs Begin')
+      if (clientAge === clientRMDStartAge && rmdRequired > 0) milestones.push('RMDs Begin')
       if (clientAge === 62) milestones.push('SS Earliest')
       if (clientAge === 65) milestones.push('Medicare')
 
@@ -738,6 +740,170 @@ export function FinancialForecast() {
           <p className="text-center text-sm text-muted-foreground mt-1">
             Prepared on {new Date().toLocaleDateString()}
           </p>
+        </div>
+
+        {/* Print-only Assumptions Page */}
+        <div className="hidden print:block mb-8 print:break-after-page">
+          <h2 className="text-xl font-bold mb-4 border-b pb-2">Forecast Assumptions</h2>
+
+          <div className="grid grid-cols-2 gap-8">
+            {/* Left Column */}
+            <div className="space-y-4">
+              {/* Personal Info */}
+              <div>
+                <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Personal Information</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Filing Status:</span>
+                    <span className="font-medium">{input.isMarried ? 'Married Filing Jointly' : 'Single'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Client Age:</span>
+                    <span className="font-medium">{input.clientAge}</span>
+                  </div>
+                  {input.isMarried && (
+                    <div className="flex justify-between">
+                      <span>Spouse Age:</span>
+                      <span className="font-medium">{input.spouseAge}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Annual Income */}
+              <div>
+                <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Annual Income (Year 1)</h3>
+                <div className="space-y-1 text-sm">
+                  {input.ordinaryIncome > 0 && (
+                    <div className="flex justify-between">
+                      <span>Ordinary Income:</span>
+                      <span className="font-medium">{formatCurrency(input.ordinaryIncome)}</span>
+                    </div>
+                  )}
+                  {input.capitalGainsIncome > 0 && (
+                    <div className="flex justify-between">
+                      <span>Capital Gains:</span>
+                      <span className="font-medium">{formatCurrency(input.capitalGainsIncome)}</span>
+                    </div>
+                  )}
+                  {input.selfEmploymentIncome > 0 && (
+                    <div className="flex justify-between">
+                      <span>Self-Employment:</span>
+                      <span className="font-medium">{formatCurrency(input.selfEmploymentIncome)}</span>
+                    </div>
+                  )}
+                  {input.socialSecurityIncome > 0 && (
+                    <div className="flex justify-between">
+                      <span>Social Security:</span>
+                      <span className="font-medium">{formatCurrency(input.socialSecurityIncome)}</span>
+                    </div>
+                  )}
+                  {input.nonTaxableIncome > 0 && (
+                    <div className="flex justify-between">
+                      <span>Non-Taxable Income:</span>
+                      <span className="font-medium">{formatCurrency(input.nonTaxableIncome)}</span>
+                    </div>
+                  )}
+                  {(input.ordinaryIncome + input.capitalGainsIncome + input.selfEmploymentIncome + input.socialSecurityIncome + input.nonTaxableIncome) === 0 && (
+                    <div className="text-muted-foreground italic">No income entered</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div>
+                <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Annual Expenses</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Discretionary Expenses:</span>
+                    <span className="font-medium">{formatCurrency(input.discretionaryExpenses)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              {/* Portfolio */}
+              <div>
+                <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Starting Portfolio Balances</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Non-Retirement:</span>
+                    <span className="font-medium">{formatCurrency(input.nonRetirementBalance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Traditional IRA/401(k):</span>
+                    <span className="font-medium">{formatCurrency(input.traditionalBalance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Roth IRA/401(k):</span>
+                    <span className="font-medium">{formatCurrency(input.rothBalance)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t pt-1 mt-1">
+                    <span>Total Portfolio:</span>
+                    <span>{formatCurrency(input.nonRetirementBalance + input.traditionalBalance + input.rothBalance)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Settings */}
+              <div>
+                <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Projection Settings</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Growth Rate:</span>
+                    <span className="font-medium">{input.growthRate}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Inflation Rate:</span>
+                    <span className="font-medium">{input.inflationRate}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cap Gains % of Earnings:</span>
+                    <span className="font-medium">{input.capitalGainsPct}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Withdrawal Order:</span>
+                    <span className="font-medium">{input.withdrawalOrder === 'non_retirement_first' ? 'Non-Retirement First' : 'Retirement First'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scenarios */}
+              {input.scenarios.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Scenarios</h3>
+                  <div className="space-y-2 text-sm">
+                    {input.scenarios.map((scenario) => (
+                      <div key={scenario.id} className="border-l-2 border-primary pl-2">
+                        <div className="font-medium">{scenario.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {scenario.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} |
+                          Ages {scenario.startAge}-{scenario.endAge} |
+                          {formatCurrency(scenario.amount)}/yr
+                          {scenario.growthRate > 0 && ` (+${scenario.growthRate}%/yr)`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="mt-6 pt-4 border-t">
+            <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Important Notes</h3>
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+              <li>Tax brackets are inflation-adjusted each year based on the inflation rate.</li>
+              <li>Required Minimum Distributions (RMDs) begin at age {clientRMDStartAge} from Traditional accounts (based on birth year {clientBirthYear}).</li>
+              <li>Non-retirement earnings are taxed annually ({input.capitalGainsPct}% as capital gains, {100 - input.capitalGainsPct}% as ordinary income).</li>
+              <li>Withdrawals from non-retirement accounts are treated as tax-free return of capital.</li>
+              <li>Social Security benefits are taxed using the provisional income formula.</li>
+              <li>This projection is for illustrative purposes only and should not be considered tax or financial advice.</li>
+            </ul>
+          </div>
         </div>
 
         {/* INPUT SECTION - Compact horizontal layout at top */}
@@ -1273,7 +1439,7 @@ export function FinancialForecast() {
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>- Add a scenario to stop income at retirement age</li>
                 <li>- Add SS Income scenario starting at 62-70</li>
-                <li>- Consider Roth conversions before RMDs at 73</li>
+                <li>- Consider Roth conversions before RMDs at {clientRMDStartAge}</li>
                 <li>- Run Monte Carlo to stress-test your plan</li>
               </ul>
             </div>
@@ -1287,6 +1453,7 @@ export function FinancialForecast() {
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
           .print\\:block { display: block !important; }
+          .print\\:break-after-page { break-after: page; page-break-after: always; }
         }
       `}</style>
     </div>
