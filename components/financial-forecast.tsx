@@ -632,6 +632,7 @@ export function FinancialForecast() {
       const yearEndBalances: number[] = []
 
       for (let year = 0; year < years; year++) {
+        const clientAge = input.clientAge + year
         const randomReturn = baseGrowth + volatility * (Math.random() + Math.random() + Math.random() - 1.5) * 2
 
         nonRetirement *= (1 + randomReturn)
@@ -639,15 +640,59 @@ export function FinancialForecast() {
         roth *= (1 + randomReturn)
 
         const inflationFactor = Math.pow(1 + input.inflationRate / 100, year)
-        const annualExpenses = input.discretionaryExpenses * inflationFactor
 
-        // Calculate income (inflation-adjusted for earned income, fixed for SS)
+        // Calculate scenario adjustments based on client age
+        let scenarioOrdinaryIncome = 0
+        let scenarioCapitalGainsIncome = 0
+        let scenarioSEIncome = 0
+        let scenarioSSIncome = 0
+        let scenarioNonTaxableIncome = 0
+        let scenarioDiscretionaryExpense = 0
+        let scenarioTraditionalContribution = 0
+        let scenarioRothContribution = 0
+        let scenarioRothConversion = 0
+
+        for (const scenario of input.scenarios) {
+          if (clientAge >= scenario.startAge && clientAge <= scenario.endAge) {
+            const yearsIntoScenario = clientAge - scenario.startAge
+            const scenarioAmount = scenario.amount * Math.pow(1 + scenario.growthRate / 100, yearsIntoScenario)
+
+            switch (scenario.type) {
+              case 'ordinary_income': scenarioOrdinaryIncome += scenarioAmount; break
+              case 'capital_gain_income': scenarioCapitalGainsIncome += scenarioAmount; break
+              case 'se_income': scenarioSEIncome += scenarioAmount; break
+              case 'ss_income': scenarioSSIncome += scenarioAmount; break
+              case 'nontaxable_income': scenarioNonTaxableIncome += scenarioAmount; break
+              case 'discretionary_expense': scenarioDiscretionaryExpense += scenarioAmount; break
+              case 'traditional_contribution': scenarioTraditionalContribution += scenarioAmount; break
+              case 'roth_contribution': scenarioRothContribution += scenarioAmount; break
+              case 'roth_conversion': scenarioRothConversion += scenarioAmount; break
+            }
+          }
+        }
+
+        // Calculate total income including scenarios
         const totalIncome = (input.ordinaryIncome + input.capitalGainsIncome +
           input.selfEmploymentIncome + input.nonTaxableIncome) * inflationFactor +
-          input.socialSecurityIncome // SS doesn't inflate in this simplified model
+          input.socialSecurityIncome * inflationFactor +
+          scenarioOrdinaryIncome + scenarioCapitalGainsIncome + scenarioSEIncome +
+          scenarioSSIncome + scenarioNonTaxableIncome
+
+        // Calculate total expenses including scenarios
+        const totalExpenses = input.discretionaryExpenses * inflationFactor + scenarioDiscretionaryExpense
+
+        // Handle contributions
+        traditional += scenarioTraditionalContribution
+        roth += scenarioRothContribution
+
+        // Handle Roth conversions
+        if (scenarioRothConversion > 0 && traditional >= scenarioRothConversion) {
+          traditional -= scenarioRothConversion
+          roth += scenarioRothConversion
+        }
 
         // Net need = expenses - income (negative means surplus)
-        const netNeed = annualExpenses - totalIncome
+        const netNeed = totalExpenses - totalIncome
 
         if (netNeed > 0) {
           // Need to withdraw from portfolio
@@ -672,7 +717,7 @@ export function FinancialForecast() {
           nonRetirement += Math.abs(netNeed)
         }
 
-        yearEndBalances.push(nonRetirement + traditional + roth)
+        yearEndBalances.push(Math.max(0, nonRetirement) + Math.max(0, traditional) + Math.max(0, roth))
       }
 
       results.push(yearEndBalances)
