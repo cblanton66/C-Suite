@@ -641,8 +641,17 @@ export function FinancialForecast() {
         const inflationFactor = Math.pow(1 + input.inflationRate / 100, year)
         const annualExpenses = input.discretionaryExpenses * inflationFactor
 
-        if (annualExpenses > 0) {
-          let remaining = annualExpenses
+        // Calculate income (inflation-adjusted for earned income, fixed for SS)
+        const totalIncome = (input.ordinaryIncome + input.capitalGainsIncome +
+          input.selfEmploymentIncome + input.nonTaxableIncome) * inflationFactor +
+          input.socialSecurityIncome // SS doesn't inflate in this simplified model
+
+        // Net need = expenses - income (negative means surplus)
+        const netNeed = annualExpenses - totalIncome
+
+        if (netNeed > 0) {
+          // Need to withdraw from portfolio
+          let remaining = netNeed
           if (nonRetirement > 0) {
             const withdrawal = Math.min(remaining, nonRetirement)
             nonRetirement -= withdrawal
@@ -658,6 +667,9 @@ export function FinancialForecast() {
             roth -= withdrawal
             remaining -= withdrawal
           }
+        } else {
+          // Surplus goes to non-retirement
+          nonRetirement += Math.abs(netNeed)
         }
 
         yearEndBalances.push(nonRetirement + traditional + roth)
