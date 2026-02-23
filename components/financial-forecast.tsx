@@ -134,6 +134,17 @@ const calculateTaxableSS = (
   return Math.max(0, taxableSS)
 }
 
+// Portfolio allocation types with expected return and standard deviation
+const PORTFOLIO_TYPES = {
+  conservative: { label: 'Conservative', expectedReturn: 4.5, stdDeviation: 5 },
+  income_growth: { label: 'Income with Growth', expectedReturn: 5.5, stdDeviation: 8 },
+  growth_income: { label: 'Growth with Income', expectedReturn: 7.0, stdDeviation: 11 },
+  growth: { label: 'Growth', expectedReturn: 8.5, stdDeviation: 14 },
+  aggressive: { label: 'Aggressive', expectedReturn: 10.0, stdDeviation: 18 }
+} as const
+
+type PortfolioType = keyof typeof PORTFOLIO_TYPES
+
 type ScenarioType =
   | 'ordinary_income'
   | 'capital_gain_income'
@@ -169,7 +180,7 @@ interface ForecastInput {
   traditionalBalance: number
   rothBalance: number
   discretionaryExpenses: number
-  growthRate: number
+  portfolioType: PortfolioType
   inflationRate: number
   capitalGainsPct: number
   withdrawalOrder: 'non_retirement_first' | 'retirement_first'
@@ -269,7 +280,7 @@ export function FinancialForecast() {
     traditionalBalance: 0,
     rothBalance: 0,
     discretionaryExpenses: 0,
-    growthRate: 6,
+    portfolioType: 'growth_income',
     inflationRate: 3,
     capitalGainsPct: 30,
     withdrawalOrder: 'non_retirement_first',
@@ -385,7 +396,7 @@ export function FinancialForecast() {
     let traditionalBalance = input.traditionalBalance
     let rothBalance = input.rothBalance
 
-    const growthRate = input.growthRate / 100
+    const growthRate = PORTFOLIO_TYPES[input.portfolioType].expectedReturn / 100
     const inflationRate = input.inflationRate / 100
 
     for (let yearOffset = 0; yearOffset < 20; yearOffset++) {
@@ -610,8 +621,9 @@ export function FinancialForecast() {
     const years = 20
     const results: number[][] = []
 
-    const baseGrowth = input.growthRate / 100
-    const volatility = 0.15
+    const portfolioConfig = PORTFOLIO_TYPES[input.portfolioType]
+    const baseGrowth = portfolioConfig.expectedReturn / 100
+    const volatility = portfolioConfig.stdDeviation / 100
 
     for (let sim = 0; sim < simulations; sim++) {
       let nonRetirement = input.nonRetirementBalance
@@ -704,7 +716,7 @@ export function FinancialForecast() {
       traditionalBalance: 0,
       rothBalance: 0,
       discretionaryExpenses: 0,
-      growthRate: 6,
+      portfolioType: 'growth_income',
       inflationRate: 3,
       capitalGainsPct: 30,
       withdrawalOrder: 'non_retirement_first',
@@ -864,8 +876,16 @@ export function FinancialForecast() {
                 <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Projection Settings</h3>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>Growth Rate:</span>
-                    <span className="font-medium">{input.growthRate}%</span>
+                    <span>Portfolio Type:</span>
+                    <span className="font-medium">{PORTFOLIO_TYPES[input.portfolioType].label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Expected Return:</span>
+                    <span className="font-medium">{PORTFOLIO_TYPES[input.portfolioType].expectedReturn}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Std Deviation:</span>
+                    <span className="font-medium">{PORTFOLIO_TYPES[input.portfolioType].stdDeviation}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Inflation Rate:</span>
@@ -1073,17 +1093,22 @@ export function FinancialForecast() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Growth %</label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      className="h-7 text-sm"
-                      value={input.growthRate}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value)
-                        handleInputChange('growthRate', isNaN(val) ? 6 : val)
-                      }}
-                    />
+                    <label className="text-xs text-muted-foreground">Portfolio</label>
+                    <Select
+                      value={input.portfolioType}
+                      onValueChange={(v) => handleInputChange('portfolioType', v as PortfolioType)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(PORTFOLIO_TYPES).map(([key, value]) => (
+                          <SelectItem key={key} value={key} className="text-xs">
+                            {value.label} ({value.expectedReturn}% / {value.stdDeviation}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -1462,7 +1487,7 @@ export function FinancialForecast() {
                   </ResponsiveContainer>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Based on 1,000 simulations with 15% annual volatility. {monteCarloResult.failureRate.toFixed(1)}% of scenarios depleted the portfolio.
+                  Based on 1,000 simulations with {PORTFOLIO_TYPES[input.portfolioType].stdDeviation}% annual volatility ({PORTFOLIO_TYPES[input.portfolioType].label}). {monteCarloResult.failureRate.toFixed(1)}% of scenarios depleted the portfolio.
                 </p>
               </Card>
             )}
