@@ -26,6 +26,18 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts"
 
 // Tax brackets for projections (simplified - using 2025 MFJ as baseline, inflated each year)
 const TAX_BRACKETS_2025_MFJ = [
@@ -1265,6 +1277,195 @@ export function FinancialForecast() {
                 </p>
               </Card>
             </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 gap-4 print:hidden">
+              {/* Portfolio Growth Chart */}
+              <Card className="p-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Portfolio Growth
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={projections.map(p => ({
+                        year: p.year,
+                        'Non-Retirement': Math.round(p.nonRetirementBalance),
+                        'Traditional': Math.round(p.traditionalBalance),
+                        'Roth': Math.round(p.rothBalance)
+                      }))}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis
+                        dataKey="year"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value.toString().slice(-2)}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${(value / 1000).toFixed(0)}K`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        labelFormatter={(label) => `Year ${label}`}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Area
+                        type="monotone"
+                        dataKey="Roth"
+                        stackId="1"
+                        stroke="#10b981"
+                        fill="#10b981"
+                        fillOpacity={0.8}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Traditional"
+                        stackId="1"
+                        stroke="#3b82f6"
+                        fill="#3b82f6"
+                        fillOpacity={0.8}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Non-Retirement"
+                        stackId="1"
+                        stroke="#8b5cf6"
+                        fill="#8b5cf6"
+                        fillOpacity={0.8}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Income vs Expenses Chart */}
+              <Card className="p-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Income vs Expenses
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={projections.map(p => ({
+                        year: p.year,
+                        'Income': Math.round(p.totalIncome),
+                        'Expenses': Math.round(p.discretionaryExpenses + p.totalTax)
+                      }))}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis
+                        dataKey="year"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value.toString().slice(-2)}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${(value / 1000).toFixed(0)}K`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        labelFormatter={(label) => `Year ${label}`}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Bar dataKey="Income" fill="#10b981" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="Expenses" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </div>
+
+            {/* Monte Carlo Chart - Full Width */}
+            {monteCarloResult && (
+              <Card className="p-4 print:hidden">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <LineChart className="w-4 h-4" />
+                  Monte Carlo Simulation - Portfolio Value Confidence Bands
+                </h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={Array.from({ length: 20 }, (_, idx) => ({
+                        year: currentYear + idx,
+                        p10: monteCarloResult.percentile10[idx],
+                        p25: monteCarloResult.percentile25[idx],
+                        p50: monteCarloResult.percentile50[idx],
+                        p75: monteCarloResult.percentile75[idx],
+                        p90: monteCarloResult.percentile90[idx]
+                      }))}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis
+                        dataKey="year"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value.toString().slice(-2)}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) => value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${(value / 1000).toFixed(0)}K`}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        labelFormatter={(label) => `Year ${label}`}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      {/* 10th-90th percentile band (outer) */}
+                      <Area
+                        type="monotone"
+                        dataKey="p90"
+                        stroke="none"
+                        fill="#10b981"
+                        fillOpacity={0.2}
+                        name="90th Percentile"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="p10"
+                        stroke="none"
+                        fill="#ffffff"
+                        fillOpacity={1}
+                        name="10th Percentile"
+                      />
+                      {/* 25th-75th percentile band (inner) */}
+                      <Area
+                        type="monotone"
+                        dataKey="p75"
+                        stroke="none"
+                        fill="#3b82f6"
+                        fillOpacity={0.3}
+                        name="75th Percentile"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="p25"
+                        stroke="none"
+                        fill="#ffffff"
+                        fillOpacity={1}
+                        name="25th Percentile"
+                      />
+                      {/* Median line */}
+                      <Area
+                        type="monotone"
+                        dataKey="p50"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        fill="none"
+                        name="50th Percentile (Median)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Based on 1,000 simulations with 15% annual volatility. {monteCarloResult.failureRate.toFixed(1)}% of scenarios depleted the portfolio.
+                </p>
+              </Card>
+            )}
 
             {/* Main Projection Table */}
             <Card className="p-4">
