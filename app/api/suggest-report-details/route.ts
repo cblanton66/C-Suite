@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { FEATURE_MODELS } from '@/lib/ai-models'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🤖 [SUGGEST-REPORT-DETAILS] Calling OpenAI API...')
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: FEATURE_MODELS.reportSuggestions,
       messages: [
         {
           role: "system",

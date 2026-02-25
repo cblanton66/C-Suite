@@ -48,6 +48,7 @@ import { ThreadSaveModal } from "@/components/thread-save-modal"
 import { ThreadManagementModal } from "@/components/thread-management-modal"
 import { AdminCommunicationsModal } from "@/components/admin-communications-modal"
 import { ClientManagementModal } from "@/components/client-management-modal"
+import { ALL_MODELS, COMBINED_ANALYSIS, DEFAULT_MODEL, type ModelId } from "@/lib/ai-models"
 import { ClientAutocomplete } from "@/components/client-autocomplete"
 import { PDFTextExtractorModal } from "@/components/pdf-text-extractor-modal"
 import { ShareReportModal } from "@/components/share-report-modal"
@@ -119,7 +120,7 @@ export function ChatInterface() {
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [selectedRole, setSelectedRole] = useState<'Business Owner' | 'CPA' | 'Bookkeeper'>('Bookkeeper')
   const [userPermissions, setUserPermissions] = useState<string[]>(['chat'])
-  const [selectedModel, setSelectedModel] = useState<'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'combined-analysis'>('grok-4-1-fast-non-reasoning')
+  const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_MODEL)
   const [searchMyHistory, setSearchMyHistory] = useState(false)
   const [activeMode, setActiveMode] = useState<{ title: string; hiddenInstructions: string } | null>(null)
 
@@ -1332,11 +1333,14 @@ Always cite the specific data points you're analyzing.`
     localStorage.setItem('selectedRole', role)
   }
 
-  const handleModelChange = (model: 'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'combined-analysis') => {
+  const handleModelChange = (model: ModelId) => {
     setSelectedModel(model)
     // Save to localStorage for persistence
     localStorage.setItem('selectedModel', model)
   }
+
+  // Get list of valid model IDs for validation
+  const validModelIds = [...ALL_MODELS.map(m => m.id), COMBINED_ANALYSIS.id]
 
   // Load saved role and model on component mount
   useEffect(() => {
@@ -1344,9 +1348,9 @@ Always cite the specific data points you're analyzing.`
     if (savedRole && ['Business Owner', 'CPA', 'Bookkeeper'].includes(savedRole)) {
       setSelectedRole(savedRole)
     }
-    
-    const savedModel = localStorage.getItem('selectedModel') as 'grok-4-0709' | 'grok-4-1-fast-non-reasoning' | 'gemini-3-flash-preview' | 'gemini-3-pro-preview' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'combined-analysis' | null
-    if (savedModel && ['grok-4-0709', 'grok-4-1-fast-non-reasoning', 'gemini-3-flash-preview', 'gemini-3-pro-preview', 'gpt-5.2-chat-latest', 'gpt-5.2-pro', 'combined-analysis'].includes(savedModel)) {
+
+    const savedModel = localStorage.getItem('selectedModel') as ModelId | null
+    if (savedModel && validModelIds.includes(savedModel)) {
       setSelectedModel(savedModel)
     }
   }, [])
@@ -2777,18 +2781,19 @@ Always cite the specific data points you're analyzing.`
                     AI Model Selection
                   </p>
                     <div className="flex justify-center">
-                      <Select value={selectedModel} onValueChange={handleModelChange}>
+                      <Select value={selectedModel} onValueChange={(v) => handleModelChange(v as ModelId)}>
                         <SelectTrigger className="w-48">
                           <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="grok-4-1-fast-non-reasoning">⚡ Grok 4.1 Fast</SelectItem>
-                          <SelectItem value="grok-4-0709">🧠 Grok 4 Full</SelectItem>
-                          <SelectItem value="gemini-3-flash-preview">⚡ Gemini 3 Flash</SelectItem>
-                          <SelectItem value="gemini-3-pro-preview">🧠 Gemini 3 Pro</SelectItem>
-                          <SelectItem value="gpt-5.2-chat-latest">⚡ GPT-5.2 Instant</SelectItem>
-                          <SelectItem value="gpt-5.2-pro">🧠 GPT-5.2 Pro</SelectItem>
-                          <SelectItem value="combined-analysis">🔮 Combined Analysis</SelectItem>
+                          {ALL_MODELS.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.icon} {model.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={COMBINED_ANALYSIS.id}>
+                            {COMBINED_ANALYSIS.icon} {COMBINED_ANALYSIS.name}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

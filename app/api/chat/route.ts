@@ -6,6 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import OpenAI from "openai"
 import { getUserReports, getClientSummary, type ClientSummary } from "@/lib/google-cloud-storage"
 import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
+import { FEATURE_MODELS, isGrokModel, isGeminiModel, isOpenAIModel, DEFAULT_MODEL } from "@/lib/ai-models"
 
 // Helper function to detect if user is asking for a client overview
 function detectClientOverviewRequest(query: string): boolean {
@@ -202,7 +203,7 @@ const portfolioTools = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, fileContext, model = 'grok-3-mini-beta', searchMyHistory, userId, workspaceOwner, modeInstructions } = await req.json()
+    const { messages, fileContext, model = DEFAULT_MODEL, searchMyHistory, userId, workspaceOwner, modeInstructions } = await req.json()
 
     console.log('[DEBUG] Chat request received:', {
       searchMyHistory,
@@ -217,14 +218,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for Gemini API key if a Gemini model is requested
-    // Note: The @ai-sdk/google package expects GOOGLE_GENERATIVE_AI_API_KEY env var
-    const isGeminiRequest = model?.startsWith('gemini-')
+    const isGeminiRequest = isGeminiModel(model)
     if (isGeminiRequest && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       return NextResponse.json({ error: "Google Generative AI API key not configured. Set GOOGLE_GENERATIVE_AI_API_KEY environment variable." }, { status: 500 })
     }
 
     // Check for OpenAI API key if a GPT model or combined analysis is requested
-    const isOpenAIRequest = model?.startsWith('gpt-') || model === 'combined-analysis'
+    const isOpenAIRequest = isOpenAIModel(model)
     if (isOpenAIRequest && !process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: "OpenAI API key not configured. Set OPENAI_API_KEY environment variable." }, { status: 500 })
     }
@@ -239,8 +239,8 @@ export async function POST(req: NextRequest) {
     // Override model to use full Grok for portfolio analysis
     let selectedModel = model
     if (isPortfolioMode) {
-      selectedModel = 'grok-4-0709'
-      console.log('[DEBUG] Portfolio analysis mode activated - using grok-4-0709 model')
+      selectedModel = FEATURE_MODELS.portfolioAnalysis
+      console.log(`[DEBUG] Portfolio analysis mode activated - using ${FEATURE_MODELS.portfolioAnalysis} model`)
     }
 
     // Select appropriate instruction set
@@ -449,10 +449,10 @@ DO NOT make up or fabricate any client information, project details, dates, or w
 
     // Use Chat API for all modes with appropriate configuration
     // Determine which provider to use based on model
-    const isGeminiModel = selectedModel.startsWith('gemini-')
+    const isGeminiModelSelected = isGeminiModel(selectedModel)
 
     // For Gemini models, use native SDK with Google Search tool
-    if (isGeminiModel && !isPortfolioMode) {
+    if (isGeminiModelSelected && !isPortfolioMode) {
       // Add instruction for Gemini to not output internal reasoning
       const geminiSystemPrompt = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user. Never output text like "Self-Correction" or "Internal Documentation Mode" or any commentary about your thought process.\n\n` + systemInstructions
 
@@ -501,8 +501,8 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // For Grok models (non-portfolio), use xAI Responses API with web search
-    const isGrokModel = selectedModel.startsWith('grok-')
-    if (isGrokModel && !isPortfolioMode) {
+    const isGrokModelSelected = isGrokModel(selectedModel)
+    if (isGrokModelSelected && !isPortfolioMode) {
       const xaiClient = new OpenAI({
         apiKey: process.env.XAI_API_KEY,
         baseURL: "https://api.x.ai/v1",
@@ -536,8 +536,8 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // For GPT models (non-portfolio), use OpenAI Responses API with web search
-    const isGPTModel = selectedModel.startsWith('gpt-')
-    if (isGPTModel && !isPortfolioMode) {
+    const isGPTModelSelected = isOpenAIModel(selectedModel) && selectedModel !== 'combined-analysis'
+    if (isGPTModelSelected && !isPortfolioMode) {
       const openaiClient = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       })
@@ -589,7 +589,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
             })),
           ]
           const response = await (xaiClient as any).responses.create({
-            model: 'grok-4-1-fast-non-reasoning',
+            model: FEATURE_MODELS.grokWebSearch,
             input: xaiMessages,
             tools: [{ type: "web_search" }],
           })
@@ -601,7 +601,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
           const geminiSystemPrompt = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user.\n\n` + systemInstructions
           const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
           const geminiModel = genAI.getGenerativeModel({
-            model: 'gemini-3-flash-preview',
+            model: FEATURE_MODELS.geminiWebSearch,
             tools: [{ googleSearch: {} } as any],
             systemInstruction: geminiSystemPrompt,
           })
@@ -628,7 +628,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
             })),
           ]
           const response = await (openaiClient as any).responses.create({
-            model: 'gpt-5.2-chat-latest',
+            model: FEATURE_MODELS.openaiWebSearch,
             input: openaiMessages,
             tools: [{ type: "web_search" }],
           })
@@ -667,7 +667,7 @@ Do not mention that you are synthesizing responses or reference the individual m
       })
 
       const synthesisResponse = await (openaiClient as any).responses.create({
-        model: 'gpt-5.2-chat-latest',
+        model: FEATURE_MODELS.openaiWebSearch,
         input: [{ role: "user", content: synthesisPrompt }],
       })
 
@@ -685,7 +685,7 @@ Do not mention that you are synthesizing responses or reference the individual m
     let tools: Record<string, unknown> | undefined = undefined
     let maxSteps = 1
 
-    if (isGeminiModel) {
+    if (isGeminiModelSelected) {
       // Portfolio mode with Gemini - use Vercel AI SDK without search (tools conflict)
       const { google } = await import("@ai-sdk/google")
       modelProvider = google(selectedModel, {
