@@ -5,7 +5,6 @@ import { z } from "zod"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import OpenAI from "openai"
 import { getUserReports, getClientSummary, type ClientSummary } from "@/lib/google-cloud-storage"
-import { getTickerDetails, calculatePerformance } from "@/lib/polygon-api"
 import { FEATURE_MODELS, isGrokModel, isGeminiModel, isOpenAIModel, DEFAULT_MODEL } from "@/lib/ai-models"
 
 // Helper function to detect if user is asking for a client overview
@@ -100,107 +99,6 @@ const taxInstructions = `
 # - Current economic data affecting taxes
 # Use the web_search tool to ensure accuracy and currency of information.`
 
-
-
-// Define tools for portfolio analysis with Polygon.io
-const portfolioTools = {
-  getTickerData: tool({
-    description: 'Get comprehensive data for a stock or ETF ticker including current details and historical performance (1M, 3M, 6M, 1Y returns). Use this when user asks about specific stocks or ETFs.',
-    parameters: z.object({
-      symbol: z.string().describe('The ticker symbol in uppercase (e.g., VTI, AAPL, SPY, NVDA)')
-    }),
-    execute: async (args) => {
-      const symbol = args?.symbol
-      console.log(`[TOOL CALL] getTickerData called for symbol:`, symbol, 'args:', args)
-
-      if (!symbol) {
-        return { error: 'Symbol parameter is required' }
-      }
-
-      try {
-        const [details, performance] = await Promise.all([
-          getTickerDetails(symbol.toUpperCase()),
-          calculatePerformance(symbol.toUpperCase())
-        ])
-
-        if (!details) {
-          return { error: `No data found for ticker ${symbol}` }
-        }
-
-        return {
-          symbol: details.ticker,
-          name: details.name,
-          type: details.type,
-          description: details.description,
-          marketCap: details.market_cap,
-          performance: performance || {
-            oneMonth: null,
-            threeMonth: null,
-            sixMonth: null,
-            oneYear: null
-          }
-        }
-      } catch (error) {
-        console.error(`[TOOL ERROR] getTickerData failed for ${symbol}:`, error)
-        return { error: `Failed to fetch data for ${symbol}` }
-      }
-    }
-  }),
-
-  getMultipleTickers: tool({
-    description: 'Get data for multiple stock/ETF tickers at once. More efficient than calling getTickerData multiple times. Use this for portfolio analysis with multiple holdings.',
-    parameters: z.object({
-      symbols: z.array(z.string()).describe('Array of ticker symbols in uppercase (e.g., ["VTI", "VOO", "AAPL"])')
-    }),
-    execute: async (args) => {
-      const symbols = args?.symbols
-      console.log(`[TOOL CALL] getMultipleTickers called for symbols:`, symbols, 'args:', args)
-
-      if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
-        return { error: 'Symbols array parameter is required' }
-      }
-
-      try {
-        const results = await Promise.all(
-          symbols.map(async (symbol) => {
-            const upperSymbol = symbol.toUpperCase()
-            try {
-              const [details, performance] = await Promise.all([
-                getTickerDetails(upperSymbol),
-                calculatePerformance(upperSymbol)
-              ])
-
-              if (!details) {
-                return { symbol: upperSymbol, error: 'No data found' }
-              }
-
-              return {
-                symbol: details.ticker,
-                name: details.name,
-                type: details.type,
-                description: details.description,
-                marketCap: details.market_cap,
-                performance: performance || {
-                  oneMonth: null,
-                  threeMonth: null,
-                  sixMonth: null,
-                  oneYear: null
-                }
-              }
-            } catch (error) {
-              return { symbol: upperSymbol, error: 'Failed to fetch data' }
-            }
-          })
-        )
-        return { tickers: results }
-      } catch (error) {
-        console.error('[TOOL ERROR] getMultipleTickers failed:', error)
-        return { error: 'Failed to fetch ticker data' }
-      }
-    }
-  })
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { messages, fileContext, model = DEFAULT_MODEL, searchMyHistory, userId, workspaceOwner, modeInstructions } = await req.json()
@@ -229,23 +127,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "OpenAI API key not configured. Set OPENAI_API_KEY environment variable." }, { status: 500 })
     }
 
-    // Check if user is requesting portfolio analysis
-    // Check the entire conversation history to see if portfolio mode was triggered
-    const isPortfolioMode = messages.some(msg =>
-      msg.role === 'user' &&
-      msg.content?.toLowerCase().includes('perform a portfolio analysis')
-    )
+    const selectedModel = model
 
-    // Override model to use full Grok for portfolio analysis
-    let selectedModel = model
-    if (isPortfolioMode) {
-      selectedModel = FEATURE_MODELS.portfolioAnalysis
-      console.log(`[DEBUG] Portfolio analysis mode activated - using ${FEATURE_MODELS.portfolioAnalysis} model`)
-    }
-
-    // Select appropriate instruction set
-    let systemInstructions = isPortfolioMode ? portfolioInstructions : taxInstructions
-    console.log('[DEBUG] Mode:', isPortfolioMode ? 'PORTFOLIO' : 'DEFAULT with WEB SEARCH')
+    // Set system instructions
+    let systemInstructions = taxInstructions
 
     // Add current date to system instructions
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -452,7 +337,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     const isGeminiModelSelected = isGeminiModel(selectedModel)
 
     // For Gemini models, use native SDK with Google Search tool
-    if (isGeminiModelSelected && !isPortfolioMode) {
+    if (isGeminiModelSelected ) {
       // Add instruction for Gemini to not output internal reasoning
       const geminiSystemPrompt = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user. Never output text like "Self-Correction" or "Internal Documentation Mode" or any commentary about your thought process.\n\n` + systemInstructions
 
@@ -502,7 +387,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
 
     // For Grok models (non-portfolio), use xAI Responses API with web search
     const isGrokModelSelected = isGrokModel(selectedModel)
-    if (isGrokModelSelected && !isPortfolioMode) {
+    if (isGrokModelSelected ) {
       const xaiClient = new OpenAI({
         apiKey: process.env.XAI_API_KEY,
         baseURL: "https://api.x.ai/v1",
@@ -537,7 +422,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
 
     // For GPT models (non-portfolio), use OpenAI Responses API with web search
     const isGPTModelSelected = isOpenAIModel(selectedModel) && selectedModel !== 'combined-analysis'
-    if (isGPTModelSelected && !isPortfolioMode) {
+    if (isGPTModelSelected ) {
       const openaiClient = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       })
@@ -570,7 +455,7 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     }
 
     // For Combined Analysis mode - query all three models and synthesize
-    if (selectedModel === 'combined-analysis' && !isPortfolioMode) {
+    if (selectedModel === 'combined-analysis' ) {
       console.log('[DEBUG] Combined Analysis mode - querying Grok, Gemini, and GPT (fast models)')
 
       // Query all three fast models in parallel
@@ -680,33 +565,13 @@ Do not mention that you are synthesizing responses or reference the individual m
       })
     }
 
-    // For Gemini portfolio mode or Grok portfolio mode, use Vercel AI SDK
-    let modelProvider
-    let tools: Record<string, unknown> | undefined = undefined
-    let maxSteps = 1
-
-    if (isGeminiModelSelected) {
-      // Portfolio mode with Gemini - use Vercel AI SDK without search (tools conflict)
-      const { google } = await import("@ai-sdk/google")
-      modelProvider = google(selectedModel, {
-        thinkingConfig: { thinkingBudget: 0 },
-      })
-      systemInstructions = `IMPORTANT: Do not output any internal reasoning, self-correction notes, thinking process, or meta-commentary. Only output your final response to the user.\n\n` + systemInstructions
-      tools = portfolioTools
-      maxSteps = 5
-    } else {
-      // Grok portfolio mode
-      modelProvider = xai(selectedModel, { apiKey: process.env.XAI_API_KEY })
-      tools = portfolioTools
-      maxSteps = 5
-    }
+    // Fallback: use Vercel AI SDK with Grok (no web search)
+    const modelProvider = xai(selectedModel, { apiKey: process.env.XAI_API_KEY })
 
     const result = await streamText({
       model: modelProvider,
       system: systemInstructions,
       messages: messages,
-      tools,
-      maxSteps,
     })
 
     return result.toTextStreamResponse()

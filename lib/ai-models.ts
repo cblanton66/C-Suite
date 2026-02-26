@@ -117,9 +117,6 @@ export const isOpenAIModel = (id: string): boolean => id.startsWith('gpt-') || i
 
 // Models used for specific features (update these when changing models)
 export const FEATURE_MODELS = {
-  // Model for portfolio analysis mode
-  portfolioAnalysis: 'grok-4-0709',
-
   // Model for web search (Grok)
   grokWebSearch: 'grok-4-1-fast-non-reasoning',
 
