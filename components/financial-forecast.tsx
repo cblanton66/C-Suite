@@ -263,6 +263,7 @@ export function FinancialForecast() {
   const [showScenarios, setShowScenarios] = useState(false)
   const [projections, setProjections] = useState<YearlyProjection[]>([])
   const [monteCarloResult, setMonteCarloResult] = useState<MonteCarloResult | null>(null)
+  const [forecastYears, setForecastYears] = useState<10 | 20 | 30>(20)
 
   const currentYear = new Date().getFullYear()
 
@@ -399,7 +400,7 @@ export function FinancialForecast() {
     const growthRate = PORTFOLIO_TYPES[input.portfolioType].expectedReturn / 100
     const inflationRate = input.inflationRate / 100
 
-    for (let yearOffset = 0; yearOffset < 20; yearOffset++) {
+    for (let yearOffset = 0; yearOffset < forecastYears; yearOffset++) {
       const year = currentYear + yearOffset
       const clientAge = input.clientAge + yearOffset
       const spouseAge = input.isMarried ? input.spouseAge + yearOffset : null
@@ -562,9 +563,49 @@ export function FinancialForecast() {
         rothBalance += scenarioRothConversion
       }
 
-      // Any excess cash (after taxes) goes to non-retirement
+      // Handle cash flow
       if (netCashFlow > 0) {
+        // Any excess cash (after taxes) goes to non-retirement
         nonRetirementBalance += netCashFlow
+      } else if (netCashFlow < 0) {
+        // Negative cash flow means we need to withdraw more to cover taxes
+        // This happens when expenses + taxes > income + withdrawals
+        let taxShortfall = Math.abs(netCashFlow)
+
+        // Cover the shortfall from accounts (same order as expense withdrawals)
+        if (input.withdrawalOrder === 'non_retirement_first') {
+          if (taxShortfall > 0 && nonRetirementBalance > 0) {
+            const amt = Math.min(taxShortfall, nonRetirementBalance)
+            nonRetirementBalance -= amt
+            taxShortfall -= amt
+          }
+          if (taxShortfall > 0 && traditionalBalance > 0) {
+            const amt = Math.min(taxShortfall, traditionalBalance)
+            traditionalBalance -= amt
+            taxShortfall -= amt
+          }
+          if (taxShortfall > 0 && rothBalance > 0) {
+            const amt = Math.min(taxShortfall, rothBalance)
+            rothBalance -= amt
+            taxShortfall -= amt
+          }
+        } else {
+          if (taxShortfall > 0 && traditionalBalance > 0) {
+            const amt = Math.min(taxShortfall, traditionalBalance)
+            traditionalBalance -= amt
+            taxShortfall -= amt
+          }
+          if (taxShortfall > 0 && rothBalance > 0) {
+            const amt = Math.min(taxShortfall, rothBalance)
+            rothBalance -= amt
+            taxShortfall -= amt
+          }
+          if (taxShortfall > 0 && nonRetirementBalance > 0) {
+            const amt = Math.min(taxShortfall, nonRetirementBalance)
+            nonRetirementBalance -= amt
+            taxShortfall -= amt
+          }
+        }
       }
 
       // Step 12: Apply investment earnings to balances
@@ -618,7 +659,7 @@ export function FinancialForecast() {
 
   const runMonteCarlo = () => {
     const simulations = 1000
-    const years = 20
+    const years = forecastYears
     const results: number[][] = []
 
     const portfolioConfig = PORTFOLIO_TYPES[input.portfolioType]
@@ -799,7 +840,7 @@ export function FinancialForecast() {
               </Link>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                <h1 className="text-xl font-bold">20-Year Financial Forecast</h1>
+                <h1 className="text-xl font-bold">{forecastYears}-Year Financial Forecast</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -816,7 +857,7 @@ export function FinancialForecast() {
       <div className="container mx-auto px-4 py-4" ref={printRef}>
         {/* Print Header */}
         <div className="hidden print:block mb-6">
-          <h1 className="text-2xl font-bold text-center">20-Year Financial Forecast</h1>
+          <h1 className="text-2xl font-bold text-center">{forecastYears}-Year Financial Forecast</h1>
           {input.clientName && <p className="text-center text-lg mt-2">Client: {input.clientName}</p>}
           <p className="text-center text-sm text-muted-foreground mt-1">
             Prepared on {new Date().toLocaleDateString()}
@@ -1138,7 +1179,7 @@ export function FinancialForecast() {
                 Settings
               </h3>
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground">Expenses</label>
                     <Input
@@ -1148,6 +1189,22 @@ export function FinancialForecast() {
                       value={input.discretionaryExpenses ? input.discretionaryExpenses.toLocaleString() : ''}
                       onChange={(e) => handleNumberInput('discretionaryExpenses', e.target.value)}
                     />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Forecast</label>
+                    <Select
+                      value={forecastYears.toString()}
+                      onValueChange={(v) => setForecastYears(parseInt(v) as 10 | 20 | 30)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 Years</SelectItem>
+                        <SelectItem value="20">20 Years</SelectItem>
+                        <SelectItem value="30">30 Years</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Portfolio</label>
@@ -1341,9 +1398,9 @@ export function FinancialForecast() {
                 </p>
               </Card>
               <Card className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Year 20 Balance</p>
+                <p className="text-xs text-muted-foreground">Year {forecastYears} Balance</p>
                 <p className="text-lg font-bold text-primary">
-                  {formatCurrency(projections[19]?.totalBalance || 0)}
+                  {formatCurrency(projections[forecastYears - 1]?.totalBalance || 0)}
                 </p>
               </Card>
               <Card className="p-3 text-center">
@@ -1553,7 +1610,7 @@ export function FinancialForecast() {
             <Card className="p-4">
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
-                20-Year Projection
+                {forecastYears}-Year Projection
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
