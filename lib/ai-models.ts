@@ -126,7 +126,7 @@ export type ModelId =
   | 'combined-analysis'
 
 // Default model
-export const DEFAULT_MODEL: ModelId = 'grok-4-1-fast-non-reasoning'
+export const DEFAULT_MODEL: ModelId = 'claude-sonnet-4-20250514'
 
 // Helper to get model by ID
 export const getModelById = (id: string): AIModel | undefined => {
