@@ -395,47 +395,60 @@ DO NOT make up or fabricate any client information, project details, dates, or w
     // For Claude models, use Anthropic SDK with streaming
     const isClaudeModelSelected = isClaudeModel(selectedModel)
     if (isClaudeModelSelected) {
-      const anthropic = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      })
+      console.log('[DEBUG] Claude model selected:', selectedModel)
+      console.log('[DEBUG] ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY)
 
-      // Convert messages to Anthropic format
-      const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      }))
+      try {
+        const anthropic = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY,
+        })
 
-      // Create streaming response
-      const stream = await anthropic.messages.stream({
-        model: selectedModel,
-        max_tokens: 4096,
-        system: systemInstructions,
-        messages: anthropicMessages,
-      })
+        // Convert messages to Anthropic format
+        const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }))
 
-      // Create a streaming response
-      const encoder = new TextEncoder()
-      const readableStream = new ReadableStream({
-        async start(controller) {
-          try {
-            for await (const event of stream) {
-              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-                controller.enqueue(encoder.encode(event.delta.text))
+        console.log('[DEBUG] Calling Anthropic API with', anthropicMessages.length, 'messages')
+
+        // Create streaming response
+        const stream = await anthropic.messages.stream({
+          model: selectedModel,
+          max_tokens: 4096,
+          system: systemInstructions,
+          messages: anthropicMessages,
+        })
+
+        console.log('[DEBUG] Anthropic stream created successfully')
+
+        // Create a streaming response
+        const encoder = new TextEncoder()
+        const readableStream = new ReadableStream({
+          async start(controller) {
+            try {
+              for await (const event of stream) {
+                if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                  controller.enqueue(encoder.encode(event.delta.text))
+                }
               }
+              controller.close()
+            } catch (error) {
+              console.error('[DEBUG] Claude streaming error:', error)
+              controller.error(error)
             }
-            controller.close()
-          } catch (error) {
-            controller.error(error)
-          }
-        },
-      })
+          },
+        })
 
-      return new Response(readableStream, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Transfer-Encoding': 'chunked',
-        },
-      })
+        return new Response(readableStream, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Transfer-Encoding': 'chunked',
+          },
+        })
+      } catch (error) {
+        console.error('[DEBUG] Claude API error:', error)
+        throw error
+      }
     }
 
     // For Grok models, use xAI Responses API with web search
