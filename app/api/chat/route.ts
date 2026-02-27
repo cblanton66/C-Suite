@@ -4,8 +4,9 @@ import { xai } from "@ai-sdk/xai"
 import { z } from "zod"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import OpenAI from "openai"
+import Anthropic from "@anthropic-ai/sdk"
 import { getUserReports, getClientSummary, type ClientSummary } from "@/lib/google-cloud-storage"
-import { FEATURE_MODELS, isGrokModel, isGeminiModel, isOpenAIModel, DEFAULT_MODEL } from "@/lib/ai-models"
+import { FEATURE_MODELS, isGrokModel, isGeminiModel, isOpenAIModel, isClaudeModel, DEFAULT_MODEL } from "@/lib/ai-models"
 
 // Helper function to detect if user is asking for a client overview
 function detectClientOverviewRequest(query: string): boolean {
@@ -125,6 +126,12 @@ export async function POST(req: NextRequest) {
     const isOpenAIRequest = isOpenAIModel(model)
     if (isOpenAIRequest && !process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: "OpenAI API key not configured. Set OPENAI_API_KEY environment variable." }, { status: 500 })
+    }
+
+    // Check for Anthropic API key if a Claude model is requested
+    const isClaudeRequest = isClaudeModel(model)
+    if (isClaudeRequest && !process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: "Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable." }, { status: 500 })
     }
 
     const selectedModel = model
@@ -385,7 +392,53 @@ DO NOT make up or fabricate any client information, project details, dates, or w
       })
     }
 
-    // For Grok models (non-portfolio), use xAI Responses API with web search
+    // For Claude models, use Anthropic SDK with streaming
+    const isClaudeModelSelected = isClaudeModel(selectedModel)
+    if (isClaudeModelSelected) {
+      const anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      })
+
+      // Convert messages to Anthropic format
+      const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }))
+
+      // Create streaming response
+      const stream = await anthropic.messages.stream({
+        model: selectedModel,
+        max_tokens: 4096,
+        system: systemInstructions,
+        messages: anthropicMessages,
+      })
+
+      // Create a streaming response
+      const encoder = new TextEncoder()
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                controller.enqueue(encoder.encode(event.delta.text))
+              }
+            }
+            controller.close()
+          } catch (error) {
+            controller.error(error)
+          }
+        },
+      })
+
+      return new Response(readableStream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    }
+
+    // For Grok models, use xAI Responses API with web search
     const isGrokModelSelected = isGrokModel(selectedModel)
     if (isGrokModelSelected ) {
       const xaiClient = new OpenAI({

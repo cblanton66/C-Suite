@@ -5,7 +5,7 @@
 export interface AIModel {
   id: string
   name: string
-  provider: 'xai' | 'google' | 'openai'
+  provider: 'xai' | 'google' | 'openai' | 'anthropic'
   icon: string
   description?: string
 }
@@ -74,12 +74,34 @@ export const OPENAI_MODELS: AIModel[] = [
 ]
 
 // =============================================================================
+// CLAUDE MODELS (Anthropic)
+// Docs: https://docs.anthropic.com/en/docs/about-claude/models
+// =============================================================================
+export const CLAUDE_MODELS: AIModel[] = [
+  {
+    id: 'claude-sonnet-4-20250514',
+    name: 'Claude Sonnet 4',
+    provider: 'anthropic',
+    icon: '⚡',
+    description: 'Fast and capable'
+  },
+  {
+    id: 'claude-opus-4-20250514',
+    name: 'Claude Opus 4',
+    provider: 'anthropic',
+    icon: '🧠',
+    description: 'Most intelligent'
+  }
+]
+
+// =============================================================================
 // COMBINED / ALL MODELS
 // =============================================================================
 export const ALL_MODELS: AIModel[] = [
   ...GROK_MODELS,
   ...GEMINI_MODELS,
-  ...OPENAI_MODELS
+  ...OPENAI_MODELS,
+  ...CLAUDE_MODELS
 ]
 
 // Special combined analysis option
@@ -99,6 +121,8 @@ export type ModelId =
   | 'gemini-3-pro-preview'
   | 'gpt-5.2-chat-latest'
   | 'gpt-5.2-pro'
+  | 'claude-sonnet-4-20250514'
+  | 'claude-opus-4-20250514'
   | 'combined-analysis'
 
 // Default model
@@ -114,6 +138,7 @@ export const getModelById = (id: string): AIModel | undefined => {
 export const isGrokModel = (id: string): boolean => id.startsWith('grok-')
 export const isGeminiModel = (id: string): boolean => id.startsWith('gemini-')
 export const isOpenAIModel = (id: string): boolean => id.startsWith('gpt-') || id === 'combined-analysis'
+export const isClaudeModel = (id: string): boolean => id.startsWith('claude-')
 
 // Models used for specific features (update these when changing models)
 export const FEATURE_MODELS = {
@@ -125,6 +150,9 @@ export const FEATURE_MODELS = {
 
   // Model for web search (OpenAI)
   openaiWebSearch: 'gpt-5.2-chat-latest',
+
+  // Model for Claude
+  claudeDefault: 'claude-sonnet-4-20250514',
 
   // Model for report suggestions
   reportSuggestions: 'gpt-3.5-turbo'
