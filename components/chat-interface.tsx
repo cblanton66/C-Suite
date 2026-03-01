@@ -2799,61 +2799,6 @@ Always cite the specific data points you're analyzing.`
                     </div>
                   </div>
 
-                <p className="text-2xl text-muted-foreground mb-4">
-                  What role are we playing today?
-                </p>
-
-                {/* Role Selection */}
-                <div className="flex justify-center gap-6 mb-8">
-                  {(['Business Owner', 'CPA', 'Bookkeeper'] as const).map((role) => (
-                    <label key={role} className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="role"
-                        value={role}
-                        checked={selectedRole === role}
-                        onChange={() => handleRoleChange(role)}
-                        className="sr-only"
-                      />
-                      <div className={`w-4 h-4 border-2 rounded mr-2 flex items-center justify-center transition-all ${
-                        selectedRole === role 
-                          ? 'bg-primary border-primary' 
-                          : 'border-muted-foreground hover:border-primary'
-                      }`}>
-                        {selectedRole === role && (
-                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                        )}
-                      </div>
-                      <span className={`text-sm font-medium transition-colors ${
-                        selectedRole === role ? 'text-primary' : 'text-muted-foreground'
-                      }`}>
-                        {role}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto transition-all duration-300">
-                  {quickActions.map((action, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="text-left justify-start h-auto p-4 bg-transparent hover:bg-primary/5 border border-border hover:border-primary/20"
-                      onClick={() => handleQuickAction(action.prompt, action.title, (action as any).hiddenInstructions)}
-                    >
-                      <div className="flex items-start gap-3 w-full">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 text-primary">
-                          {action.icon}
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="font-medium text-foreground text-sm mb-1">{action.title}</p>
-                          <p className="text-xs text-muted-foreground">{action.description}</p>
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
