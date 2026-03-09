@@ -403,11 +403,56 @@ DO NOT make up or fabricate any client information, project details, dates, or w
           apiKey: process.env.ANTHROPIC_API_KEY,
         })
 
+        // Check if there are images in fileContext
+        const hasImages = fileContext && (
+          (Array.isArray(fileContext) && fileContext.some((f: any) => f.isImage)) ||
+          (!Array.isArray(fileContext) && fileContext.isImage)
+        )
+
         // Convert messages to Anthropic format
-        const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
+        let anthropicMessages: any[] = messages.map((msg: { role: string; content: string }) => ({
           role: msg.role as "user" | "assistant",
           content: msg.content,
         }))
+
+        // If there are images, add them to the last user message
+        if (hasImages) {
+          const images = Array.isArray(fileContext)
+            ? fileContext.filter((f: any) => f.isImage)
+            : [fileContext]
+
+          // Find the last user message and convert to content blocks
+          const lastUserMsgIndex = anthropicMessages.findLastIndex((m: any) => m.role === 'user')
+          if (lastUserMsgIndex !== -1) {
+            const lastUserMsg = anthropicMessages[lastUserMsgIndex]
+            const contentBlocks: any[] = []
+
+            // Add images first
+            for (const img of images) {
+              contentBlocks.push({
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: img.type,
+                  data: img.base64
+                }
+              })
+            }
+
+            // Add text content
+            contentBlocks.push({
+              type: 'text',
+              text: lastUserMsg.content
+            })
+
+            anthropicMessages[lastUserMsgIndex] = {
+              role: 'user',
+              content: contentBlocks
+            }
+
+            console.log('[DEBUG] Added', images.length, 'image(s) to Claude request')
+          }
+        }
 
         console.log('[DEBUG] Calling Anthropic API with', anthropicMessages.length, 'messages')
 

@@ -76,6 +76,8 @@ interface UploadedFile {
   size: number
   type: string
   content?: string
+  isImage?: boolean
+  base64?: string
 }
 
 interface Message {
@@ -899,7 +901,9 @@ export function ChatInterface() {
             filename: file.name,
             type: file.type,
             size: file.size,
-            content: file.content
+            content: file.content,
+            isImage: file.isImage,
+            base64: file.base64
           }))
         }),
         // Maintain backward compatibility with single file
@@ -908,7 +912,9 @@ export function ChatInterface() {
             filename: uploadedFile.name,
             type: uploadedFile.type,
             size: uploadedFile.size,
-            content: uploadedFile.content
+            content: uploadedFile.content,
+            isImage: uploadedFile.isImage,
+            base64: uploadedFile.base64
           }
         })
       }
@@ -989,6 +995,7 @@ export function ChatInterface() {
     if (fileType.includes('excel') || fileType.includes('spreadsheet') || fileType.includes('csv')) return '📊'
     if (fileType.includes('word') || fileType.includes('document')) return '📝'
     if (fileType.includes('text')) return '📄'
+    if (fileType.includes('image')) return '🖼️'
     return '📎'
   }
 
@@ -1015,11 +1022,16 @@ export function ChatInterface() {
       'text/csv',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
-      'text/plain'
+      'text/plain',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/webp'
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('Unsupported file type. Please upload Excel, CSV, Word, or text files.')
+      setUploadError('Unsupported file type. Please upload Excel, CSV, Word, text files, or images.')
       return
     }
 
@@ -1044,7 +1056,9 @@ export function ChatInterface() {
         name: file.name,
         size: file.size,
         type: file.type,
-        content: result.content
+        content: result.content,
+        isImage: result.isImage,
+        base64: result.base64
       }
 
       setUploadedFile(uploadedFileData)
@@ -1101,7 +1115,12 @@ export function ChatInterface() {
       'text/csv',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
-      'text/plain'
+      'text/plain',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/webp'
     ]
 
     // Validate all files
@@ -1112,7 +1131,7 @@ export function ChatInterface() {
         return
       }
       if (!allowedTypes.includes(file.type)) {
-        setUploadError(`File "${file.name}" has an unsupported type. Please upload Excel, CSV, Word, or text files.`)
+        setUploadError(`File "${file.name}" has an unsupported type. Please upload Excel, CSV, Word, text files, or images.`)
         setIsUploading(false)
         return
       }
@@ -1141,7 +1160,9 @@ export function ChatInterface() {
           name: file.name,
           size: file.size,
           type: file.type,
-          content: result.content
+          content: result.content,
+          isImage: result.isImage,
+          base64: result.base64
         })
       }
 
@@ -1402,7 +1423,9 @@ Always cite the specific data points you're analyzing.`
               filename: uploadedFile.name,
               type: uploadedFile.type,
               size: uploadedFile.size,
-              content: uploadedFile.content
+              content: uploadedFile.content,
+              isImage: uploadedFile.isImage,
+              base64: uploadedFile.base64
             }
           })
         }
@@ -2769,7 +2792,7 @@ Always cite the specific data points you're analyzing.`
                   </div>
                   
                   <div className="text-center mt-2 text-xs text-muted-foreground">
-                    <span>Upload: Excel, CSV, Word, TXT (max 10MB each, up to 5 files)</span>
+                    <span>Upload: Excel, CSV, Word, TXT, Images (max 10MB each, up to 5 files)</span>
                   </div>
                 </div>
 
@@ -3443,7 +3466,7 @@ Always cite the specific data points you're analyzing.`
               
               <div className="text-center mt-2">
                 <p className="text-xs text-muted-foreground">
-                  Upload: Excel, CSV, Word, TXT (max 10MB each, up to 5 files)
+                  Upload: Excel, CSV, Word, TXT, Images (max 10MB each, up to 5 files)
                 </p>
               </div>
             </div>
@@ -3457,7 +3480,7 @@ Always cite the specific data points you're analyzing.`
           onChange={handleMultipleFileUpload}
           className="hidden"
           multiple
-          accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt"
+          accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.png,.jpg,.jpeg,.gif,.webp"
         />
       </div>
 

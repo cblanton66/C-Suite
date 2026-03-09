@@ -26,12 +26,17 @@ export async function POST(request: NextRequest) {
       'application/msword',
       'text/plain',
       'text/html',
-      'application/pdf'
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/webp'
     ]
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({
-        error: 'Unsupported file type. Please upload PDF, Excel, CSV, Word, HTML, or text files.'
+        error: 'Unsupported file type. Please upload PDF, Excel, CSV, Word, HTML, text files, or images (PNG, JPG, GIF, WebP).'
       }, { status: 400 })
     }
 
@@ -74,6 +79,21 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(arrayBuffer)
         const pdfData = await pdfParse(buffer)
         content = `[PDF Document: ${file.name}]\n\nPages: ${pdfData.numpages}\n\nDocument Content:\n${pdfData.text}`
+      } else if (file.type.startsWith('image/')) {
+        // Handle image files - return base64 for Claude vision
+        const arrayBuffer = await file.arrayBuffer()
+        const base64 = Buffer.from(arrayBuffer).toString('base64')
+
+        // Return image data for vision analysis
+        return NextResponse.json({
+          success: true,
+          filename: file.name,
+          size: file.size,
+          type: file.type,
+          isImage: true,
+          base64: base64,
+          content: `[Image: ${file.name}] - Image uploaded for visual analysis`
+        })
       } else {
         // Fallback for unsupported file types
         content = `[${file.name}]\n\nDocument uploaded successfully (${file.type}, ${(file.size / 1024).toFixed(1)} KB).\n\nThis file type requires manual analysis. Please describe what information you're looking for or what analysis you need.`
