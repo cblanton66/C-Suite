@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { EmailLoginModal } from "@/components/email-login-modal"
 import { ExclusiveWaitlistModal } from "@/components/exclusive-waitlist-modal"
-import { 
-  Calculator, 
-  FileText, 
-  TrendingUp, 
-  BarChart3, 
-  Users, 
-  Briefcase, 
+import {
+  Calculator,
+  FileText,
+  TrendingUp,
+  BarChart3,
+  Users,
+  Briefcase,
   DollarSign,
   CheckCircle,
   ArrowRight,
@@ -26,7 +26,8 @@ import {
   Handshake,
   Quote,
   Eye,
-  MessageCircle
+  MessageCircle,
+  Upload
 } from "lucide-react"
 
 interface LandingPageProps {
@@ -196,12 +197,18 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <ThemeToggle />
               </div>
             </div>
-            {/* Mobile Features button */}
-            <div className="mt-2 flex justify-center">
+            {/* Mobile Features and Upload buttons */}
+            <div className="mt-2 flex justify-center gap-2">
               <Link href="/features">
                 <Button variant="ghost" size="sm">
                   <Eye className="w-4 h-4 mr-2" />
                   View Features
+                </Button>
+              </Link>
+              <Link href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Docs
                 </Button>
               </Link>
             </div>
@@ -223,6 +230,12 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                 <Button variant="ghost" size="sm">
                   <Eye className="w-4 h-4 mr-2" />
                   View Features
+                </Button>
+              </Link>
+              <Link href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Docs
                 </Button>
               </Link>
               <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs sm:text-sm whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
