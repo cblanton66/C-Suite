@@ -413,14 +413,29 @@ export function ChatInterface() {
   // Save bookmarks to localStorage whenever they change (but not during logout)
   useEffect(() => {
     if (typeof window !== 'undefined' && bookmarkedMessages.length >= 0 && !isLoggingOut) {
-      localStorage.setItem('peaksuiteai_bookmarks', JSON.stringify(bookmarkedMessages))
+      try {
+        localStorage.setItem('peaksuiteai_bookmarks', JSON.stringify(bookmarkedMessages))
+      } catch (error) {
+        console.warn('Failed to save bookmarks to localStorage:', error)
+      }
     }
   }, [bookmarkedMessages, isLoggingOut])
 
   // Save sessions to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined' && chatSessions.length > 0) {
-      localStorage.setItem('peaksuiteai_chat_sessions', JSON.stringify(chatSessions))
+      try {
+        localStorage.setItem('peaksuiteai_chat_sessions', JSON.stringify(chatSessions))
+      } catch (error) {
+        // localStorage quota exceeded — trim oldest sessions and retry
+        console.warn('localStorage quota exceeded, trimming old sessions...')
+        try {
+          const trimmed = chatSessions.slice(-20) // keep only the 20 most recent sessions
+          localStorage.setItem('peaksuiteai_chat_sessions', JSON.stringify(trimmed))
+        } catch {
+          console.error('Failed to save chat sessions even after trimming')
+        }
+      }
     }
   }, [chatSessions])
 
