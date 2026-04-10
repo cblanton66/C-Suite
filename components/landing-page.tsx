@@ -205,12 +205,12 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                   View Features
                 </Button>
               </Link>
-              <Link href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <a href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
                 <Button variant="ghost" size="sm">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Docs
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -232,12 +232,12 @@ export function LandingPage({ onNavigateToChat }: LandingPageProps) {
                   View Features
                 </Button>
               </Link>
-              <Link href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <a href="https://taxcalc-sage.vercel.app/" target="_blank" rel="noopener noreferrer">
                 <Button variant="ghost" size="sm">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Docs
                 </Button>
-              </Link>
+              </a>
               <Button onClick={handleTryNowClick} variant="ghost" size="sm" className={`text-xs sm:text-sm whitespace-nowrap ${isLoggedIn ? 'text-green-600 hover:text-green-700' : ''}`}>
                 {isLoggedIn ? `${assistantName} is Available` : 'Login'}
               </Button>
