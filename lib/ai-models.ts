@@ -23,8 +23,8 @@ export const GROK_MODELS: AIModel[] = [
     description: 'Fast responses, good for most tasks'
   },
   {
-    id: 'grok-4-0709',
-    name: 'Grok 4 Full',
+    id: 'grok-4.3',
+    name: 'Grok 4.3',
     provider: 'xai',
     icon: '🧠',
     description: 'Full reasoning capabilities'
@@ -116,7 +116,7 @@ export const COMBINED_ANALYSIS: AIModel = {
 // All available model IDs (for type safety)
 export type ModelId =
   | 'grok-4-1-fast-non-reasoning'
-  | 'grok-4-0709'
+  | 'grok-4.3'
   | 'gemini-3-flash-preview'
   | 'gemini-3-pro-preview'
   | 'gpt-5.2-chat-latest'
