@@ -582,7 +582,7 @@ function ClientDetailModal({
       setLoadingCounts(true)
       try {
         const clientOwner = client.workspaceOwner || workspaceOwner
-        const clientSlug = client.clientName.toLowerCase().replace(/\s+/g, '-')
+        const clientSlug = client.clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
 
         // Fetch all counts in parallel
         const [projectsRes, notesRes, reportsRes] = await Promise.all([

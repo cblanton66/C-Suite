@@ -44,7 +44,7 @@ export function ClientNotesTab({
   const fetchNotes = async () => {
     setLoading(true)
     try {
-      const clientSlug = client.clientName.toLowerCase().replace(/\s+/g, '-')
+      const clientSlug = client.clientName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
       const clientOwner = client.workspaceOwner || workspaceOwner
       console.log('[ClientNotesTab] Fetching notes for client slug:', clientSlug, 'owner:', clientOwner)
       const response = await fetch(
