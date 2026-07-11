@@ -20,7 +20,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 
-// Tax brackets and rates for 2024 and 2025
+// Tax brackets and rates for 2024, 2025, and 2026
 const TAX_DATA = {
   2024: {
     brackets: {
@@ -168,11 +168,87 @@ const TAX_DATA = {
       3: { maxCredit: 7641, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 16980, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 58450, mfj: 65200, hoh: 58450 } }
     },
     eicInvestmentIncomeLimit: 11950
+  },
+  // 2026 amounts per IRS Rev. Proc. 2025-32 (inflation adjustments) and SSA Oct 2025 wage-base announcement.
+  // OBBB (signed July 4, 2025) provisions carry into 2026. VERIFY EIC + CTC values before publishing.
+  2026: {
+    brackets: {
+      single: [
+        { min: 0, max: 12400, rate: 0.10 },
+        { min: 12400, max: 50400, rate: 0.12 },
+        { min: 50400, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256225, rate: 0.32 },
+        { min: 256225, max: 640600, rate: 0.35 },
+        { min: 640600, max: Infinity, rate: 0.37 }
+      ],
+      mfj: [
+        { min: 0, max: 24800, rate: 0.10 },
+        { min: 24800, max: 100800, rate: 0.12 },
+        { min: 100800, max: 211400, rate: 0.22 },
+        { min: 211400, max: 403550, rate: 0.24 },
+        { min: 403550, max: 512450, rate: 0.32 },
+        { min: 512450, max: 768700, rate: 0.35 },
+        { min: 768700, max: Infinity, rate: 0.37 }
+      ],
+      hoh: [
+        { min: 0, max: 17700, rate: 0.10 },
+        { min: 17700, max: 67450, rate: 0.12 },
+        { min: 67450, max: 105700, rate: 0.22 },
+        { min: 105700, max: 201775, rate: 0.24 },
+        { min: 201775, max: 256200, rate: 0.32 },
+        { min: 256200, max: 640600, rate: 0.35 },
+        { min: 640600, max: Infinity, rate: 0.37 }
+      ]
+    },
+    // Std deduction indexed from 2025 OBBB baseline
+    standardDeduction: {
+      single: 16100,
+      mfj: 32200,
+      hoh: 24150
+    },
+    additionalStdDeduction: {
+      single: 2050,
+      mfj: 1650,
+      hoh: 2050
+    },
+    capGainsBrackets: {
+      single: [
+        { min: 0, max: 49450, rate: 0 },
+        { min: 49450, max: 545500, rate: 0.15 },
+        { min: 545500, max: Infinity, rate: 0.20 }
+      ],
+      mfj: [
+        { min: 0, max: 98900, rate: 0 },
+        { min: 98900, max: 613700, rate: 0.15 },
+        { min: 613700, max: Infinity, rate: 0.20 }
+      ],
+      hoh: [
+        { min: 0, max: 66200, rate: 0 },
+        { min: 66200, max: 579650, rate: 0.15 },
+        { min: 579650, max: Infinity, rate: 0.20 }
+      ]
+    },
+    ssWageBase: 184500,
+    niitThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
+    additionalMedicareThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
+    qbiThreshold: { single: 201775, mfj: 403550, hoh: 201775 },
+    qbiPhaseoutRange: { single: 50000, mfj: 100000, hoh: 50000 },
+    childTaxCredit: 2000, // VERIFY: OBBB may push CTC to $2,200 for 2026 with indexing — matching 2025 code style
+    refundableCTCPerChild: 1700, // VERIFY: ACTC refundable limit under OBBB
+    // Earned Income Credit (EIC) parameters — VERIFY against Rev. Proc. 2025-32 Table 5 before publishing
+    eic: {
+      0: { maxCredit: 664, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8690, phaseOutStart: { single: 10320, mfj: 17240, hoh: 10320 }, phaseOutEnd: { single: 19555, mfj: 26820, hoh: 19555 } },
+      1: { maxCredit: 4200, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12350, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 48995, mfj: 55905, hoh: 48995 } },
+      2: { maxCredit: 6944, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 17370, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 55700, mfj: 62610, hoh: 55700 } },
+      3: { maxCredit: 7813, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 17370, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 59819, mfj: 66729, hoh: 59819 } }
+    },
+    eicInvestmentIncomeLimit: 12200
   }
 }
 
 type FilingStatus = 'single' | 'mfj' | 'hoh'
-type TaxYear = 2024 | 2025
+type TaxYear = 2024 | 2025 | 2026
 
 interface TaxInput {
   clientName: string
@@ -257,7 +333,7 @@ export function TaxCalculator() {
 
   const [input, setInput] = useState<TaxInput>({
     clientName: '',
-    taxYear: 2025,
+    taxYear: 2026,
     filingStatus: 'single',
     childrenUnder17: 0,
     age65OrOlder: false,
@@ -579,7 +655,7 @@ export function TaxCalculator() {
   const clearForm = () => {
     setInput({
       clientName: '',
-      taxYear: 2025,
+      taxYear: 2026,
       filingStatus: 'single',
       childrenUnder17: 0,
       age65OrOlder: false,
@@ -672,6 +748,7 @@ export function TaxCalculator() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="2026">2026</SelectItem>
                         <SelectItem value="2025">2025</SelectItem>
                         <SelectItem value="2024">2024</SelectItem>
                       </SelectContent>
