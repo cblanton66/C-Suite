@@ -16,15 +16,15 @@ export interface AIModel {
 // =============================================================================
 export const GROK_MODELS: AIModel[] = [
   {
-    id: 'grok-4-1-fast-non-reasoning',
-    name: 'Grok 4.1 Fast',
+    id: 'grok-4.20-non-reasoning',
+    name: 'Grok 4.20 Fast',
     provider: 'xai',
     icon: '⚡',
     description: 'Fast responses, good for most tasks'
   },
   {
-    id: 'grok-4.3',
-    name: 'Grok 4.3',
+    id: 'grok-4.5',
+    name: 'Grok 4.5',
     provider: 'xai',
     icon: '🧠',
     description: 'Full reasoning capabilities'
@@ -115,8 +115,8 @@ export const COMBINED_ANALYSIS: AIModel = {
 
 // All available model IDs (for type safety)
 export type ModelId =
-  | 'grok-4-1-fast-non-reasoning'
-  | 'grok-4.3'
+  | 'grok-4.20-non-reasoning'
+  | 'grok-4.5'
   | 'gemini-3-flash-preview'
   | 'gemini-3-pro-preview'
   | 'gpt-5.2-chat-latest'
@@ -143,7 +143,7 @@ export const isClaudeModel = (id: string): boolean => id.startsWith('claude-')
 // Models used for specific features (update these when changing models)
 export const FEATURE_MODELS = {
   // Model for web search (Grok)
-  grokWebSearch: 'grok-4-1-fast-non-reasoning',
+  grokWebSearch: 'grok-4.20-non-reasoning',
 
   // Model for web search (Gemini)
   geminiWebSearch: 'gemini-3-flash-preview',
