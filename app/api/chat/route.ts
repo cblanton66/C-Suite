@@ -456,12 +456,14 @@ DO NOT make up or fabricate any client information, project details, dates, or w
 
         console.log('[DEBUG] Calling Anthropic API with', anthropicMessages.length, 'messages')
 
-        // Create streaming response
+        // Create streaming response with server-side web search so Claude can
+        // answer questions about current events (matches Gemini/Grok behavior)
         const stream = await anthropic.messages.stream({
           model: selectedModel,
           max_tokens: 4096,
           system: systemInstructions,
           messages: anthropicMessages,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 } as any],
         })
 
         console.log('[DEBUG] Anthropic stream created successfully')
@@ -471,10 +473,29 @@ DO NOT make up or fabricate any client information, project details, dates, or w
         const readableStream = new ReadableStream({
           async start(controller) {
             try {
+              const sources = new Map<string, string>() // url -> title (deduped)
               for await (const event of stream) {
-                if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-                  controller.enqueue(encoder.encode(event.delta.text))
+                if (event.type === 'content_block_delta') {
+                  if (event.delta.type === 'text_delta') {
+                    controller.enqueue(encoder.encode(event.delta.text))
+                  } else if ((event.delta as any).type === 'citations_delta') {
+                    // Collect web search sources Claude actually cited
+                    const citation: any = (event.delta as any).citation
+                    if (citation?.url) {
+                      sources.set(citation.url, citation.title || citation.url)
+                    }
+                  }
                 }
+              }
+              // Append cited sources so users can verify current-info answers
+              if (sources.size > 0) {
+                let sourcesText = '\n\n---\n**Sources:**\n'
+                let i = 1
+                for (const [url, title] of sources) {
+                  sourcesText += `${i}. [${title}](${url})\n`
+                  i++
+                }
+                controller.enqueue(encoder.encode(sourcesText))
               }
               controller.close()
             } catch (error) {

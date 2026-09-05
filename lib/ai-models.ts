@@ -79,15 +79,15 @@ export const OPENAI_MODELS: AIModel[] = [
 // =============================================================================
 export const CLAUDE_MODELS: AIModel[] = [
   {
-    id: 'claude-sonnet-4-6',
-    name: 'Claude Sonnet 4.6',
+    id: 'claude-sonnet-5',
+    name: 'Claude Sonnet 5',
     provider: 'anthropic',
     icon: '⚡',
     description: 'Fast and capable'
   },
   {
-    id: 'claude-opus-4-7',
-    name: 'Claude Opus 4.7',
+    id: 'claude-opus-4-8',
+    name: 'Claude Opus 4.8',
     provider: 'anthropic',
     icon: '🧠',
     description: 'Most intelligent'
@@ -121,12 +121,12 @@ export type ModelId =
   | 'gemini-3-pro-preview'
   | 'gpt-5.2-chat-latest'
   | 'gpt-5.2-pro'
-  | 'claude-sonnet-4-6'
-  | 'claude-opus-4-7'
+  | 'claude-sonnet-5'
+  | 'claude-opus-4-8'
   | 'combined-analysis'
 
 // Default model
-export const DEFAULT_MODEL: ModelId = 'claude-sonnet-4-6'
+export const DEFAULT_MODEL: ModelId = 'claude-sonnet-5'
 
 // Helper to get model by ID
 export const getModelById = (id: string): AIModel | undefined => {
@@ -152,8 +152,8 @@ export const FEATURE_MODELS = {
   openaiWebSearch: 'gpt-5.2-chat-latest',
 
   // Model for Claude
-  claudeDefault: 'claude-sonnet-4-6',
+  claudeDefault: 'claude-sonnet-5',
 
   // Model for report suggestions
-  reportSuggestions: 'gpt-3.5-turbo'
+  reportSuggestions: 'gpt-5.2-chat-latest'
 }
