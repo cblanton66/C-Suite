@@ -88,10 +88,10 @@ const TAX_DATA = {
     refundableCTCPerChild: 1700, // Additional Child Tax Credit (ACTC) refundable limit
     // Earned Income Credit (EIC) parameters by number of qualifying children
     eic: {
-      0: { maxCredit: 632, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8260, phaseOutStart: { single: 9800, mfj: 16370, hoh: 9800 }, phaseOutEnd: { single: 18591, mfj: 25511, hoh: 18591 } },
-      1: { maxCredit: 3995, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 11750, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 46560, mfj: 53120, hoh: 46560 } },
-      2: { maxCredit: 6604, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 16510, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 52918, mfj: 59478, hoh: 52918 } },
-      3: { maxCredit: 7430, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 16510, phaseOutStart: { single: 21560, mfj: 28120, hoh: 21560 }, phaseOutEnd: { single: 56838, mfj: 63398, hoh: 56838 } }
+      0: { maxCredit: 632, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8260, phaseOutStart: { single: 10330, mfj: 17250, hoh: 10330 }, phaseOutEnd: { single: 18591, mfj: 25511, hoh: 18591 } },
+      1: { maxCredit: 4213, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12390, phaseOutStart: { single: 22720, mfj: 29640, hoh: 22720 }, phaseOutEnd: { single: 49084, mfj: 56004, hoh: 49084 } },
+      2: { maxCredit: 6960, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 17400, phaseOutStart: { single: 22720, mfj: 29640, hoh: 22720 }, phaseOutEnd: { single: 55768, mfj: 62688, hoh: 55768 } },
+      3: { maxCredit: 7830, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 17400, phaseOutStart: { single: 22720, mfj: 29640, hoh: 22720 }, phaseOutEnd: { single: 59899, mfj: 66819, hoh: 59899 } }
     },
     eicInvestmentIncomeLimit: 11600
   },
@@ -158,14 +158,14 @@ const TAX_DATA = {
     additionalMedicareThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
     qbiThreshold: { single: 197300, mfj: 394600, hoh: 197300 },
     qbiPhaseoutRange: { single: 50000, mfj: 100000, hoh: 50000 },
-    childTaxCredit: 2000,
-    refundableCTCPerChild: 1700, // ACTC refundable limit (may be higher under OBBB)
+    childTaxCredit: 2200, // OBBBA raised CTC to $2,200 (2025), indexed; verified Rev. Proc. 2025-32
+    refundableCTCPerChild: 1700, // ACTC refundable limit (indexed separately from the $2,200 base)
     // Earned Income Credit (EIC) parameters by number of qualifying children (2025 inflation-adjusted)
     eic: {
-      0: { maxCredit: 649, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8490, phaseOutStart: { single: 10080, mfj: 16840, hoh: 10080 }, phaseOutEnd: { single: 19104, mfj: 26214, hoh: 19104 } },
-      1: { maxCredit: 4108, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12080, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 47880, mfj: 54630, hoh: 47880 } },
-      2: { maxCredit: 6791, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 16980, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 54427, mfj: 61177, hoh: 54427 } },
-      3: { maxCredit: 7641, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 16980, phaseOutStart: { single: 22180, mfj: 28930, hoh: 22180 }, phaseOutEnd: { single: 58450, mfj: 65200, hoh: 58450 } }
+      0: { maxCredit: 649, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8490, phaseOutStart: { single: 10620, mfj: 17730, hoh: 10620 }, phaseOutEnd: { single: 19104, mfj: 26214, hoh: 19104 } },
+      1: { maxCredit: 4328, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12730, phaseOutStart: { single: 23350, mfj: 30470, hoh: 23350 }, phaseOutEnd: { single: 50434, mfj: 57554, hoh: 50434 } },
+      2: { maxCredit: 7152, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 17880, phaseOutStart: { single: 23350, mfj: 30470, hoh: 23350 }, phaseOutEnd: { single: 57310, mfj: 64430, hoh: 57310 } },
+      3: { maxCredit: 8046, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 17880, phaseOutStart: { single: 23350, mfj: 30470, hoh: 23350 }, phaseOutEnd: { single: 61555, mfj: 68675, hoh: 61555 } }
     },
     eicInvestmentIncomeLimit: 11950
   },
@@ -234,14 +234,14 @@ const TAX_DATA = {
     additionalMedicareThreshold: { single: 200000, mfj: 250000, hoh: 200000 },
     qbiThreshold: { single: 201775, mfj: 403550, hoh: 201775 },
     qbiPhaseoutRange: { single: 50000, mfj: 100000, hoh: 50000 },
-    childTaxCredit: 2000, // VERIFY: OBBB may push CTC to $2,200 for 2026 with indexing — matching 2025 code style
-    refundableCTCPerChild: 1700, // VERIFY: ACTC refundable limit under OBBB
-    // Earned Income Credit (EIC) parameters — VERIFY against Rev. Proc. 2025-32 Table 5 before publishing
+    childTaxCredit: 2200, // OBBBA CTC, indexed; stayed $2,200 for 2026 per Rev. Proc. 2025-32 ($100 rounding)
+    refundableCTCPerChild: 1700, // ACTC refundable limit; indexed separately, stayed $1,700 for 2026
+    // Earned Income Credit (EIC) parameters — verified against Rev. Proc. 2025-32
     eic: {
-      0: { maxCredit: 664, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8690, phaseOutStart: { single: 10320, mfj: 17240, hoh: 10320 }, phaseOutEnd: { single: 19555, mfj: 26820, hoh: 19555 } },
-      1: { maxCredit: 4200, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 12350, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 48995, mfj: 55905, hoh: 48995 } },
-      2: { maxCredit: 6944, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 17370, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 55700, mfj: 62610, hoh: 55700 } },
-      3: { maxCredit: 7813, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 17370, phaseOutStart: { single: 22700, mfj: 29610, hoh: 22700 }, phaseOutEnd: { single: 59819, mfj: 66729, hoh: 59819 } }
+      0: { maxCredit: 664, phaseInRate: 0.0765, phaseOutRate: 0.0765, phaseInEnd: 8680, phaseOutStart: { single: 10860, mfj: 18140, hoh: 10860 }, phaseOutEnd: { single: 19540, mfj: 26820, hoh: 19540 } },
+      1: { maxCredit: 4427, phaseInRate: 0.34, phaseOutRate: 0.1598, phaseInEnd: 13020, phaseOutStart: { single: 23890, mfj: 31160, hoh: 23890 }, phaseOutEnd: { single: 51593, mfj: 58863, hoh: 51593 } },
+      2: { maxCredit: 7316, phaseInRate: 0.40, phaseOutRate: 0.2106, phaseInEnd: 18290, phaseOutStart: { single: 23890, mfj: 31160, hoh: 23890 }, phaseOutEnd: { single: 58629, mfj: 65899, hoh: 58629 } },
+      3: { maxCredit: 8231, phaseInRate: 0.45, phaseOutRate: 0.2106, phaseInEnd: 18290, phaseOutStart: { single: 23890, mfj: 31160, hoh: 23890 }, phaseOutEnd: { single: 62974, mfj: 70244, hoh: 62974 } }
     },
     eicInvestmentIncomeLimit: 12200
   }
@@ -266,7 +266,8 @@ interface TaxInput {
   otherOrdinaryIncome: number // Catch-all for other ordinary income
   shortTermCapGains: number
   longTermCapGains: number
-  selfEmploymentIncome: number
+  scheduleCIncome: number // Net profit/loss from Schedule C (sole proprietorship/business)
+  scheduleFIncome: number // Net profit/loss from Schedule F (farming)
   socialSecurityIncome: number
   // Deductions
   useStandardDeduction: boolean
@@ -307,6 +308,8 @@ interface TaxResult {
   totalTax: number
   totalPayments: number
   amountDueOrRefund: number
+  effectiveTaxRate: number // total tax as a % of AGI
+  marginalTaxRate: number // top ordinary bracket the taxable income reaches
   // Details for breakdown
   ordinaryTaxDetails: { bracket: string; amount: number; tax: number }[]
   capGainsTaxDetails: { bracket: string; amount: number; tax: number }[]
@@ -346,7 +349,8 @@ export function TaxCalculator() {
     otherOrdinaryIncome: 0,
     shortTermCapGains: 0,
     longTermCapGains: 0,
-    selfEmploymentIncome: 0,
+    scheduleCIncome: 0,
+    scheduleFIncome: 0,
     socialSecurityIncome: 0,
     useStandardDeduction: true,
     itemizedDeductions: 0,
@@ -368,6 +372,9 @@ export function TaxCalculator() {
     const taxData = TAX_DATA[input.taxYear]
     const status = input.filingStatus
 
+    // Combined self-employment net income (Schedule C + Schedule F)
+    const selfEmploymentIncome = input.scheduleCIncome + input.scheduleFIncome
+
     // Calculate non-qualified dividends (ordinary dividends minus qualified)
     const nonQualifiedDividends = Math.max(0, input.ordinaryDividends - input.qualifiedDividends)
 
@@ -378,7 +385,7 @@ export function TaxCalculator() {
     // Calculate taxable Social Security (up to 85%)
     const provisionalIncome = totalOrdinaryIncomeInput + input.qualifiedDividends +
       input.shortTermCapGains + input.longTermCapGains +
-      (input.selfEmploymentIncome * 0.9235 * 0.5) + // Deduct half of SE tax
+      (Math.max(0, selfEmploymentIncome) * 0.9235 * 0.5) + // Deduct half of SE tax
       (input.socialSecurityIncome * 0.5)
 
     const ssThresholds = status === 'mfj'
@@ -398,10 +405,13 @@ export function TaxCalculator() {
     // Total ordinary income (including taxable SS and short-term gains)
     const totalOrdinaryIncome = totalOrdinaryIncomeInput + taxableSS + input.shortTermCapGains
 
-    // Self-employment tax calculation
-    const seNetEarnings = input.selfEmploymentIncome * 0.9235
-    const ssSETax = Math.min(seNetEarnings, taxData.ssWageBase) * 0.124
-    const medicareSETax = seNetEarnings * 0.029
+    // Self-employment tax calculation (Schedule C + Schedule F combined).
+    // SE tax applies only to positive net earnings — a net loss across the
+    // combined schedules produces no SE tax.
+    const seNetEarnings = selfEmploymentIncome * 0.9235
+    const seTaxableEarnings = Math.max(0, seNetEarnings)
+    const ssSETax = Math.min(seTaxableEarnings, taxData.ssWageBase) * 0.124
+    const medicareSETax = seTaxableEarnings * 0.029
     const selfEmploymentTax = ssSETax + medicareSETax
     const seDeduction = selfEmploymentTax * 0.5
 
@@ -424,8 +434,8 @@ export function TaxCalculator() {
 
     // QBI Deduction calculation
     let qbiDeduction = 0
-    if (input.selfEmploymentIncome > 0) {
-      const qbiIncome = input.selfEmploymentIncome * 0.9235 - seDeduction
+    if (selfEmploymentIncome > 0) {
+      const qbiIncome = selfEmploymentIncome * 0.9235 - seDeduction
       const taxableIncomeBeforeQBI = adjustedGrossIncome - deductionUsed
       const qbiThreshold = taxData.qbiThreshold[status]
       const qbiPhaseout = taxData.qbiPhaseoutRange[status]
@@ -563,7 +573,7 @@ export function TaxCalculator() {
 
     // Earned Income Credit (EIC) - fully refundable
     let earnedIncomeCredit = 0
-    const earnedIncome = input.wages + (input.selfEmploymentIncome > 0 ? seNetEarnings : 0)
+    const earnedIncome = input.wages + (selfEmploymentIncome > 0 ? seNetEarnings : 0)
 
     // EIC requires earned income and investment income below limit
     if (earnedIncome > 0 && investmentIncome <= taxData.eicInvestmentIncomeLimit) {
@@ -617,6 +627,11 @@ export function TaxCalculator() {
     const totalPayments = input.withholding + input.estimatedPayments + earnedIncomeCredit + refundableChildTaxCredit
     const amountDueOrRefund = totalTax - totalPayments
 
+    // Effective rate (of AGI) and marginal ordinary bracket, for display
+    const marginalBracket = brackets.find(b => taxableOrdinaryIncome >= b.min && taxableOrdinaryIncome < b.max)
+    const marginalTaxRate = marginalBracket ? marginalBracket.rate : 0
+    const effectiveTaxRate = adjustedGrossIncome > 0 ? Math.max(0, totalTax) / adjustedGrossIncome : 0
+
     setResult({
       totalOrdinaryIncome,
       taxableSocialSecurity: taxableSS,
@@ -640,6 +655,8 @@ export function TaxCalculator() {
       totalTax,
       totalPayments,
       amountDueOrRefund,
+      effectiveTaxRate,
+      marginalTaxRate,
       ordinaryTaxDetails,
       capGainsTaxDetails,
       seTaxDetails: { socialSecurityTax: ssSETax, medicareTax: medicareSETax }
@@ -668,7 +685,8 @@ export function TaxCalculator() {
       otherOrdinaryIncome: 0,
       shortTermCapGains: 0,
       longTermCapGains: 0,
-      selfEmploymentIncome: 0,
+      scheduleCIncome: 0,
+      scheduleFIncome: 0,
       socialSecurityIncome: 0,
       useStandardDeduction: true,
       itemizedDeductions: 0,
@@ -904,14 +922,33 @@ export function TaxCalculator() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Self-Employment Income (Net)</label>
-                  <Input
-                    type="text"
-                    placeholder="0"
-                    value={input.selfEmploymentIncome ? input.selfEmploymentIncome.toLocaleString() : ''}
-                    onChange={(e) => handleNumberInput('selfEmploymentIncome', e.target.value)}
-                  />
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-medium mb-2">Self-Employment Income (Net)</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Schedule C (Business)</label>
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        value={input.scheduleCIncome ? input.scheduleCIncome.toLocaleString() : ''}
+                        onChange={(e) => handleNumberInput('scheduleCIncome', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Schedule F (Farm)</label>
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        value={input.scheduleFIncome ? input.scheduleFIncome.toLocaleString() : ''}
+                        onChange={(e) => handleNumberInput('scheduleFIncome', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  {(input.scheduleCIncome !== 0 || input.scheduleFIncome !== 0) && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Combined SE net: {formatCurrency(input.scheduleCIncome + input.scheduleFIncome)} — self-employment tax is calculated on the total. Enter a loss as a negative number.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Social Security Benefits</label>
@@ -956,7 +993,7 @@ export function TaxCalculator() {
                     />
                   </div>
                 )}
-                {input.selfEmploymentIncome > 0 && (
+                {(input.scheduleCIncome + input.scheduleFIncome) > 0 && (
                   <div className="pt-2 border-t">
                     <p className="text-sm font-medium mb-2">QBI Deduction (20%)</p>
                     <div className="flex items-center gap-2">
@@ -1055,10 +1092,22 @@ export function TaxCalculator() {
                         <span>{formatCurrency(input.longTermCapGains)}</span>
                       </div>
                     )}
-                    {input.selfEmploymentIncome > 0 && (
+                    {input.scheduleCIncome !== 0 && (
                       <div className="flex justify-between">
-                        <span>Self-Employment Income</span>
-                        <span>{formatCurrency(input.selfEmploymentIncome)}</span>
+                        <span>Schedule C Net (Business)</span>
+                        <span>{formatCurrency(input.scheduleCIncome)}</span>
+                      </div>
+                    )}
+                    {input.scheduleFIncome !== 0 && (
+                      <div className="flex justify-between">
+                        <span>Schedule F Net (Farm)</span>
+                        <span>{formatCurrency(input.scheduleFIncome)}</span>
+                      </div>
+                    )}
+                    {input.scheduleCIncome !== 0 && input.scheduleFIncome !== 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground pl-4">
+                        <span>Total Self-Employment Net</span>
+                        <span>{formatCurrency(input.scheduleCIncome + input.scheduleFIncome)}</span>
                       </div>
                     )}
                     {input.socialSecurityIncome > 0 && (
@@ -1148,6 +1197,10 @@ export function TaxCalculator() {
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>Total Tax</span>
                       <span>{formatCurrency(result.totalTax)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Effective Rate (of AGI) · Marginal Bracket</span>
+                      <span>{(result.effectiveTaxRate * 100).toFixed(1)}% · {formatPercent(result.marginalTaxRate)}</span>
                     </div>
                   </div>
 
